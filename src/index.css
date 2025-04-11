@@ -1,0 +1,86 @@
+@import "tailwindcss";
+@tailwind utilities;
+
+/* Apply Inter as the default font */
+body {
+  font-family: "Inter", sans-serif;
+  color: var(--color-neutral-black-01);
+}
+
+@theme {
+  --color-primary-100: #818cf8;
+  --color-primary-200: #665bed;
+  --color-primary-300: #544ada;
+  --color-primary-400: #4338ca; /* DEFAULT */
+  --color-primary-500: #392dcb;
+  --color-primary-600: #2a1eba;
+  --color-primary-700: #170d9a;
+  --color-primary-800: #06004e;
+  --color-primary-white: #ffffff;
+
+  --color-secondary-600: #56069f;
+  --color-secondary-400: #9333ea;
+  --color-secondary-200: #d6a8ff;
+
+  --color-tertiary-green-600: #00980b;
+  --color-tertiary-green-400: #38ca43;
+  --color-tertiary-green-200: #6dff78;
+
+  --color-tertiary-red-600: #8b040e;
+  --color-tertiary-red-400: #ca3843;
+  --color-tertiary-red-200: #ff98a0;
+
+  --color-accent-yellow-600: #a98700;
+  --color-accent-yellow-400: #facc15;
+  --color-accent-yellow-200: #ffefad;
+
+  --color-accent-teal-600: #009081;
+  --color-accent-teal-400: #14b8a6;
+  --color-accent-teal-200: #97fff4;
+
+  --color-supporting-1: #a5b4fc;
+  --color-supporting-2: #818cf8;
+  --color-supporting-3: #d1d5db;
+
+  --color-semantic-success: #22c55e;
+  --color-semantic-warning: #f97316;
+  --color-semantic-error: #ef4444;
+  --color-semantic-info: #3b82f6;
+
+  --color-neutral-black-01: #040222;
+  --color-neutral-black-02: #475569;
+  --color-neutral-gray-01: #e2e8f0;
+  --color-neutral-gray-02: #d1d5db;
+  --color-neutral-white: #ffffff;
+
+  --color-inactive-gray: #24233ab0;
+}
+
+@plugin "daisyui";
+@plugin "daisyui/theme" {
+  name: "PatunayTheme";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  /* colors */
+  --color-primary: var(--color-primary-400);
+  --color-primary-content: var(--color-neutral-white);
+
+  --color-secondary: var(--color-secondary-400);
+  --color-secondary-content: var(--color-neutral-white);
+
+  --color-info: var(--color-info);
+  --color-info-content: var(--color-neutral-white);
+  --color-warning: var(--color-warning);
+  --color-warning-content: var(--color-neutral-white);
+  --color-success: var(--color-success);
+  --color-success-content: var(--color-neutral-white);
+  --color-error: var(--color-error);
+  --color-error-content: var(--color-neutral-white);
+
+  /* border radius */
+  --radius-selector: 1.25rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+}
