@@ -5,6 +5,9 @@ import { ArtworkEntity, FormStepsEntity } from "@typings";
 import Step1 from "./components/Step1";
 import Step2 from "./components/Step2";
 import Step3 from "./components/Step3";
+import Step4 from "./components/Step4";
+import Step5 from "./components/Step5";
+import Step6 from "./components/Step6";
 
 const RegisterArtwork = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -49,7 +52,8 @@ const RegisterArtwork = () => {
   const [artwork, setArtwork] = useState<Partial<ArtworkEntity>>({});
 
   const handleOnStepClick = (stepNumber: number, complete: boolean) => {
-    if (currentStep > stepNumber || complete) setCurrentStep(stepNumber);
+    // if (currentStep > stepNumber || complete) setCurrentStep(stepNumber);
+    setCurrentStep(stepNumber);
   };
 
   const handleOnPrev = () => {
@@ -113,6 +117,27 @@ const RegisterArtwork = () => {
         )}
         {currentStep === 3 && (
           <Step3
+            onPrev={handleOnPrev}
+            onNext={handleOnNext}
+            onDataChange={handleOnDataChange}
+          />
+        )}
+        {currentStep === 4 && (
+          <Step4
+            onPrev={handleOnPrev}
+            onNext={handleOnNext}
+            onDataChange={handleOnDataChange}
+          />
+        )}
+        {currentStep === 5 && (
+          <Step5
+            onPrev={handleOnPrev}
+            onNext={handleOnNext}
+            onDataChange={handleOnDataChange}
+          />
+        )}
+        {currentStep === 6 && (
+          <Step6
             onPrev={handleOnPrev}
             onNext={handleOnNext}
             onDataChange={handleOnDataChange}
