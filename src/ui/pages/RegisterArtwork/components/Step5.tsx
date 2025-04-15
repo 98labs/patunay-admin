@@ -1,5 +1,5 @@
 import { Button, FormField } from "@components";
-import { FormErrorsEntity, FormInputEntity, InputType } from "@typings";
+import { FormErrorsEntity, FormInputEntity, InputType } from "../../../typings";
 import { ChangeEvent, useState } from "react";
 
 interface Props {
@@ -8,7 +8,7 @@ interface Props {
   onNext: () => void;
 }
 
-const Step2 = ({ onDataChange, onPrev, onNext }: Props) => {
+const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState({
     title: "",
     artist: "",
@@ -17,9 +17,9 @@ const Step2 = ({ onDataChange, onPrev, onNext }: Props) => {
     identifier: "",
     provenance: "",
   });
-  type Step2Keys = keyof typeof formData;
+  type Step5Keys = keyof typeof formData;
 
-  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step2Keys>>({});
+  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step5Keys>>({});
 
   const artworkFormInputs: FormInputEntity[] = [
     {
@@ -86,7 +86,9 @@ const Step2 = ({ onDataChange, onPrev, onNext }: Props) => {
   return (
     <div className="flex-2 h-fill flex flex-col justify-between">
       <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
-        <h2 className="text-xl font-semibold">Enter the artwork details</h2>
+        <h2 className="text-xl font-semibold">
+          Enter the artwork's bibliography
+        </h2>
         <ul className="flex flex-col gap-2">
           {artworkFormInputs.map(
             ({
@@ -105,7 +107,7 @@ const Step2 = ({ onDataChange, onPrev, onNext }: Props) => {
                 hint={hint}
                 inputType={inputType}
                 onInputChange={handleOnChange}
-                error={formErrors[artworkId as Step2Keys]}
+                error={formErrors[artworkId as Step5Keys]}
               />
             )
           )}
@@ -133,4 +135,4 @@ const Step2 = ({ onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step2;
+export default Step5;

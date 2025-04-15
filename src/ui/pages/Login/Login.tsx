@@ -1,4 +1,5 @@
 import { Button, FormField } from "@components";
+import { InputType } from "@typings";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
@@ -18,8 +19,8 @@ const Login = () => {
           </h2>
         </div>
         <div className="flex flex-col flex-top gap-2">
-          <FormField inputType="email" hint="Email" />
-          <FormField inputType="password" hint="Password" />
+          <FormField inputType={InputType.Email} hint="Email" />
+          <FormField inputType={InputType.Password} hint="Password" />
           <Button buttonLabel="Log in" onClick={handleLogin} />
         </div>
       </div>

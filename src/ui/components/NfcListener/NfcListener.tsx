@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import { useNfcWebSocket } from "@hooks";
-import { NfcReadType } from "@typings";
+import { useNfcWebSocket } from "../../hooks";
+import { NfcReadType } from "../../typings";
 
 const NfcListener = () => {
   const [cardInfo, setCardInfo] = useState<any | null>(null);

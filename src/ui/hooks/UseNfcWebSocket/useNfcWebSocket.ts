@@ -1,4 +1,4 @@
-import { NfcEventEntity } from "@typings";
+import { NfcEventEntity } from "../../typings";
 import { useEffect } from "react";
 
 export const useNfcWebSocket = (onMessage: (event: NfcEventEntity) => void) => {

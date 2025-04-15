@@ -1,5 +1,5 @@
 import { Button, FormField } from "@components";
-import { FormErrorsEntity, FormInputEntity, InputType } from "@typings";
+import { FormErrorsEntity, FormInputEntity, InputType } from "../../../typings";
 import { ChangeEvent, useState } from "react";
 
 interface Props {
@@ -8,7 +8,7 @@ interface Props {
   onNext: () => void;
 }
 
-const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
+const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState({
     title: "",
     artist: "",
@@ -17,9 +17,9 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
     identifier: "",
     provenance: "",
   });
-  type Step5Keys = keyof typeof formData;
+  type Step4Keys = keyof typeof formData;
 
-  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step5Keys>>({});
+  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step4Keys>>({});
 
   const artworkFormInputs: FormInputEntity[] = [
     {
@@ -107,7 +107,7 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
                 hint={hint}
                 inputType={inputType}
                 onInputChange={handleOnChange}
-                error={formErrors[artworkId as Step5Keys]}
+                error={formErrors[artworkId as Step4Keys]}
               />
             )
           )}
@@ -135,4 +135,4 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step5;
+export default Step4;

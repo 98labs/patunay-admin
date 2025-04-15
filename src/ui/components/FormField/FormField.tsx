@@ -1,4 +1,4 @@
-import { InputType } from "@typings";
+import { InputType } from "../../typings"
 import { RadioButton } from "@components";
 import { ChangeEvent } from "react";
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FormStepTitle, PageHeader } from "@components";
-import { ArtworkEntity, FormStepsEntity } from "@typings";
+import { ArtworkEntity, FormStepsEntity } from "../../typings";
 
 import Step1 from "./components/Step1";
 import Step2 from "./components/Step2";
@@ -51,7 +51,7 @@ const RegisterArtwork = () => {
 
   const [artwork, setArtwork] = useState<Partial<ArtworkEntity>>({});
 
-  const handleOnStepClick = (stepNumber: number, complete: boolean) => {
+  const handleOnStepClick = (stepNumber: number, _complete: boolean) => {
     // if (currentStep > stepNumber || complete) setCurrentStep(stepNumber);
     setCurrentStep(stepNumber);
   };
