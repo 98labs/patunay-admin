@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { useNfcWebSocket } from "@hooks";
+import { NfcReadType } from "@typings";
 
 const NfcListener = () => {
   const [cardInfo, setCardInfo] = useState<any | null>(null);
@@ -9,18 +10,23 @@ const NfcListener = () => {
   useNfcWebSocket((event) => {
     console.log(`useNfcWebSocket triggered: ${JSON.stringify(event)}`);
 
-    if (event.type === "CARD_DETECTED") {
-      setStatus("Card detected!");
-      setCardInfo(event.card);
-    } else if (event.type === "CARD_READ") {
-      setStatus("Card read");
-      setCardInfo(event);
-    } else if (event.type === "CARD_WRITE") {
-      setStatus("Card written");
-      setCardInfo(event);
-    } else if (event.type === "CARD_REMOVED") {
-      setStatus("Card removed");
-      setCardInfo(null);
+    switch (event.type) {
+      case NfcReadType.CARD_DETECTED:
+        setStatus("Card detected!");
+        setCardInfo(event.card);
+        break;
+      case NfcReadType.CARD_READ:
+        setStatus("Card read");
+        setCardInfo(event);
+        break;
+      case NfcReadType.CARD_WRITE:
+        setStatus("Card written");
+        setCardInfo(event);
+        break;
+      case NfcReadType.CARD_REMOVED:
+        setStatus("Card removed");
+        setCardInfo(null);
+        break;
     }
   });
 
