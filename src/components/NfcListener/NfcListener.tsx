@@ -7,9 +7,17 @@ const NfcListener = () => {
   const [status, setStatus] = useState("Waiting...");
 
   useNfcWebSocket((event) => {
+    console.log(`useNfcWebSocket triggered: ${JSON.stringify(event)}`);
+
     if (event.type === "CARD_DETECTED") {
       setStatus("Card detected!");
       setCardInfo(event.card);
+    } else if (event.type === "CARD_READ") {
+      setStatus("Card read");
+      setCardInfo(event);
+    } else if (event.type === "CARD_WRITE") {
+      setStatus("Card written");
+      setCardInfo(event);
     } else if (event.type === "CARD_REMOVED") {
       setStatus("Card removed");
       setCardInfo(null);
