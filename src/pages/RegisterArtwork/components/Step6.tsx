@@ -1,7 +1,6 @@
-import { Button, FormField } from "@components";
-import { FormErrorsEntity, FormInputEntity, InputType } from "@typings";
 import { Nfc, Smartphone } from "lucide-react";
-import { ChangeEvent, useState } from "react";
+
+import { Button, NfcListener } from "@components";
 
 interface Props {
   onDataChange: (data: { [key: string]: string }) => void;
@@ -87,18 +86,7 @@ const Step6 = ({ onDataChange, onPrev, onNext }: Props) => {
   return (
     <div className="flex-2 h-fill flex flex-col justify-between">
       <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col items-center gap-2 p-24">
-        <div className="flex">
-          <Smartphone className="h-40 w-40 text-neutral-black-01" />
-          <Nfc className="h-40 w-40 text-neutral-black-01" />
-        </div>
-        <div>
-          <p className="font-medium">
-            Please connect your NFC Reader device to your desktop.
-          </p>
-        </div>
-        <div>
-          <Button buttonLabel="Start scanning" onClick={() => {}} />
-        </div>
+        <NfcListener />
       </div>
       <Button
         buttonType="secondary"

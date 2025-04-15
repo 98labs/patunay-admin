@@ -26,7 +26,8 @@
     "paths":{
       "@components":["components/index"],
       "@pages":["pages/index"],
-      "@typings":["typings/index"]
+      "@typings":["typings/index"],
+      "@hooks":["hooks/index"]
     }
   },
   "include": ["src"],
