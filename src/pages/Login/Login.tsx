@@ -5,6 +5,7 @@ import {  FormField } from "@components";
 import { useSession } from "../../context/SessionContext";
 import supabase from "../../supabase";
 import { InputType } from "@typings";
+import { KEY_SESSION } from "../../content";
 
 
 const Login = () => {
@@ -12,10 +13,9 @@ const Login = () => {
   // If user is already logged in, redirect to home
   // This logic is being repeated in SignIn and SignUp..
   const { session } = useSession();
-  if (session) return <Navigate to="/" />;
-  // maybe we can create a wrapper component for these pages
-  // just like the ./router/AuthProtectedRoute.tsx? up to you.
-  // ==============================
+
+  if (session) return <Navigate to="/dashboard" />;
+
   const [status, setStatus] = useState("");
   const [formValues, setFormValues] = useState({
     email: "",
@@ -34,6 +34,7 @@ const Login = () => {
       email: formValues.email,
       password: formValues.password,
     });
+
     if (error) {
       alert(error.message);
     }
@@ -70,10 +71,9 @@ const Login = () => {
             </div>
       
             <div className="mt-2">
-              <button type="submit" className="btn btn-primary btn-block">Sign in</button>
+              <button type="submit" className="btn btn-primary btn-block">{status ? status : 'Sign in'}</button>
             </div>
           </form>
-          {status && <p>{status}</p>}
         </div>
       </div>
     </div>
