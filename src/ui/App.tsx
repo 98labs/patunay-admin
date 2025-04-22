@@ -1,17 +1,17 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { lazy } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
-import {
-  Admin,
-  Artworks,
-  Dashboard,
-  Devices,
-  Login,
-  NfcTags,
-  RegisterArtwork,
-  SearchArtwork,
-  Team,
-} from "./pages";
-import { DashboardLayout } from "./layouts";
+
+const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'))
+const Admin = lazy(() => import('./pages/Admin'));
+const Artworks = lazy(() => import('./pages/Artworks'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Devices = lazy(() => import('./pages/Devices'));
+const Login = lazy(() => import('./pages/Login'));
+const NfcTags = lazy(() => import('./pages/NfcTags'));
+const RegisterArtwork = lazy(() => import('./pages/RegisterArtwork'));
+const SearchArtwork = lazy(() => import('./pages/SearchArtwork'));
+const Team = lazy(() => import('./pages/Team'));
 
 function App() {
   return (
@@ -33,7 +33,7 @@ function App() {
           <Route path="*" element={<div>404 Not Found</div>} />
         </Route>
 
-        <Route path="*" element={<div>404 Not Found</div>} />
+        <Route path="*" element={<Navigate to={false ? "/dashboard" : "/login"} replace />}/>
       </Routes>
     </BrowserRouter>
   );

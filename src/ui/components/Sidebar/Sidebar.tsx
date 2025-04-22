@@ -1,5 +1,6 @@
 import { UserProfile } from "@components";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate  } from "react-router-dom";
+import supabase from "../../supabase";
 
 interface Links {
   name: string;
@@ -49,6 +50,7 @@ const NavbarItem = ({
 
 const Sidebar = () => {
   const pathName = useLocation();
+  const navigate = useNavigate();
 
   const links: Links[] = [
     { name: "Dashboard", path: "/dashboard" },
@@ -71,6 +73,13 @@ const Sidebar = () => {
     },
   ];
 
+  const handleLogout = async () => {
+    const {error} = await supabase.auth.signOut();
+    if (error === null) {
+      navigate('/');
+    }
+  };
+
   return (
     <div className="flex flex-col w-[300px] h-screen bg-neutral-gray-01">
       <UserProfile />
@@ -86,6 +95,14 @@ const Sidebar = () => {
           />
         ))}
       </ul>
+      <div className="mt-auto">
+        <button
+          onClick={handleLogout}
+          className="w-full bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-white mt-4"
+        >
+          Logout
+        </button>
+      </div>
     </div>
   );
 };

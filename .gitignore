@@ -14,6 +14,8 @@ dist-electron
 dist-react
 package-lock.json
 *.local
+.env
+package-lock.json
 
 # Editor directories and files
 .vscode/*
