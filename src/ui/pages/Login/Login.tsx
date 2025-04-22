@@ -6,6 +6,8 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleLogin = () => {
+    console.log("clicked");
+
     navigate("/dashboard");
   };
 

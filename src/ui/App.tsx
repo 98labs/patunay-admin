@@ -30,10 +30,10 @@ function App() {
           <Route path="admin/team" element={<Team />} />
           <Route path="admin/devices" element={<Devices />} />
 
-          <Route path="*" element={<div>404 Not Found</div>} />
+          <Route path="*" element={<Login />} />
         </Route>
 
-        <Route path="*" element={<div>404 Not Found</div>} />
+        <Route path="*" element={<Login />} />
       </Routes>
     </BrowserRouter>
   );

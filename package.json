@@ -2,6 +2,7 @@
   "name": "patunay-web",
   "private": true,
   "version": "1.0.1",
+  "author": "98Labs",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -9,7 +10,7 @@
     "dev:react": "vite",
     "dev:electron": "npm run transpile:electron && cross-env NODE_ENV=development electron .",
     "devmac:electron": "npm run transpile:electron; NODE_ENV=development electron .",
-    "build": "tsc -b && vite build",
+    "build": "electron-builder",
     "lint": "eslint .",
     "preview": "vite preview",
     "transpile:electron": "tsc --project src/electron/tsconfig.json",
@@ -29,12 +30,13 @@
   "devDependencies": {
     "@eslint/js": "^9.21.0",
     "@tailwindcss/postcss7-compat": "^2.2.17",
-    "@types/node": "^22.14.0",
+    "@types/node": "^22.14.1",
     "@types/os-utils": "^0.0.4",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
+    "cross-env": "^7.0.3",
     "electron": "^35.1.1",
     "electron-builder": "^26.0.12",
     "eslint": "^9.21.0",
@@ -52,6 +54,34 @@
   },
   "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
   "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "build": {
+    "appId": "com.patunay.app",
+    "productName": "Patunay",
+    "files": [
+      "dist/",
+      "dist-electron/",
+      "dist-react/",
+      "node_modules/",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    },
+    "nsis": {
+      "oneClick": false,
+      "uninstallDisplayName": "Patunay",
+      "license": "license.md",
+      "allowToChangeInstallationDirectory": true
+    }
+  }
 }

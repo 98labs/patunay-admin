@@ -6,13 +6,14 @@ import path from "path";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: './',
+  base: "./",
   build: {
-    outDir: 'dist-react'
+    outDir: "dist-react",
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src/ui"),
+      "@": path.resolve(__dirname, "./src"),
+      // "@assets": path.resolve(__dirname, "./src/ui/assets/"),
       "@components": path.resolve(__dirname, "src/ui/components"),
       "@pages": path.resolve(__dirname, "./src/ui/pages"),
       "@hooks": path.resolve(__dirname, "./src/ui/hooks"),
