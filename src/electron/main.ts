@@ -23,6 +23,8 @@ const createWindow = () => {
     ipcMain.handle("getStatisticData", () => getStatisticData())
     
 }
+app.setAppUserModelId("com.ne-labs.Patunay");
+if (require('electron-squirrel-startup')) app.quit();
 app.whenReady().then(() => {
     createWindow()
   

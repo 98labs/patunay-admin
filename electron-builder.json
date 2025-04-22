@@ -2,7 +2,7 @@
     "appId": "com.ne-labs.patunay",
     "files": ["dist-electron", "dist-react"],
     "extraResources": ["dist-electron/preload.cjs"],
-    "icon": "./desktopIcon.png",
+    "icon": "./src/ui/assets/logo/patunay-logo.png",
     "mac": {
         "target": "dmg"
     },

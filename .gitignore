@@ -12,7 +12,7 @@ dist
 dist-ssr
 dist-electron
 dist-react
-package-lock.json
+
 *.local
 .env
 package-lock.json
@@ -27,3 +27,5 @@ package-lock.json
 *.njsproj
 *.sln
 *.sw?
+
+out/
