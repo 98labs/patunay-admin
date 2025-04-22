@@ -10,7 +10,9 @@
     "dev:react": "vite",
     "dev:electron": "npm run transpile:electron && cross-env NODE_ENV=development electron .",
     "devmac:electron": "npm run transpile:electron; NODE_ENV=development electron .",
-    "build": "electron-builder",
+    "build:react": "vite build",
+    "build:electron": "electron-builder",
+    "build": "npm run build:react && electron-builder",
     "lint": "eslint .",
     "preview": "vite preview",
     "transpile:electron": "tsc --project src/electron/tsconfig.json",
@@ -66,8 +68,15 @@
       "package.json"
     ],
     "directories": {
-      "buildResources": "assets"
+      "buildResources": "build",
+      "output": "dist"
     },
+    "extraResources": [
+      {
+        "from": "./public/assets",
+        "to": "assets"
+      }
+    ],
     "win": {
       "target": "nsis"
     },

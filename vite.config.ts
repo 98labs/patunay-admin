@@ -10,10 +10,10 @@ export default defineConfig({
   build: {
     outDir: "dist-react",
   },
+  publicDir: "public",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // "@assets": path.resolve(__dirname, "./src/ui/assets/"),
       "@components": path.resolve(__dirname, "src/ui/components"),
       "@pages": path.resolve(__dirname, "./src/ui/pages"),
       "@hooks": path.resolve(__dirname, "./src/ui/hooks"),
