@@ -5,11 +5,10 @@ interface CardData {
 }
 
 const NfcListener = () => {
-  const [cardData, setCardData] = useState<CardData | null>(null);
+  const [cardData, setCardData] = useState<any | null>(null);
 
   useEffect(() => {
     window.electron.subscribeNfcCardDetection((card: CardData) => {
-      console.log("Card received in frontend:", card);
       setCardData(card);
     });
   }, []);
@@ -20,7 +19,7 @@ const NfcListener = () => {
       {cardData ? (
         <div>
           <p>
-            <strong>UID:</strong> {cardData.uid}
+            <strong>CARD:</strong> {cardData}
           </p>
         </div>
       ) : (

@@ -20,6 +20,8 @@ declare module "nfc-pcsc" {
       blockSize?: number,
       packetSize?: number
     ): Promise<Buffer>;
+
+    write(blockNumber: number, data: Buffer, blockSize?: number): Promise<void>;
   }
 
   export class Card {

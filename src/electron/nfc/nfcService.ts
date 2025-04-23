@@ -13,16 +13,28 @@ export const initializeNfc = (window: BrowserWindow) => {
 
     reader.on("card", async (card: Card) => {
       console.log(`Card detected: ${JSON.stringify(card)}`);
+      // read
       try {
-        // reader.read(blockNumber, length, blockSize = 4, packetSize = 16)
         const data = await reader.read(4, 12); // starts reading in block 4, continues to 5 and 6 in order to read 12 bytes
-        console.log(`data read`, data);
         const payload = data.toString(); // utf8 is default encoding
-        console.log(`data converted`, payload);
-        mainWindow?.webContents.send("nfc-card-detected", card);
+        mainWindow?.webContents.send("nfc-card-detected", payload);
       } catch (err) {
         console.error(`error when reading data`, err);
       }
+
+      // // write
+      // try {
+      //   const data = Buffer.allocUnsafe(12);
+      //   data.fill(0);
+      //   const text = new Date().toTimeString();
+      //   data.write(text); // if text is longer than 12 bytes, it will be cut off
+      //   // reader.write(blockNumber, data, blockSize = 4)
+      //   await reader.write(4, data); // starts writing in block 4, continues to 5 and 6 in order to write 12 bytes
+      //   console.log(`data written`);
+      //   mainWindow?.webContents.send("nfc-card-detected", text);
+      // } catch (err) {
+      //   console.error(`error when writing data`, err);
+      // }
     });
 
     reader.on("error", (err: Error) => {
