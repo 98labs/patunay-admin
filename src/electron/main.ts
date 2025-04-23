@@ -3,6 +3,12 @@ import path from 'path';
 import { isDev } from './util.js';
 import { getPreloadPath } from './pathResolver.js'
 import { getStatisticData, pollResources } from './resourceManager.js';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
+if (require('electron-squirrel-startup')) {
+  app.quit();
+}
 
 const createWindow = () => {
     const mainWindow = new BrowserWindow({
@@ -24,7 +30,7 @@ const createWindow = () => {
     
 }
 app.setAppUserModelId("com.ne-labs.Patunay");
-if (require('electron-squirrel-startup')) app.quit();
+
 app.whenReady().then(() => {
     createWindow()
   
