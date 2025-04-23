@@ -1,0 +1,16 @@
+{
+    "appId": "com.ne-labs.patunay",
+    "files": ["dist-electron", "dist-react"],
+    "extraResources": ["dist-electron/preload.cjs"],
+    "icon": "./src/ui/assets/logo/patunay-256x256.png",
+    "mac": {
+        "target": "dmg"
+    },
+    "win": {
+        "target": ["portable", "msi"]
+    },
+    "linux": {
+        "target": "AppImg",
+        "category": "Utility"
+    }
+}

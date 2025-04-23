@@ -22,7 +22,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    "baseUrl": "./src",
+    "baseUrl": "./src/ui",
     "paths":{
       "@components":["components/index"],
       "@pages":["pages/index"],
@@ -31,5 +31,5 @@
     }
   },
   "include": ["src"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "src/electron"]
 }

@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",  // Prefer "ESNext" over "NodeNext" for cleaner behavior
+    "moduleResolution": "node",
+    "outDir": "../../dist-electron",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node", "electron", "../../types"],
+    "resolveJsonModule": true
+  },
+  "include": ["./**/*.ts"]
+}
