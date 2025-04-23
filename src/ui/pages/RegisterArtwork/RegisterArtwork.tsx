@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FormStepTitle, PageHeader } from "@components";
-import { ArtworkEntity, FormStepsEntity } from "../../typings";
+import { ArtworkEntity, FormStepsEntity } from "@typings";
 
 import Step1 from "./components/Step1";
 import Step2 from "./components/Step2";

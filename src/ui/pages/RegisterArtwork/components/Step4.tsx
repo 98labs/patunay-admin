@@ -1,6 +1,6 @@
 import { Button, FormField } from "@components";
-import { FormErrorsEntity, FormInputEntity, InputType } from "../../../typings";
-import { ChangeEvent, useState } from "react";
+import { FormErrorsEntity, FormInputEntity, InputType } from "@typings";
+import { ChangeEvent, useEffect, useState } from "react";
 
 interface Props {
   onDataChange: (data: { [key: string]: string }) => void;
@@ -9,78 +9,12 @@ interface Props {
 }
 
 const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
-  const [formData, setFormData] = useState({
-    title: "",
-    artist: "",
-    description: "",
-    medium: "",
-    identifier: "",
-    provenance: "",
-  });
-  type Step4Keys = keyof typeof formData;
+  const [formData, setFormData] = useState<string[]>([""]);
 
-  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step4Keys>>({});
+  const handleOnChange = (index: number) => {};
 
-  const artworkFormInputs: FormInputEntity[] = [
-    {
-      artworkId: "title",
-      artworkLabel: "Title",
-      hint: "Enter the title of the artwork",
-      required: true,
-    },
-    {
-      artworkId: "artist",
-      artworkLabel: "Artist",
-      hint: "Enter the artist's name",
-      required: true,
-    },
-    {
-      inputType: InputType.TextArea,
-      artworkId: "description",
-      artworkLabel: "Description",
-      hint: "Enter the description of the artwork (optional)",
-      required: false,
-    },
-    {
-      artworkId: "medium",
-      artworkLabel: "Medium",
-      hint: "Enter the artwork's medium",
-      required: true,
-    },
-    {
-      artworkId: "identifier",
-      artworkLabel: "Identifier",
-      hint: "Enter its identifier",
-      required: true,
-    },
-    {
-      artworkId: "provenance",
-      artworkLabel: "Provenance",
-      hint: "Enter the artwork's provenance",
-      required: true,
-    },
-  ];
-
-  const validateForm = () => {
-    const errors: { [key: string]: string } = {};
-
-    artworkFormInputs.forEach(({ artworkId, required }) => {
-      if (required && !formData[artworkId as keyof typeof formData].trim()) {
-        errors[artworkId] = "This field is required.";
-      }
-    });
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleOnChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    setFormErrors((prev) => ({ ...prev, [name]: "" }));
-    onDataChange({ [name]: value });
+  const handleOnListItemClick = () => {
+    setFormData([...formData, ""]);
   };
 
   return (
@@ -89,29 +23,15 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
         <h2 className="text-xl font-semibold">
           Enter the artwork's bibliography
         </h2>
-        <ul className="flex flex-col gap-2">
-          {artworkFormInputs.map(
-            ({
-              inputType,
-              artworkId,
-              artworkLabel,
-              hint,
-              required,
-            }: FormInputEntity) => (
-              <FormField
-                key={artworkId}
-                name={artworkId}
-                required={required}
-                isLabelVisible={true}
-                label={artworkLabel}
-                hint={hint}
-                inputType={inputType}
-                onInputChange={handleOnChange}
-                error={formErrors[artworkId as Step4Keys]}
-              />
-            )
-          )}
-        </ul>
+        {formData.map((item, index) => (
+          <FormField
+            key={index}
+            isListItem={true}
+            hint="Add the artwork's bibliography"
+            onListItemClick={handleOnListItemClick}
+            value={item}
+          />
+        ))}
       </div>
       <div className="flex gap-2">
         <Button
@@ -125,9 +45,9 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
           buttonType="primary"
           buttonLabel="Continue"
           onClick={() => {
-            if (validateForm()) {
-              onNext();
-            }
+            // if (validateForm()) {
+            //   onNext();
+            // }
           }}
         />
       </div>

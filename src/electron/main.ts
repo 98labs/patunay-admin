@@ -23,7 +23,6 @@ const createWindow = () => {
     console.log(`Loading file: ${indexPath}`);
     mainWindow.loadFile(indexPath);
   }
-  mainWindow.loadFile(path.join(app.getAppPath(), "dist-react/index.html"));
 
   ipcMain.handle("getStatisticData", () => getStatisticData());
 };

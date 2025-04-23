@@ -5,7 +5,7 @@ import {
   FormInputEntity,
   InputType,
   SizeUnit,
-} from "../../../typings";
+} from "@typings";
 
 interface Props {
   onDataChange: (data: { [key: string]: string }) => void;

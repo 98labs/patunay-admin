@@ -1,5 +1,5 @@
 import { Button, FormField } from "@components";
-import { FormErrorsEntity, FormInputEntity, InputType } from "../../../typings";
+import { FormErrorsEntity, FormInputEntity, InputType } from "@typings";
 import { ChangeEvent, useState } from "react";
 
 interface Props {
