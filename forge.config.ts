@@ -3,7 +3,7 @@ import type { ForgeConfig } from '@electron-forge/shared-types';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: './src/ui/assets/logo/patunay-256x256.png',
+    icon: './src/assets/logo/patunay-256x256.png',
     osxSign: {},
   },
   makers: [

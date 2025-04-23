@@ -1,5 +1,5 @@
 import { lazy } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { HashRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
 
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'))
@@ -15,7 +15,7 @@ const Team = lazy(() => import('./pages/Team'));
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<DashboardLayout />}>
@@ -30,12 +30,12 @@ function App() {
           <Route path="admin/team" element={<Team />} />
           <Route path="admin/devices" element={<Devices />} />
 
-          <Route path="*" element={<div>404 Not Found</div>} />
+          <Route path="*" element={<Login />} />
         </Route>
 
-        <Route path="*" element={<Navigate to={false ? "/dashboard" : "/login"} replace />}/>
+        <Route path="*" element={<Login />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

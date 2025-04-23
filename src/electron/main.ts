@@ -11,20 +11,25 @@ if (require('electron-squirrel-startup')) {
 }
 
 const createWindow = () => {
-    const mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
-        webPreferences: {
-            preload: getPreloadPath()
-        }
-    });
-    if (isDev()) {
-        mainWindow.loadURL('http://localhost:5173');
-    } else {
-        mainWindow.loadFile(path.join(app.getAppPath(), 'dist-react/index.html'));
-    }
+  const mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      preload: getPreloadPath(),
+      // devTools: false, // Uncomment to disable devtools
+    },
+  });
 
-    pollResources(mainWindow);
+  if (isDev()) {
+    mainWindow.loadURL("http://localhost:5173");
+    console.log("Loading URL: http://localhost:5173");
+    mainWindow.webContents.openDevTools();
+  } else {
+    const indexPath = path.join(app.getAppPath(), "dist-react/index.html");
+    console.log(`Loading file: ${indexPath}`);
+    mainWindow.loadFile(indexPath);
+  }
+  mainWindow.loadFile(path.join(app.getAppPath(), "dist-react/index.html"));
 
     ipcMain.handle("getStatisticData", () => getStatisticData())
     
@@ -32,11 +37,11 @@ const createWindow = () => {
 app.setAppUserModelId("com.ne-labs.Patunay");
 
 app.whenReady().then(() => {
-    createWindow()
-  
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow()
-      }
-    })
-  })
+  createWindow();
+
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});

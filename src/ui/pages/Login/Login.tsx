@@ -6,6 +6,8 @@ import { useSession } from "../../context/SessionContext";
 import supabase from "../../supabase";
 import { InputType } from "@typings";
 
+import logo from "@/assets/logo/patunay-logo.png";
+
 const Login = () => {
   // ==============================
   // If user is already logged in, redirect to home
@@ -40,11 +42,13 @@ const Login = () => {
   };
 
   return (
-
-    <div className="flex min-h-full flex-col justify-center px-6 py-24 lg:px-12">
-      <div className="p-12 mx-auto rounded-2xl w-100 ">
-        <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900 text-white">Sign in to your account</h2>
+    <div className="w-full h-screen flex justify-center items-center">
+      <div className="m-auto flex flex-col items-center gap-2">
+        <div className="flex flex-col gap-2 items-center ">
+          <img src={logo} />
+          <h2 className="m-auto text-[32px] leading-10 font-medium">
+            Welcome to Patunay
+          </h2>
         </div>
       
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">

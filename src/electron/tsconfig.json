@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["../../types"],
+    "types": ["node", "electron", "../../types"],
     "resolveJsonModule": true
   },
   "include": ["./**/*.ts"]
