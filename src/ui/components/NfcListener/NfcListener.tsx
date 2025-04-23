@@ -1,42 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { useNfcWebSocket } from "../../hooks";
-import { NfcReadType } from "@typings";
+interface CardData {
+  uid: string;
+}
 
 const NfcListener = () => {
-  const [cardInfo, setCardInfo] = useState<any | null>(null);
-  const [status, setStatus] = useState("Waiting...");
+  const [cardData, setCardData] = useState<CardData | null>(null);
 
-  useNfcWebSocket((event) => {
-    console.log(`useNfcWebSocket triggered: ${JSON.stringify(event)}`);
-
-    switch (event.type) {
-      case NfcReadType.CARD_DETECTED:
-        setStatus("Card detected!");
-        setCardInfo(event.card);
-        break;
-      case NfcReadType.CARD_READ:
-        setStatus("Card read");
-        setCardInfo(event);
-        break;
-      case NfcReadType.CARD_WRITE:
-        setStatus("Card written");
-        setCardInfo(event);
-        break;
-      case NfcReadType.CARD_REMOVED:
-        setStatus("Card removed");
-        setCardInfo(null);
-        break;
-    }
-  });
+  useEffect(() => {
+    window.electron.subscribeNfcCardDetection((card: CardData) => {
+      console.log("Card received in frontend:", card);
+      setCardData(card);
+    });
+  }, []);
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold">NFC Status: {status}</h2>
-      {cardInfo && (
-        <pre className="mt-2 bg-gray-100 p-2 rounded">
-          {JSON.stringify(cardInfo, null, 2)}
-        </pre>
+    <div className="p-4 rounded-lg shadow bg-white">
+      <h2 className="text-lg font-bold mb-2">NFC Card Info</h2>
+      {cardData ? (
+        <div>
+          <p>
+            <strong>UID:</strong> {cardData.uid}
+          </p>
+        </div>
+      ) : (
+        <p>No card scanned yet.</p>
       )}
     </div>
   );

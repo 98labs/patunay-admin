@@ -3,6 +3,7 @@ import path from "path";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData, pollResources } from "./resourceManager.js";
+import { initializeNfc } from "./nfc/nfcService.js";
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -24,6 +25,7 @@ const createWindow = () => {
     mainWindow.loadFile(indexPath);
   }
 
+  initializeNfc(mainWindow);
   ipcMain.handle("getStatisticData", () => getStatisticData());
 };
 app.whenReady().then(() => {
