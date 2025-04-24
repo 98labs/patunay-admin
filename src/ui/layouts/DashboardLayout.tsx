@@ -12,7 +12,11 @@ const DashboardLayout = () => {
       <div className="flex min-h-screen">
         <Sidebar />
         <main className="flex-1 p-6 bg-base-100">
-          <Outlet />
+          <div className="grow">
+            <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+                <Outlet />
+            </div>
+          </div>
         </main>
       </div>
     );

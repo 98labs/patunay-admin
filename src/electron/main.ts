@@ -1,9 +1,9 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
+import { createRequire } from 'module';
 import { isDev } from './util.js';
 import { getPreloadPath } from './pathResolver.js'
 import { getStatisticData, pollResources } from './resourceManager.js';
-import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
 if (require('electron-squirrel-startup')) {

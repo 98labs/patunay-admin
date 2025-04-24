@@ -56,12 +56,11 @@ body {
   --color-inactive-gray: #24233ab0;
 }
 
-@plugin "daisyui";
-@plugin "daisyui/theme" {
+@plugin "daisyui" {
   name: "PatunayTheme";
   default: true;
   prefersdark: false;
-  color-scheme: light;
+  theme: light --default, dark --prefersdark;
 
   /* colors */
   --color-primary: var(--color-primary-400);
