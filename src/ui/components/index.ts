@@ -7,3 +7,4 @@ export { default as PageHeader } from "./PageHeader";
 export { default as RadioButton } from "./RadioButton";
 export { default as Sidebar } from "./Sidebar";
 export { default as UserProfile } from "./UserProfile";
+export { default as NotificationMessage}  from './NotificationMessage';

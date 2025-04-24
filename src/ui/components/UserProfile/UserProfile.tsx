@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
 import { themeChange } from 'theme-change';
+import { useSelector } from 'react-redux';
+
 import logo from '../../../assets/logo/patunay-256x256.png'
+import { selectAuth } from '../../pages/Login/selector';
 
 const UserProfile = () => {
   const [currentTheme, setCurrentTheme] = useState(localStorage.getItem("theme"))
+  const {user} = useSelector(selectAuth)
     useEffect(() => {
       themeChange(false)
       if(currentTheme === null){
@@ -14,6 +18,7 @@ const UserProfile = () => {
           }
       }
     }, [])
+    const username = user?.email.split("@")[0];
   return (
     <div className="px-4 py-8">
       <div className="flex items-center gap-2">
@@ -23,8 +28,8 @@ const UserProfile = () => {
           className="rounded-full w-12 h-12 object-cover object-top"
         />
         <div className="my-auto">
-          <div className="text-base font-semibold">Fundacion Sanso</div>
-          <div className="text-xs">Head Office</div>
+          <div className="text-base font-semibold">{user ? username : 'Super Admin'}</div>
+          <div className="text-xs">Admin</div>
         </div>
         <div className="col-span-3 grid grid-cols-subgrid gap-6">
           <div className="col-start-2 flex items-center space-x-3">

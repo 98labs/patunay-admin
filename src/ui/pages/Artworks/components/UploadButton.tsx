@@ -1,5 +1,8 @@
 import React, { useRef } from 'react';
 import Papa from 'papaparse';
+import { useDispatch } from 'react-redux';
+
+import { showNotification } from '../../../components/NotificationMessage/slice'
 
 interface UploadButtonProps {
   onFileSelect: (data: any[]) => void;
@@ -7,6 +10,7 @@ interface UploadButtonProps {
 
 const UploadButton: React.FC<UploadButtonProps> = ({ onFileSelect }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dispatch = useDispatch();
 
   const handleButtonClick = () => {
     fileInputRef.current?.click();
@@ -21,6 +25,11 @@ const UploadButton: React.FC<UploadButtonProps> = ({ onFileSelect }) => {
       skipEmptyLines: true,
       complete: (result) => {
         console.log('result.data', result.data)
+        const msg = {
+          message: 'Successfully Uploaded',
+          status: 'success'
+        }
+        dispatch(showNotification(msg))
         onFileSelect(result.data);
       },
       error: (err) => {

@@ -1,18 +1,23 @@
 import { createSlice } from '@reduxjs/toolkit'
 
+interface NotifState {
+    title: string | null;
+    message: string | null;
+    status: 'success' | 'error' | 'info' | null;
+  }
+
+export const initialState: NotifState = {
+    title: "Home",  // current page title state management
+    message : "",  // message of notification to be shown
+    status : null,   // to check the notification type -  success/ error/ info
+  };
 export const notificationSlice = createSlice({
     name: 'notification',
-    initialState: {
-        pageTitle: "Home",  // current page title state management
-        noOfNotifications : 15,  // no of unread notifications
-        message : "",  // message of notification to be shown
-        status : null,   // to check the notification type -  success/ error/ info
-    },
+    initialState,
     reducers: {
-        setPageTitle: (state, action) => {
-            state.pageTitle = action.payload.title
+        setTitle: (state, action) => {
+            state.title = action.payload.title
         },
-
 
         removeNotificationMessage: (state) => {
             state.message = ""
@@ -26,6 +31,6 @@ export const notificationSlice = createSlice({
     }
 })
 
-export const { setPageTitle, removeNotificationMessage, showNotification } = notificationSlice.actions
+export const { setTitle, removeNotificationMessage, showNotification } = notificationSlice.actions
 
 export default notificationSlice.reducer
