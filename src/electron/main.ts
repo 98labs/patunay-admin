@@ -4,6 +4,12 @@ import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData, pollResources } from "./resourceManager.js";
 import { initializeNfc } from "./nfc/nfcService.js";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+
+if (require("electron-squirrel-startup")) {
+  app.quit();
+}
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -28,6 +34,9 @@ const createWindow = () => {
   initializeNfc(mainWindow);
   ipcMain.handle("getStatisticData", () => getStatisticData());
 };
+
+app.setAppUserModelId("com.ne-labs.Patunay");
+
 app.whenReady().then(() => {
   createWindow();
 

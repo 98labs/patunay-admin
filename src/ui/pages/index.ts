@@ -10,3 +10,4 @@ export { default as Admin } from "./Admin";
 export { default as NfcTags } from "./NfcTags";
 export { default as Team } from "./Team";
 export { default as Devices } from "./Devices";
+export { default as HomePage } from "./HomePage";
