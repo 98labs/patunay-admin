@@ -22,7 +22,7 @@ const DashboardLayout = () => {
         <Sidebar />
         <main className="flex-1 p-6 bg-base-100">
           <div className="grow">
-            <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+            <div className="px-4 sm:px-6 lg:px-8 py-4 w-full max-w-9xl mx-auto">
               <NotificationMessage />
                 <Outlet />
             </div>

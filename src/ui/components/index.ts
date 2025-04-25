@@ -8,3 +8,4 @@ export { default as RadioButton } from "./RadioButton";
 export { default as Sidebar } from "./Sidebar";
 export { default as UserProfile } from "./UserProfile";
 export { default as NotificationMessage}  from './NotificationMessage';
+export { default as Loading } from './Loading';

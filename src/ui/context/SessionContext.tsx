@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import supabase from "../supabase";
+import { Loading } from "@components";
 import { Session } from "@supabase/supabase-js";
 
 const SessionContext = createContext<{
@@ -40,7 +41,9 @@ export const SessionProvider = ({ children }: Props) => {
 
   return (
     <SessionContext.Provider value={{ session }}>
-      {isLoading ? 'Loading...' : children}
+      {isLoading ? (
+        <Loading />
+      ) : children}
     </SessionContext.Provider>
   );
 };
