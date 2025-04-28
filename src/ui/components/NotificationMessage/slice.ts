@@ -7,7 +7,7 @@ interface NotifState {
   }
 
 export const initialState: NotifState = {
-    title: "Home",  // current page title state management
+    title: "",  // current page title state management
     message : "",  // message of notification to be shown
     status : null,   // to check the notification type -  success/ error/ info
   };
@@ -21,10 +21,12 @@ export const notificationSlice = createSlice({
 
         removeNotificationMessage: (state) => {
             state.message = ""
+            state.title = ""
             state.status = null
         },
 
         showNotification: (state, action) => {
+            state.title = action.payload.title
             state.message = action.payload.message
             state.status = action.payload.status
         },

@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
+import moment from "moment";
+import { useSelector } from "react-redux";
 import supabase from "../../supabase";
 import UploadButton from "./components/UploadButton";
-import moment from "moment";
+import { selectNotif } from "../../components/NotificationMessage/selector";
 import { Loading } from "@components";
 
 type ArtistType = {
@@ -17,24 +19,31 @@ const Artworks = () => {
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const { title, status } = useSelector(selectNotif);
 
-    useEffect(() => {
-        const getDataList = async () => {
-            const { data, error } = await supabase.rpc("get_artwork_list", {});
-            
-            if (error) {
-                setLoading(false);
-                setArtList([])
-                console.error("RPC Error:", error.message);
-            }
+    const getDataList = async () => {
+        const { data, error } = await supabase.rpc("get_artwork_list", {});
+        
+        if (error) {
             setLoading(false);
-            setArtList(data || [])
-        };
+            setArtList([])
+            console.error("RPC Error:", error.message);
+        }
+        setLoading(false);
+        setArtList(data || [])
+    };
+    useEffect(() => {
         getDataList()
       return () => {
         setArtList([])
       }
     }, [])
+
+    useEffect(() => {
+        if (status === "success" && title === "ArtList") {
+            getDataList()
+        }
+    }, [status, title]);
     
     // Pagination calculations
     const indexOfLast = currentPage * itemsPerPage;
@@ -52,7 +61,7 @@ const Artworks = () => {
     };
     
   const handleFile = (file: any) => {
-    console.log('Selected file:', file.name);
+    console.log('Selected file:', file);
     // You can do something with the file here
   };
 
@@ -121,8 +130,8 @@ const Artworks = () => {
                                             <td className="px-4 py-4 text-sm whitespace-nowrap">Status</td>
                                             <td className="px-4 py-4 text-sm whitespace-nowrap">
                                                 <button className="px-1 py-1 text-gray-500 transition-colors duration-200 rounded-lg dark:text-gray-300 hover:bg-gray-100">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="w-6 h-6">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
                                                     </svg>
                                                 </button>
                                             </td>
