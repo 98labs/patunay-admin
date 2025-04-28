@@ -1,7 +1,16 @@
+import { NfcModeEntity } from "./../../types/enums/nfcMode";
 import { NFC, Reader, Card } from "nfc-pcsc";
 import { BrowserWindow } from "electron";
 
 let mainWindow: BrowserWindow | null = null;
+
+let mode: NfcModeEntity = NfcModeEntity.Write;
+let dataToWrite: string | null = null;
+
+export const setNfcMode = (newMode: NfcModeEntity, data?: string) => {
+  mode = newMode;
+  dataToWrite = newMode === NfcModeEntity.Write && data ? data : null;
+};
 
 export const initializeNfc = (window: BrowserWindow) => {
   mainWindow = window;
@@ -13,28 +22,35 @@ export const initializeNfc = (window: BrowserWindow) => {
 
     reader.on("card", async (card: Card) => {
       console.log(`Card detected: ${JSON.stringify(card)}`);
-      // read
-      try {
-        const data = await reader.read(4, 12); // starts reading in block 4, continues to 5 and 6 in order to read 12 bytes
-        const payload = data.toString(); // utf8 is default encoding
-        mainWindow?.webContents.send("nfc-card-detected", payload);
-      } catch (err) {
-        console.error(`error when reading data`, err);
-      }
 
-      // // write
-      // try {
-      //   const data = Buffer.allocUnsafe(12);
-      //   data.fill(0);
-      //   const text = new Date().toTimeString();
-      //   data.write(text); // if text is longer than 12 bytes, it will be cut off
-      //   // reader.write(blockNumber, data, blockSize = 4)
-      //   await reader.write(4, data); // starts writing in block 4, continues to 5 and 6 in order to write 12 bytes
-      //   console.log(`data written`);
-      //   mainWindow?.webContents.send("nfc-card-detected", text);
-      // } catch (err) {
-      //   console.error(`error when writing data`, err);
-      // }
+      switch (mode) {
+        case NfcModeEntity.Read:
+          // read
+          try {
+            const data = await reader.read(4, 12); // starts reading in block 4, continues to 5 and 6 in order to read 12 bytes
+            const payload = data.toString() + "Hello"; // utf8 is default encoding
+            mainWindow?.webContents.send("nfc-card-detected", payload);
+          } catch (err) {
+            console.error(`error when reading data`, err);
+          }
+          break;
+
+        case NfcModeEntity.Write:
+          // write
+          try {
+            const data = Buffer.allocUnsafe(12);
+            data.fill(0);
+            const text = "Hello nfc world!";
+            data.write(text); // if text is longer than 12 bytes, it will be cut off
+            // reader.write(blockNumber, data, blockSize = 4)
+            await reader.write(4, data); // starts writing in block 4, continues to 5 and 6 in order to write 12 bytes
+            console.log(`data written`);
+            mainWindow?.webContents.send("nfc-card-detected", text);
+          } catch (err) {
+            console.error(`error when writing data`, err);
+          }
+          break;
+      }
     });
 
     reader.on("error", (err: Error) => {

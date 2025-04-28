@@ -3,8 +3,9 @@ import path from "path";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData, pollResources } from "./resourceManager.js";
-import { initializeNfc } from "./nfc/nfcService.js";
+import { initializeNfc, setNfcMode } from "./nfc/nfcService.js";
 import { createRequire } from "module";
+import { NfcModeEntity } from "../types/enums/nfcMode.js";
 const require = createRequire(import.meta.url);
 
 if (require("electron-squirrel-startup")) {
@@ -32,6 +33,12 @@ const createWindow = () => {
   }
 
   initializeNfc(mainWindow);
+  ipcMain.on(
+    "nfc-set-mode",
+    (_event, payload: { mode: NfcModeEntity; data?: string }) => {
+      setNfcMode(payload.mode, payload.data);
+    }
+  );
   ipcMain.handle("getStatisticData", () => getStatisticData());
 };
 
