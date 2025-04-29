@@ -1,11 +1,16 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
-import { isDev } from "./util.js";
-import { getPreloadPath } from "./pathResolver.js";
-import { getStatisticData, pollResources } from "./resourceManager.js";
-import { initializeNfc, setNfcMode } from "./nfc/nfcService.js";
+import { isDev } from "./util";
+import { getPreloadPath } from "./pathResolver";
+import { getStatisticData, pollResources } from "./resourceManager";
+import { initializeNfc, setNfcMode } from "./nfc/nfcService";
 import { createRequire } from "module";
-import { NfcModeEntity } from "../types/enums/nfcMode.js";
+
+enum NfcModeEntity {
+  Read = "read",
+  Write = "write",
+}
+
 const require = createRequire(import.meta.url);
 
 if (require("electron-squirrel-startup")) {

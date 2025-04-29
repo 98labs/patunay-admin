@@ -1,6 +1,10 @@
-import { NfcModeEntity } from "./../../types/enums/nfcMode";
 import { NFC, Reader, Card } from "nfc-pcsc";
 import { BrowserWindow } from "electron";
+
+enum NfcModeEntity {
+  Read = "read",
+  Write = "write",
+}
 
 let mainWindow: BrowserWindow | null = null;
 
