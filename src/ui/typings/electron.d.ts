@@ -1,5 +1,8 @@
 import { NfcModeEntity } from "./enums/nfcMode";
-import { CardData } from "./CardData";
+
+interface CardData {
+  uid: string;
+}
 
 declare global {
   interface Window {

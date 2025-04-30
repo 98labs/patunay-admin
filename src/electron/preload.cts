@@ -1,7 +1,13 @@
-import { CardData } from "./../types/CardData";
-import { NfcModeEntity } from "./../types/enums/nfcMode";
 import electron from "electron";
 
+enum NfcModeEntity {
+  Read = "read",
+  Write = "write",
+}
+
+interface CardData {
+  uid: string;
+}
 export interface Statistics {
   // Define the structure of statistics object, e.g.,:
   cpuUsage: number;

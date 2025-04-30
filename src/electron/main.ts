@@ -1,9 +1,9 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
-import { isDev } from "./util";
-import { getPreloadPath } from "./pathResolver";
-import { getStatisticData, pollResources } from "./resourceManager";
-import { initializeNfc, setNfcMode } from "./nfc/nfcService";
+import { isDev } from "./util.js";
+import { getPreloadPath } from "./pathResolver.js";
+import { getStatisticData, pollResources } from "./resourceManager.js";
+import { initializeNfc, setNfcMode } from "./nfc/nfcService.js";
 import { createRequire } from "module";
 
 enum NfcModeEntity {

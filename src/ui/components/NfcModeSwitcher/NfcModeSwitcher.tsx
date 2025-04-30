@@ -1,7 +1,12 @@
-import { useState } from "react";
-import { NfcModeEntity } from "../../../types/enums/nfcMode";
+import { NfcModeEntity } from "@typings";
+import { useEffect, useState } from "react";
+
+interface CardData {
+  uid: string;
+}
 
 const NfcModeSwitcher = () => {
+  const [cardData, setCardData] = useState<any | null>(null);
   const [mode, setMode] = useState<NfcModeEntity>(NfcModeEntity.Read);
   const [textToWrite, setTextToWrite] = useState("");
 
@@ -13,6 +18,12 @@ const NfcModeSwitcher = () => {
 
     window.electron.setMode(mode, textToWrite);
   };
+
+  useEffect(() => {
+    window.electron.subscribeNfcCardDetection((card: CardData) => {
+      setCardData(card);
+    });
+  }, []);
 
   return (
     <div className="p-4 border rounded max-w-md flex flex-col gap-4">
@@ -39,6 +50,8 @@ const NfcModeSwitcher = () => {
           <span className="ml-2">Write</span>
         </label>
       </div>
+
+      {mode === NfcModeEntity.Read && <div>{cardData}</div>}
 
       {mode === NfcModeEntity.Write && (
         <input
