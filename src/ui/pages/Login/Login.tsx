@@ -1,14 +1,18 @@
 import { useState } from "react";
 import {  Navigate } from "react-router-dom";
+import { useDispatch } from 'react-redux';
 
-import {  FormField } from "@components";
+import {  FormField, NotificationMessage } from "@components";
 import { useSession } from "../../context/SessionContext";
 import supabase from "../../supabase";
 import { InputType } from "@typings";
+import { setUser } from './slice'
+import { showNotification } from '../../components/NotificationMessage/slice'
 
 import logo from "@/assets/logo/patunay-logo.png";
 
 const Login = () => {
+  const dispatch = useDispatch();
   // ==============================
   // If user is already logged in, redirect to home
   // This logic is being repeated in SignIn and SignUp..
@@ -30,19 +34,32 @@ const Login = () => {
     e.preventDefault();
     setStatus("Logging in...");
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: formValues.email,
       password: formValues.password,
     });
+    if (data) {
+      const msg = {
+        message: 'Successfully Login',
+        status: 'success'
+      }
+      dispatch(showNotification(msg))
+      dispatch(setUser(data.user))
+    }
 
     if (error) {
-      alert(error.message);
+      const msg = {
+        message: error.message,
+        status: 'error'
+      }
+      dispatch(showNotification(msg))
     }
     setStatus("");
   };
 
   return (
     <div className="w-full h-screen flex justify-center items-center">
+      <NotificationMessage />
       <div className="m-auto flex flex-col items-center gap-2">
         <div className="flex flex-col gap-2 items-center ">
           <img src={logo} />

@@ -27,7 +27,7 @@ const NavbarItem = ({
     <Link to={path}>
       <li
         key={path}
-        className={`transition-all duration-300 ease-in-out overflow-hidden py-4 cursor-pointer hover:text-white ${isChild ? "px-8" : "px-4"} ${currentPath === path ? "bg-primary-100 text-white" : " hover:bg-primary-100 hover:opacity-50"}`}
+        className={`transition-all duration-300 ease-in-out overflow-hidden py-4 cursor-pointer hover:text-white ${isChild ? "px-12" : "px-8"} ${currentPath === path ? "bg-primary-100 text-white" : " hover:bg-primary-100 hover:opacity-50"}`}
       >
         {name}
       </li>
@@ -76,7 +76,7 @@ const Sidebar = () => {
   const handleLogout = async () => {
     const {error} = await supabase.auth.signOut();
     if (error === null) {
-      navigate('/');
+      navigate('/login');
     }
   };
 
@@ -98,7 +98,7 @@ const Sidebar = () => {
       <div className="mt-auto">
         <button
           onClick={handleLogout}
-          className="w-full bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-white mt-4"
+          className="w-full hover:bg-primary-100 hover:opacity-50 hover:text-white px-3 py-2 rounded mt-4"
         >
           Logout
         </button>

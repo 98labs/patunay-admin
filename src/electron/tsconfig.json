@@ -11,5 +11,5 @@
     "types": ["node", "electron", "../../types"],
     "resolveJsonModule": true
   },
-  "include": ["./**/*.ts"]
+  "include": ["./**/*.ts", "./**/*.cts"]
 }
