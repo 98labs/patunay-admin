@@ -76,7 +76,7 @@ const Sidebar = () => {
   const handleLogout = async () => {
     const {error} = await supabase.auth.signOut();
     if (error === null) {
-      navigate('/');
+      navigate('/login');
     }
   };
 

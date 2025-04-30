@@ -109,12 +109,12 @@ const Artworks = () => {
                         {loading ? (
                             <Loading fullScreen={false} />
                         ) : (
-                            <table className="table table-xs table-pin-rows table-pin-cols md:table-fixed">
+                            <table className="table table-sm table-pin-rows table-pin-cols md:table-fixed table-zebra">
                                 <thead>
                                     {table.getHeaderGroups().map(headerGroup => (
                                         <tr key={headerGroup.id}>
                                         {headerGroup.headers.map(header => (
-                                            <th key={header.id}>
+                                            <th key={header.id} className={header.column.columnDef.meta?.className ?? ""}>
                                             {flexRender(header.column.columnDef.header, header.getContext())}
                                             </th>
                                         ))}
@@ -125,7 +125,7 @@ const Artworks = () => {
                                     {table.getRowModel().rows.map(row => (
                                         <tr key={row.id}>
                                         {row.getVisibleCells().map(cell => (
-                                            <td key={cell.id}>
+                                            <td key={cell.id} className={cell.column.columnDef.meta?.className ?? ""}>
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                             </td>
                                         ))}

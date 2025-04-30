@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy } from 'react'
 import Providers from "../Providers";
 
@@ -13,7 +13,7 @@ const NfcTags = lazy(() => import('../pages/NfcTags'));
 const RegisterArtwork = lazy(() => import('../pages/RegisterArtwork'));
 const SearchArtwork = lazy(() => import('../pages/SearchArtwork'));
 const Team = lazy(() => import('../pages/Team'));
-const HomePage = lazy(() => import('../pages/HomePage'));
+// const HomePage = lazy(() => import('../pages/HomePage'));
 const NotFoundPage = lazy(() => import('../pages/404Page'))
 
 const router = createBrowserRouter([
@@ -25,7 +25,7 @@ const router = createBrowserRouter([
       // Public routes
       {
         path: "/",
-        element: <HomePage />,
+        element: <Navigate to="/login" />,
       },
       {
         path: "/login",
@@ -86,7 +86,7 @@ const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <NotFoundPage />,
+    element: <Navigate to="/login" />,
   },
 ]);
 

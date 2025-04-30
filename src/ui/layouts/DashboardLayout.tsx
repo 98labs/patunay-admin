@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import { Sidebar, NotificationMessage } from "@components";
-import { Outlet } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useSession } from "../context/SessionContext";
-import NotFoundPage from "../pages/404Page";
 import { useDispatch } from "react-redux";
 import { setUser } from "../pages/Login/slice";
 
@@ -11,7 +10,7 @@ const DashboardLayout = () => {
   const { session } = useSession();
   const dispatch = useDispatch();
   if (!session) {
-    return <NotFoundPage />;
+    return <Navigate to="/login" />;
   }
   useEffect(() => {
     dispatch(setUser(session.user))

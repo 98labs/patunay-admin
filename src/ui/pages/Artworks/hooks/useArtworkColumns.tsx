@@ -18,6 +18,7 @@ export function useArtworkColumns(
           {row.original.idnumber}
         </Link>
       ),
+      meta: { className: "hidden lg:table-cell" },
     },
     {
       header: "Image",
@@ -33,6 +34,7 @@ export function useArtworkColumns(
           </Link>
         );
       },
+      meta: { className: "hidden lg:table-cell" },
     },
     {
       header: "Title",
@@ -49,6 +51,7 @@ export function useArtworkColumns(
     {
       header: "Date Added",
       cell: ({ row }) => moment(row.original.tag_issued_at).format("MMM DD, YYYY"),
+      meta: { className: "hidden lg:table-cell" },
     },
     {
       header: "Status",
