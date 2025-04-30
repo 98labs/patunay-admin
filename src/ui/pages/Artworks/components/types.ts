@@ -1,3 +1,6 @@
+import { Table } from "@tanstack/react-table";
+import { Dispatch, SetStateAction } from 'react';
+
 interface CSVItem {
     idnumber: string;
     title: string;
@@ -23,3 +26,14 @@ interface CSVItem {
     onFileSelect: (data: CSVItem[]) => void;
   }
   
+  export type TableProps<T> = {
+    table: Table<T>;
+  };
+  
+  export type TableFilterProp<T> = {
+    table: Table<T>;
+    globalFilter: string;
+    setGlobalFilter: Dispatch<SetStateAction<string>>;
+    nfcFilter: 'all' | 'with' | 'none';
+    setNfcFilter: Dispatch<SetStateAction<'all' | 'with' | 'none'>>;
+  };

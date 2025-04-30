@@ -20,7 +20,7 @@ const UserProfile = () => {
     }, [])
     const username = user?.email.split("@")[0];
   return (
-    <div className="px-4 py-8">
+    <div className="px-8 py-8">
       <div className="flex items-center gap-2">
         <img
           src={logo}

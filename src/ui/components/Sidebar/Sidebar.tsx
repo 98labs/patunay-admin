@@ -27,7 +27,7 @@ const NavbarItem = ({
     <Link to={path}>
       <li
         key={path}
-        className={`transition-all duration-300 ease-in-out overflow-hidden py-4 cursor-pointer hover:text-white ${isChild ? "px-8" : "px-4"} ${currentPath === path ? "bg-primary-100 text-white" : " hover:bg-primary-100 hover:opacity-50"}`}
+        className={`transition-all duration-300 ease-in-out overflow-hidden py-4 cursor-pointer hover:text-white ${isChild ? "px-12" : "px-8"} ${currentPath === path ? "bg-primary-100 text-white" : " hover:bg-primary-100 hover:opacity-50"}`}
       >
         {name}
       </li>

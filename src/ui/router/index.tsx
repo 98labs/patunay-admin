@@ -5,6 +5,7 @@ import Providers from "../Providers";
 const DashboardLayout = lazy(() => import('../layouts/DashboardLayout'))
 const Admin = lazy(() => import('../pages/Admin'));
 const Artworks = lazy(() => import('../pages/Artworks'));
+const DetailedArtwork = lazy(() => import('../pages/DetailedArtwork/DetailArtwork'));
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const Devices = lazy(() => import('../pages/Devices'));
 const Login = lazy(() => import('../pages/Login'));
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
           {
             path: "/dashboard/artworks",
             element: <Artworks />,
+          },
+          {
+            path: "/dashboard/artworks/:id",
+            element: <DetailedArtwork />,
           },
           {
             path: "/dashboard",
