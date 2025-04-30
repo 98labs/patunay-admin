@@ -48,7 +48,7 @@ const Step2 = ({ onDataChange, onPrev, onNext }: Props) => {
       required: true,
     },
     {
-      artworkId: "identifier",
+      artworkId: "idNumber",
       artworkLabel: "Identifier",
       hint: "Enter its identifier",
       required: true,

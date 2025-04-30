@@ -1,21 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FormStepTitle, PageHeader } from "@components";
 import { ArtworkEntity, FormStepsEntity } from "@typings";
 
-import Step1 from "./components/Step1";
-import Step2 from "./components/Step2";
-import Step3 from "./components/Step3";
-import Step4 from "./components/Step4";
-import Step5 from "./components/Step5";
-import Step6 from "./components/Step6";
-import Step7 from "./components/Step7";
+import Step1 from "./components/Step1Image";
+import Step2 from "./components/Step2Info";
+import Step3 from "./components/Step3Size";
+import Step4 from "./components/Step4Bibliography";
+import Step5 from "./components/Step5Collector";
+import Step6 from "./components/Step6AttachNfc";
+import Step7 from "./components/Step7Summary";
 
 const RegisterArtwork = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formSteps, setFormSteps] = useState<FormStepsEntity[]>([
     {
       stepNumber: 1,
-      stepName: "Upload Artwork",
+      stepName: "Upload Artwork (WIP)",
       complete: false,
     },
     {
@@ -40,7 +40,7 @@ const RegisterArtwork = () => {
     },
     {
       stepNumber: 6,
-      stepName: "Attach to NFC Tag",
+      stepName: "Attach to NFC Tag (WIP)",
       complete: false,
     },
     {
@@ -53,8 +53,7 @@ const RegisterArtwork = () => {
   const [artwork, setArtwork] = useState<Partial<ArtworkEntity>>({});
 
   const handleOnStepClick = (stepNumber: number, _complete: boolean) => {
-    // if (currentStep > stepNumber || complete) setCurrentStep(stepNumber);
-    setCurrentStep(stepNumber);
+    if (currentStep > stepNumber || _complete) setCurrentStep(stepNumber);
   };
 
   const handleOnPrev = () => {
@@ -79,9 +78,13 @@ const RegisterArtwork = () => {
     );
   };
 
-  const handleOnDataChange = (data: { [key: string]: string }) => {
+  const handleOnDataChange = (data: { [key: string]: string | string[] }) => {
     setArtwork({ ...artwork, ...data });
   };
+
+  useEffect(() => {
+    console.log("Updated artwork:\n", artwork);
+  }, [artwork]);
 
   return (
     <div className="flex flex-col h-full">
@@ -138,17 +141,13 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 6 && (
-          <Step6
-            onPrev={handleOnPrev}
-            onNext={handleOnNext}
-            onDataChange={handleOnDataChange}
-          />
+          <Step6 data={artwork} onPrev={handleOnPrev} onNext={handleOnNext} />
         )}
         {currentStep === 7 && (
           <Step7
+            artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
-            onDataChange={handleOnDataChange}
           />
         )}
       </div>

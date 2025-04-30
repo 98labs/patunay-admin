@@ -1,10 +1,11 @@
 import { Button, NfcListener, NfcModeSwitcher } from "@components";
-import { NfcModeEntity } from "@typings";
+import { ArtworkEntity, NfcModeEntity } from "@typings";
 import { Nfc } from "lucide-react";
 import { useEffect, useState } from "react";
+import { addArtwork } from "../../../supabase/rpc/addArtwork";
 
 interface Props {
-  onDataChange: (data: { [key: string]: string }) => void;
+  data: ArtworkEntity;
   onPrev: () => void;
   onNext: () => void;
 }
@@ -16,7 +17,7 @@ interface WriteResult {
   error?: string;
 }
 
-const Step6 = ({ onNext }: Props) => {
+const Step6 = ({ data, onNext }: Props) => {
   const [textToWrite, setTextToWrite] = useState<string>("");
   const [writeResult, setWriteResult] = useState<WriteResult | null>(null);
   const [isScanning, setisScanning] = useState<boolean>(false);
@@ -28,6 +29,46 @@ const Step6 = ({ onNext }: Props) => {
   const handleStartScanning = () => {
     setisScanning(true);
     window.electron.writeOnTag(textToWrite);
+  };
+
+  const handleAddArtwork = async () => {
+    const artwork: ArtworkEntity = {
+      idNumber: data.idNumber,
+      title: data.title,
+      description: data.description,
+      height: data.height,
+      width: data.width,
+      sizeUnit: data.sizeUnit,
+      artist: data.artist,
+      year: new Date().getFullYear().toString(),
+      medium: data.medium,
+      tagId: null,
+      expirationDate: new Date("2025-12-31"),
+      readWriteCount: 0,
+      provenance: data.provenance,
+      collectors: data.collectors,
+      assets: null,
+    };
+
+    const result = (await addArtwork(artwork))[0];
+
+    const parsedRes: ArtworkEntity = {
+      ...result,
+      idNumber: result.idnumber,
+      sizeUnit: result.size_unit,
+      tagId: result.tag_id,
+      collectors: result.collectors ? JSON.parse(result.collectors) : [],
+      assets: result.assets
+        ? result.assets.map((asset: any) => ({
+            fileName: asset.filename ?? "", // fallback to empty string if null
+            url: asset.url,
+            sortOrder: asset.sort_order,
+          }))
+        : null,
+    };
+
+    console.log("Result", parsedRes);
+    onNext();
   };
 
   useEffect(() => {
@@ -68,7 +109,7 @@ const Step6 = ({ onNext }: Props) => {
       <Button
         buttonType="secondary"
         buttonLabel="Attach artwork to NFC tag later"
-        onClick={onNext}
+        onClick={handleAddArtwork}
       />
     </div>
   );
