@@ -3,13 +3,8 @@ import path from "path";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData, pollResources } from "./resourceManager.js";
-import { initializeNfc, setNfcMode } from "./nfc/nfcService.js";
+import { nfcWriteOnTag, initializeNfc } from "./nfc/nfcService.js";
 import { createRequire } from "module";
-
-enum NfcModeEntity {
-  Read = "read",
-  Write = "write",
-}
 
 const require = createRequire(import.meta.url);
 
@@ -38,12 +33,11 @@ const createWindow = () => {
   }
 
   initializeNfc(mainWindow);
-  ipcMain.on(
-    "nfc-set-mode",
-    (_event, payload: { mode: NfcModeEntity; data?: string }) => {
-      setNfcMode(payload.mode, payload.data);
-    }
-  );
+
+  ipcMain.on("nfc-write-tag", (_event, payload: { data?: string }) => {
+    nfcWriteOnTag(payload.data);
+  });
+
   ipcMain.handle("getStatisticData", () => getStatisticData());
 };
 

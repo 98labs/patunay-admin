@@ -19,7 +19,7 @@ const Button = ({
 }: Props) => {
   const btnType =
     buttonType === "primary" ? "btn-primary" : "btn-outline btn-primary";
-  const disabledBtn = disabled && "btn-disabled";
+  const disabledBtn = disabled && "opacity-50 cursor-not-allowed";
 
   return (
     <button

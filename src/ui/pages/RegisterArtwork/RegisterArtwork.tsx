@@ -8,6 +8,7 @@ import Step3 from "./components/Step3";
 import Step4 from "./components/Step4";
 import Step5 from "./components/Step5";
 import Step6 from "./components/Step6";
+import Step7 from "./components/Step7";
 
 const RegisterArtwork = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -138,6 +139,13 @@ const RegisterArtwork = () => {
         )}
         {currentStep === 6 && (
           <Step6
+            onPrev={handleOnPrev}
+            onNext={handleOnNext}
+            onDataChange={handleOnDataChange}
+          />
+        )}
+        {currentStep === 7 && (
+          <Step7
             onPrev={handleOnPrev}
             onNext={handleOnNext}
             onDataChange={handleOnDataChange}

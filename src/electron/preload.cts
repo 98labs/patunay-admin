@@ -1,50 +1,34 @@
 import electron from "electron";
-
-enum NfcModeEntity {
-  Read = "read",
-  Write = "write",
-}
-
-interface CardData {
-  uid: string;
-}
-export interface Statistics {
-  // Define the structure of statistics object, e.g.,:
-  cpuUsage: number;
-  memoryUsage: number;
-  diskSpace: number;
-}
-
-export interface StaticData {
-  // Define the structure of static data, e.g.:
-  userId: string;
-  username: string;
-}
-
-interface ElectronAPI {
-  subscribeStatistics: (callback: (statistics: Statistics) => void) => void;
-  getStaticData: () => Promise<StaticData>;
-  setMode: (mode: NfcModeEntity, data?: string) => void;
-  subscribeNfcCardDetection: (callback: (card: CardData) => void) => void;
-}
+import { ElectronAPI } from "./types/electronApi.js";
 
 interface Window {
   electron: ElectronAPI;
 }
 
 electron.contextBridge.exposeInMainWorld("electron", {
+  getStaticData: () => electron.ipcRenderer.invoke("getStaticData"),
   subscribeStatistics: (callback: (statistics: any) => void) => {
     electron.ipcRenderer.on("statistics", (_: any, stats: any) => {
       callback(stats);
     });
   },
-  getStaticData: () => electron.ipcRenderer.invoke("getStaticData"),
-  setMode: (mode: NfcModeEntity, data?: string) => {
-    electron.ipcRenderer.send("nfc-set-mode", { mode, data });
-  },
+  subscribeNfcWriteResult: (
+    callback: (result: {
+      success: boolean;
+      message: string;
+      data?: string;
+      error?: string;
+    }) => void
+  ) =>
+    electron.ipcRenderer.on("nfc-write-result", (_event, result) => {
+      callback(result);
+    }),
   subscribeNfcCardDetection: (callback: (card: CardData) => void) => {
     electron.ipcRenderer.on("nfc-card-detected", (_event, card: CardData) => {
       callback(card);
     });
+  },
+  writeOnTag: (data?: string) => {
+    electron.ipcRenderer.send("nfc-write-tag", { data });
   },
 } satisfies Window["electron"]);
