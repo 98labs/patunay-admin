@@ -83,7 +83,7 @@ const RegisterArtwork = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full text-base-content">
       <PageHeader name="Register Artwork" />
       <div className="flex flex-1">
         {/* Left Column */}

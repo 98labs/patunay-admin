@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @tailwind utilities;
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* Apply Inter as the default font */
 body {
@@ -57,30 +58,3 @@ body {
 }
 
 @plugin "daisyui";
-@plugin "daisyui/theme" {
-  name: "PatunayTheme";
-  default: true;
-  prefersdark: false;
-  color-scheme: light;
-
-  /* colors */
-  --color-primary: var(--color-primary-400);
-  --color-primary-content: var(--color-neutral-white);
-
-  --color-secondary: var(--color-secondary-400);
-  --color-secondary-content: var(--color-neutral-white);
-
-  --color-info: var(--color-info);
-  --color-info-content: var(--color-neutral-white);
-  --color-warning: var(--color-warning);
-  --color-warning-content: var(--color-neutral-white);
-  --color-success: var(--color-success);
-  --color-success-content: var(--color-neutral-white);
-  --color-error: var(--color-error);
-  --color-error-content: var(--color-neutral-white);
-
-  /* border radius */
-  --radius-selector: 1.25rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
-}
