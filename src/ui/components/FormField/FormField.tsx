@@ -55,6 +55,7 @@ const FormField = ({
             name={name}
             type={inputType}
             className={`${isListItem && "flex-5/6"} input w-full transition-all focus:outline-none focus:input-primary `}
+            value={value}
             placeholder={isHintVisible ? hint : ""}
             onChange={onInputChange}
           />

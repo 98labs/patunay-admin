@@ -1,62 +1,47 @@
 import { Button, FormField } from "@components";
-import { FormErrorsEntity, FormInputEntity, InputType } from "@typings";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
+import {
+  ArtworkEntity,
+  FormErrorsEntity,
+  FormInputEntity,
+  InputType,
+  SizeUnit,
+} from "@typings";
 
 interface Props {
+  artwork: ArtworkEntity;
   onDataChange: (data: { [key: string]: string }) => void;
   onPrev: () => void;
   onNext: () => void;
 }
 
-const Step2 = ({ onDataChange, onPrev, onNext }: Props) => {
+const Step3 = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState({
-    title: "",
-    artist: "",
-    description: "",
-    medium: "",
-    identifier: "",
-    provenance: "",
+    sizeUnit: "",
+    height: "",
+    width: "",
   });
-  type Step2Keys = keyof typeof formData;
-
-  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step2Keys>>({});
+  type Step3Keys = keyof typeof formData;
+  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step3Keys>>({});
 
   const artworkFormInputs: FormInputEntity[] = [
     {
-      artworkId: "title",
-      artworkLabel: "Title",
-      hint: "Enter the title of the artwork",
+      inputType: InputType.Radio,
+      artworkId: "sizeUnit",
+      artworkLabel: "Unit",
+      hint: "Enter the size unit for the artwork",
       required: true,
     },
     {
-      artworkId: "artist",
-      artworkLabel: "Artist",
-      hint: "Enter the artist's name",
+      artworkId: "height",
+      artworkLabel: "Height",
+      hint: "Enter the artwork's height",
       required: true,
     },
     {
-      inputType: InputType.TextArea,
-      artworkId: "description",
-      artworkLabel: "Description",
-      hint: "Enter the description of the artwork (optional)",
-      required: false,
-    },
-    {
-      artworkId: "medium",
-      artworkLabel: "Medium",
-      hint: "Enter the artwork's medium",
-      required: true,
-    },
-    {
-      artworkId: "idNumber",
-      artworkLabel: "Identifier",
-      hint: "Enter its identifier",
-      required: true,
-    },
-    {
-      artworkId: "provenance",
-      artworkLabel: "Provenance",
-      hint: "Enter the artwork's provenance",
+      artworkId: "width",
+      artworkLabel: "Width",
+      hint: "Enter the artwork's width",
       required: true,
     },
   ];
@@ -83,6 +68,16 @@ const Step2 = ({ onDataChange, onPrev, onNext }: Props) => {
     onDataChange({ [name]: value });
   };
 
+  useEffect(() => {
+    if (artwork) {
+      setFormData({
+        sizeUnit: artwork.sizeUnit || "",
+        height: artwork.height?.toString() || "",
+        width: artwork.width?.toString() || "",
+      });
+    }
+  }, []);
+
   return (
     <div className="flex-2 h-fill flex flex-col justify-between">
       <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
@@ -104,8 +99,10 @@ const Step2 = ({ onDataChange, onPrev, onNext }: Props) => {
                 label={artworkLabel}
                 hint={hint}
                 inputType={inputType}
+                value={formData[artworkId as Step3Keys]}
+                items={artworkId === "sizeUnit" ? Object.entries(SizeUnit) : []}
                 onInputChange={handleOnChange}
-                error={formErrors[artworkId as Step2Keys]}
+                error={formErrors[artworkId as Step3Keys]}
               />
             )
           )}
@@ -133,4 +130,4 @@ const Step2 = ({ onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step2;
+export default Step3;

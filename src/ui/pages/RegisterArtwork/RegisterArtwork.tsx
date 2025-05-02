@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { FormStepTitle, PageHeader } from "@components";
 import { ArtworkEntity, FormStepsEntity } from "@typings";
 
-import Step1 from "./components/Step1Image";
-import Step2 from "./components/Step2Info";
-import Step3 from "./components/Step3Size";
-import Step4 from "./components/Step4Bibliography";
-import Step5 from "./components/Step5Collector";
-import Step6 from "./components/Step6AttachNfc";
-import Step7 from "./components/Step7Summary";
+import Step1 from "./components/steps/Step1Image";
+import Step2 from "./components/steps/Step2Info";
+import Step3 from "./components/steps/Step3Size";
+import Step4 from "./components/steps/Step4Bibliography";
+import Step5 from "./components/steps/Step5Collector";
+import Step6 from "./components/steps/Step6AttachNfc";
+import Step7 from "./components/steps/Step7Summary";
 
 const RegisterArtwork = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -114,6 +114,7 @@ const RegisterArtwork = () => {
         {currentStep === 1 && <Step1 onNext={handleOnNext} />}
         {currentStep === 2 && (
           <Step2
+            artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
             onDataChange={handleOnDataChange}
@@ -121,6 +122,7 @@ const RegisterArtwork = () => {
         )}
         {currentStep === 3 && (
           <Step3
+            artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
             onDataChange={handleOnDataChange}
@@ -128,6 +130,7 @@ const RegisterArtwork = () => {
         )}
         {currentStep === 4 && (
           <Step4
+            artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
             onDataChange={handleOnDataChange}
@@ -135,6 +138,7 @@ const RegisterArtwork = () => {
         )}
         {currentStep === 5 && (
           <Step5
+            artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
             onDataChange={handleOnDataChange}

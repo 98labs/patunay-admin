@@ -1,7 +1,9 @@
 import { Button, FormField } from "@components";
+import { ArtworkEntity, FormErrorsEntity } from "@typings";
 import { ChangeEvent, useState } from "react";
 
 interface Props {
+  artwork: ArtworkEntity;
   onDataChange: (data: { [key: string]: string[] }) => void;
   onPrev: () => void;
   onNext: () => void;
@@ -9,6 +11,7 @@ interface Props {
 
 const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState<string[]>([""]);
+  const [formErrors, setFormErrors] = useState<FormErrorsEntity<string>>({});
 
   const handleOnChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -24,10 +27,29 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
 
       return updated;
     });
+
+    // Clear error on change
+    const errorKey = `bibliography-${index}`;
+    setFormErrors((prev) => ({
+      ...prev,
+      [errorKey]: "",
+    }));
   };
 
   const handleOnListItemClick = () => {
     setFormData([...formData, ""]);
+  };
+
+  const validateForm = () => {
+    const errors: { [key: string]: string } = {};
+    formData.forEach((item, index) => {
+      if (!item.trim()) {
+        errors[`bibliography-${index}`] = "This field is required.";
+      }
+    });
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   return (
@@ -43,6 +65,7 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
             hint="Add the artwork's bibliography"
             onListItemClick={handleOnListItemClick}
             value={item}
+            error={formErrors[`bibliography-${index}`]}
             onInputChange={(e) => handleOnChange(e, index)}
           />
         ))}
@@ -59,9 +82,9 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
           buttonType="primary"
           buttonLabel="Continue"
           onClick={() => {
-            // if (validateForm()) {
-            onNext();
-            // }
+            if (validateForm()) {
+              onNext();
+            }
           }}
         />
       </div>

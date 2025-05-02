@@ -1,7 +1,9 @@
 import { Button, FormField } from "@components";
+import { ArtworkEntity, FormErrorsEntity } from "@typings";
 import { ChangeEvent, useState } from "react";
 
 interface Props {
+  artwork: ArtworkEntity;
   onDataChange: (data: { [key: string]: string[] }) => void;
   onPrev: () => void;
   onNext: () => void;
@@ -9,6 +11,7 @@ interface Props {
 
 const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState<string[]>([""]);
+  const [formErrors, setFormErrors] = useState<FormErrorsEntity<string>>({});
 
   const handleOnChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -24,16 +27,37 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
 
       return updated;
     });
+
+    // Clear error on change
+    const errorKey = `collectors-${index}`;
+    setFormErrors((prev) => ({
+      ...prev,
+      [errorKey]: "",
+    }));
   };
 
   const handleOnListItemClick = () => {
     setFormData([...formData, ""]);
   };
 
+  const validateForm = () => {
+    const errors: { [key: string]: string } = {};
+    formData.forEach((item, index) => {
+      if (!item.trim()) {
+        errors[`collectors-${index}`] = "This field is required.";
+      }
+    });
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   return (
     <div className="flex-2 h-fill flex flex-col justify-between">
       <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
-        <h2 className="text-xl font-semibold">Enter the artwork's collector</h2>
+        <h2 className="text-xl font-semibold">
+          Enter the artwork's collectors
+        </h2>
         {formData.map((item, index) => (
           <FormField
             key={index}
@@ -41,6 +65,7 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
             hint="Add the artwork's collector"
             onListItemClick={handleOnListItemClick}
             value={item}
+            error={formErrors[`collectors-${index}`]}
             onInputChange={(e) => handleOnChange(e, index)}
           />
         ))}
@@ -57,9 +82,9 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
           buttonType="primary"
           buttonLabel="Continue"
           onClick={() => {
-            // if (validateForm()) {
-            onNext();
-            // }
+            if (validateForm()) {
+              onNext();
+            }
           }}
         />
       </div>

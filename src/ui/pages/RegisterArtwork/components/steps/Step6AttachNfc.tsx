@@ -2,7 +2,7 @@ import { Button, NfcListener, NfcModeSwitcher } from "@components";
 import { ArtworkEntity, NfcModeEntity } from "@typings";
 import { Nfc } from "lucide-react";
 import { useEffect, useState } from "react";
-import { addArtwork } from "../../../supabase/rpc/addArtwork";
+import { addArtwork } from "../../../../supabase/rpc/addArtwork";
 
 interface Props {
   data: ArtworkEntity;
