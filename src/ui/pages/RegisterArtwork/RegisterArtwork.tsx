@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { FormStepTitle, PageHeader } from "@components";
-import { ArtworkEntity, FormStepsEntity } from "@typings";
+import { ArtworkEntity, FormStepsEntity } from "../../typings";
 
 import Step1 from "./components/steps/Step1Image";
 import Step2 from "./components/steps/Step2Info";
@@ -54,7 +54,8 @@ const RegisterArtwork = () => {
   const [addedArtwork, setAddedArtwork] = useState<ArtworkEntity | null>(null);
 
   const handleOnStepClick = (stepNumber: number, _complete: boolean) => {
-    if (currentStep > stepNumber || _complete) setCurrentStep(stepNumber);
+    // if (currentStep > stepNumber || complete) setCurrentStep(stepNumber);
+    setCurrentStep(stepNumber);
   };
 
   const handleOnPrev = async () => {
@@ -92,7 +93,7 @@ const RegisterArtwork = () => {
   }, [artwork]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full text-base-content">
       <PageHeader name="Register Artwork" />
       <div className="flex flex-1">
         {/* Left Column */}

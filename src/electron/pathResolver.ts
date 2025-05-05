@@ -7,12 +7,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const getPreloadPath = () => {
-  const preloadPath = path.join(
-    app.getAppPath(),
-    isDev() ? "." : "..",
-    "/dist-electron/preload.cjs"
-  );
+  const preloadPath = isDev()
+    ? path.resolve(__dirname, "../dist-electron/preload.cjs") // Assuming dev output is one folder up from src
+    : path.join(app.getAppPath(), "dist-electron", "preload.cjs");
 
-  console.log(`Preload script paths: ${preloadPath}`);
+  console.log(`Preload script path: ${preloadPath}`);
   return preloadPath;
 };

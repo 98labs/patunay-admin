@@ -1,11 +1,10 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
+import { createRequire } from "module";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData, pollResources } from "./resourceManager.js";
 import { nfcWriteOnTag, initializeNfc } from "./nfc/nfcService.js";
-import { createRequire } from "module";
-
 const require = createRequire(import.meta.url);
 
 if (require("electron-squirrel-startup")) {
@@ -14,8 +13,8 @@ if (require("electron-squirrel-startup")) {
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1080,
+    height: 800,
     webPreferences: {
       preload: getPreloadPath(),
       // devTools: false, // Uncomment to disable devtools
@@ -23,8 +22,8 @@ const createWindow = () => {
   });
 
   if (isDev()) {
-    mainWindow.loadURL("http://localhost:5173");
-    console.log("Loading URL: http://localhost:5173");
+    mainWindow.loadURL("http://localhost:5173/login");
+    console.log("Loading URL: http://localhost:5173/login");
     mainWindow.webContents.openDevTools();
   } else {
     const indexPath = path.join(app.getAppPath(), "dist-react/index.html");
@@ -34,13 +33,15 @@ const createWindow = () => {
 
   initializeNfc(mainWindow);
 
+  mainWindow.loadFile(path.join(app.getAppPath(), "dist-react/index.html"));
+
+  ipcMain.handle("getStatisticData", () => getStatisticData());
   ipcMain.on("nfc-write-tag", (_event, payload: { data?: string }) => {
     nfcWriteOnTag(payload.data);
   });
 
   ipcMain.handle("getStatisticData", () => getStatisticData());
 };
-
 app.setAppUserModelId("com.ne-labs.Patunay");
 
 app.whenReady().then(() => {

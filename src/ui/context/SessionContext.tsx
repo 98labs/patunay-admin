@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import supabase from "../supabase";
+import { Loading } from "@components";
 import { Session } from "@supabase/supabase-js";
 
 const SessionContext = createContext<{
@@ -22,6 +23,10 @@ export const SessionProvider = ({ children }: Props) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    document.documentElement.setAttribute("data-theme", "light");
+  }, []);
+
+  useEffect(() => {
     const authStateListener = supabase.auth.onAuthStateChange(
       async (_, session) => {
         setSession(session);
@@ -36,7 +41,7 @@ export const SessionProvider = ({ children }: Props) => {
 
   return (
     <SessionContext.Provider value={{ session }}>
-      {isLoading ? 'Loading...' : children}
+      {isLoading ? <Loading /> : children}
     </SessionContext.Provider>
   );
 };
