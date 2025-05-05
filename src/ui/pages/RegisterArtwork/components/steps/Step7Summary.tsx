@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 interface Props {
   artwork: ArtworkEntity;
   onPrev: () => void;
-  onNext: () => void;
+  onNext: () => Promise<void>;
 }
 
 interface Detail {

@@ -8,9 +8,11 @@ const NfcListener = () => {
   const [cardData, setCardData] = useState<any | null>(null);
 
   useEffect(() => {
-    window.electron.subscribeNfcCardDetection((card: CardData) => {
-      setCardData(card);
-    });
+    window.electron.subscribeNfcCardDetection(
+      (data: { uid: string; card: CardData }) => {
+        setCardData(data.uid);
+      }
+    );
   }, []);
 
   return (

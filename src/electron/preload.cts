@@ -23,9 +23,11 @@ electron.contextBridge.exposeInMainWorld("electron", {
     electron.ipcRenderer.on("nfc-write-result", (_event, result) => {
       callback(result);
     }),
-  subscribeNfcCardDetection: (callback: (card: CardData) => void) => {
-    electron.ipcRenderer.on("nfc-card-detected", (_event, card: CardData) => {
-      callback(card);
+  subscribeNfcCardDetection: (
+    callback: (data: { uid: string; card: CardData }) => void
+  ) => {
+    electron.ipcRenderer.on("nfc-card-detected", (_event, data) => {
+      callback(data);
     });
   },
   writeOnTag: (data?: string) => {

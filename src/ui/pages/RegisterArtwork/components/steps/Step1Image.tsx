@@ -2,7 +2,7 @@ import { Button } from "@components";
 import { ImageUp } from "lucide-react";
 
 interface Props {
-  onNext: () => void;
+  onNext: () => Promise<void>;
 }
 
 const Step1 = ({ onNext }: Props) => {
@@ -16,7 +16,7 @@ const Step1 = ({ onNext }: Props) => {
           <p className="font-medium">Drag and drop an artwork here, or</p>
         </div>
         <div>
-          <Button buttonLabel="Upload an artwork" onClick={() => {}} />
+          <Button buttonLabel="Upload an artwork" onClick={async () => {}} />
         </div>
       </div>
       <Button

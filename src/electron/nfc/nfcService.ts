@@ -4,7 +4,7 @@ import { NfcModeEntity } from "../types/nfc.js";
 
 let mainWindow: BrowserWindow | null = null;
 
-let mode: NfcModeEntity = NfcModeEntity.Write;
+let mode: NfcModeEntity = NfcModeEntity.Read;
 let dataToWrite: string | null = null;
 
 export const nfcWriteOnTag = (data?: string) => {
@@ -24,12 +24,17 @@ export const initializeNfc = (window: BrowserWindow) => {
       console.log(`Card detected: ${JSON.stringify(card)}`);
       console.log(`mode: ${mode}`);
 
+      const uid = card.uid;
+
       switch (mode) {
         case NfcModeEntity.Read:
           try {
             const data = await reader.read(4, 12);
             const payload = data.toString();
-            mainWindow?.webContents.send("nfc-card-detected", payload);
+            mainWindow?.webContents.send("nfc-card-detected", {
+              uid,
+              data: payload,
+            });
           } catch (err) {
             console.error(`error when reading data`, err);
           }
@@ -45,7 +50,10 @@ export const initializeNfc = (window: BrowserWindow) => {
             await reader.write(4, data);
             console.log(`data written`);
 
-            mainWindow?.webContents.send("nfc-card-detected", text);
+            mainWindow?.webContents.send("nfc-card-detected", {
+              uid,
+              data: text,
+            });
             mainWindow?.webContents.send("nfc-write-result", {
               success: true,
               message: "Data written successfully.",

@@ -20,7 +20,9 @@ declare global {
           error?: string;
         }) => void
       ) => void;
-      subscribeNfcCardDetection: (callback: (card: CardData) => void) => void;
+      subscribeNfcCardDetection: (
+        callback: (data: { uid: string; card: CardData }) => void
+      ) => void;
     };
   }
 }

@@ -5,8 +5,8 @@ import { ChangeEvent, useState } from "react";
 interface Props {
   artwork: ArtworkEntity;
   onDataChange: (data: { [key: string]: string[] }) => void;
-  onPrev: () => void;
-  onNext: () => void;
+  onPrev: () => Promise<void>;
+  onNext: () => Promise<void>;
 }
 
 const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
@@ -81,7 +81,7 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
           className="flex-1"
           buttonType="primary"
           buttonLabel="Continue"
-          onClick={() => {
+          onClick={async () => {
             if (validateForm()) {
               onNext();
             }

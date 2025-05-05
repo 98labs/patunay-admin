@@ -11,8 +11,8 @@ import {
 interface Props {
   artwork: ArtworkEntity;
   onDataChange: (data: { [key: string]: string }) => void;
-  onPrev: () => void;
-  onNext: () => void;
+  onPrev: () => Promise<void>;
+  onNext: () => Promise<void>;
 }
 
 const Step3 = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
@@ -119,7 +119,7 @@ const Step3 = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
           className="flex-1"
           buttonType="primary"
           buttonLabel="Continue"
-          onClick={() => {
+          onClick={async () => {
             if (validateForm()) {
               onNext();
             }

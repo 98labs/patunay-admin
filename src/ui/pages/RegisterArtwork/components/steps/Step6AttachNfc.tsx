@@ -6,6 +6,7 @@ import { addArtwork } from "../../../../supabase/rpc/addArtwork";
 
 interface Props {
   data: ArtworkEntity;
+  addAddArtworkResult: (result: ArtworkEntity) => void;
   onPrev: () => void;
   onNext: () => void;
 }
@@ -17,21 +18,18 @@ interface WriteResult {
   error?: string;
 }
 
-const Step6 = ({ data, onNext }: Props) => {
-  const [textToWrite, setTextToWrite] = useState<string>("");
+const Step6 = ({ data, addAddArtworkResult, onNext }: Props) => {
   const [writeResult, setWriteResult] = useState<WriteResult | null>(null);
   const [isScanning, setisScanning] = useState<boolean>(false);
 
-  const handleSetText = (text: string) => {
-    setTextToWrite(text);
-  };
-
-  const handleStartScanning = () => {
+  const handleStartScanning = async () => {
     setisScanning(true);
-    window.electron.writeOnTag(textToWrite);
   };
 
-  const handleAddArtwork = async () => {
+  const handleAddArtwork = async (options: {
+    attachLater: boolean;
+    tagId?: string;
+  }) => {
     const artwork: ArtworkEntity = {
       idNumber: data.idNumber,
       title: data.title,
@@ -42,7 +40,7 @@ const Step6 = ({ data, onNext }: Props) => {
       artist: data.artist,
       year: new Date().getFullYear().toString(),
       medium: data.medium,
-      tagId: null,
+      tagId: options.tagId ?? null,
       expirationDate: new Date("2025-12-31"),
       readWriteCount: 0,
       provenance: data.provenance,
@@ -50,25 +48,37 @@ const Step6 = ({ data, onNext }: Props) => {
       assets: null,
     };
 
+    console.log("before adding");
+
     const result = (await addArtwork(artwork))[0];
+    console.log("between adding");
 
     const parsedRes: ArtworkEntity = {
       ...result,
+      id: result.id,
       idNumber: result.idnumber,
       sizeUnit: result.size_unit,
       tagId: result.tag_id,
       collectors: result.collectors ? JSON.parse(result.collectors) : [],
       assets: result.assets
         ? result.assets.map((asset: any) => ({
-            fileName: asset.filename ?? "", // fallback to empty string if null
+            fileName: asset.filename ?? "",
             url: asset.url,
             sortOrder: asset.sort_order,
           }))
         : null,
     };
+    console.log("after adding");
+
+    window.electron.writeOnTag(
+      options.attachLater ? "No data" : (parsedRes.id ?? "No Data")
+    );
+
+    addAddArtworkResult(parsedRes);
+
+    onNext();
 
     console.log("Result", parsedRes);
-    onNext();
   };
 
   useEffect(() => {
@@ -85,6 +95,17 @@ const Step6 = ({ data, onNext }: Props) => {
       return unsubscribe;
     });
   }, []);
+
+  useEffect(() => {
+    if (isScanning)
+      window.electron.subscribeNfcCardDetection(
+        (card: { uid: string; card: any }) => {
+          handleAddArtwork({ attachLater: false, tagId: card.uid });
+        }
+      );
+
+    return;
+  }, [isScanning, handleAddArtwork]);
 
   return (
     <div className="flex-2 h-fill flex flex-col justify-between">
@@ -106,10 +127,11 @@ const Step6 = ({ data, onNext }: Props) => {
           />
         </div>
       </div>
+      {/* <NfcListener /> */}
       <Button
         buttonType="secondary"
         buttonLabel="Attach artwork to NFC tag later"
-        onClick={handleAddArtwork}
+        onClick={() => handleAddArtwork({ attachLater: true })}
       />
     </div>
   );

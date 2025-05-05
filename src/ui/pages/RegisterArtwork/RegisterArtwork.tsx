@@ -51,12 +51,13 @@ const RegisterArtwork = () => {
   ]);
 
   const [artwork, setArtwork] = useState<Partial<ArtworkEntity>>({});
+  const [addedArtwork, setAddedArtwork] = useState<ArtworkEntity | null>(null);
 
   const handleOnStepClick = (stepNumber: number, _complete: boolean) => {
     if (currentStep > stepNumber || _complete) setCurrentStep(stepNumber);
   };
 
-  const handleOnPrev = () => {
+  const handleOnPrev = async () => {
     setCurrentStep(currentStep - 1);
     setFormSteps(
       [...formSteps].map((formStep) =>
@@ -67,7 +68,7 @@ const RegisterArtwork = () => {
     );
   };
 
-  const handleOnNext = () => {
+  const handleOnNext = async () => {
     setCurrentStep(currentStep + 1);
     setFormSteps(
       [...formSteps].map((formStep) =>
@@ -80,6 +81,10 @@ const RegisterArtwork = () => {
 
   const handleOnDataChange = (data: { [key: string]: string | string[] }) => {
     setArtwork({ ...artwork, ...data });
+  };
+
+  const handleAddArtworkResult = (addedArtwork: ArtworkEntity) => {
+    setAddedArtwork(addedArtwork);
   };
 
   useEffect(() => {
@@ -145,11 +150,16 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 6 && (
-          <Step6 data={artwork} onPrev={handleOnPrev} onNext={handleOnNext} />
+          <Step6
+            data={artwork}
+            addAddArtworkResult={handleAddArtworkResult}
+            onPrev={handleOnPrev}
+            onNext={handleOnNext}
+          />
         )}
         {currentStep === 7 && (
           <Step7
-            artwork={artwork}
+            artwork={addedArtwork ?? artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
           />
