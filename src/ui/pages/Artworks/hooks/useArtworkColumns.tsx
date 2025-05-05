@@ -23,7 +23,7 @@ export function useArtworkColumns(
     {
       header: "Image",
       cell: ({ row }) => {
-        const imageUrl = row.original.assets?.[0]?.url || "";
+        const imageUrl = row.original.assets?.[0]?.url || "https://placehold.co/40?text=No+Image";
         return imageUrl ? (
           <Link to={`/dashboard/artworks/${row.original.id}`} className="link">
             <img src={imageUrl} alt="Artwork" className="h-10 w-10 object-cover" />
