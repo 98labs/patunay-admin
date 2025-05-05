@@ -45,7 +45,6 @@ const DetailArtwork = () => {
   
     if (loading) return <Loading fullScreen={false} />;
     if (!artwork) return <div className="p-6">Artwork not found.</div>;
-  
     return (
       <div className="text-base-content">
         <div className="breadcrumbs text-sm">
@@ -84,14 +83,18 @@ const DetailArtwork = () => {
                 <div><strong>Identifier:</strong> {artwork.idnumber}</div>
                 <div><strong>Provenance:</strong> {artwork.provenance}</div>
                 <div><strong>Bibliography:</strong>
-                  <ul>
-                    {artwork.bibliography.map((item, i) => <li key={i}>{item}</li>)}
-                  </ul>
+                  {typeof artwork.bibliography === 'string' ? <p>No bibliography available</p> : 
+                    <ul>
+                      {artwork.bibliography.map((item, i) => <li key={i}>{item}</li>)}
+                    </ul>
+                  }
                 </div>
                 <div><strong>Collector:</strong>
-                  <ul>
-                    {artwork.collectors.map((item, i) => <li key={i}>{item}</li>)}
-                  </ul>
+                  {typeof artwork.collectors === 'string' ? <p>No collectors available</p> :
+                    <ul>
+                      {artwork.collectors.map((item, i) => <li key={i}>{item}</li>)}
+                    </ul>
+                  }
                 </div>
                 <div><strong>Artwork ID:</strong> {artwork.tag_id}</div>
                 <div><strong>NFC Tag ID:</strong> 00:00:00:00:00:00</div> 
