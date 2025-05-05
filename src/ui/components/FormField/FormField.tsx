@@ -1,6 +1,7 @@
-import { InputType } from "../../typings"
-import { RadioButton } from "@components";
+import { InputType } from "@typings";
+import { Button, RadioButton } from "@components";
 import { ChangeEvent } from "react";
+import { Plus } from "lucide-react";
 
 interface Props {
   name?: string;
@@ -13,6 +14,8 @@ interface Props {
   error?: string;
   inputType?: InputType;
   items?: [string, string][];
+  isListItem?: boolean;
+  onListItemClick?: () => Promise<void>;
   onInputChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -25,6 +28,8 @@ const FormField = ({
   required = false,
   inputType = InputType.Text,
   items = [],
+  isListItem = false,
+  onListItemClick,
   value,
   error,
   onInputChange,
@@ -45,13 +50,24 @@ const FormField = ({
           onChange={onInputChange}
         />
       ) : (
-        <input
-          name={name}
-          type={inputType}
-          className="input w-full transition-all focus:outline-none focus:input-primary"
-          placeholder={isHintVisible ? hint : ""}
-          onChange={onInputChange}
-        />
+        <div className="flex gap-2">
+          <input
+            name={name}
+            type={inputType}
+            className={`${isListItem && "flex-5/6"} input w-full transition-all focus:outline-none focus:input-primary `}
+            value={value}
+            placeholder={isHintVisible ? hint : ""}
+            onChange={onInputChange}
+          />
+          {isListItem && (
+            <Button
+              className="w-10 h-10 rounded-full text-lg"
+              onClick={onListItemClick!}
+              buttonLabel=""
+              buttonIcon={Plus}
+            />
+          )}
+        </div>
       )}
 
       {error && <span className="text-semantic-error text-sm">{error}</span>}

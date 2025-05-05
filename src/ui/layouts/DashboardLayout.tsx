@@ -5,7 +5,6 @@ import { useSession } from "../context/SessionContext";
 import { useDispatch } from "react-redux";
 import { setUser } from "../pages/Login/slice";
 
-
 const DashboardLayout = () => {
   const { session } = useSession();
   const dispatch = useDispatch();
@@ -14,8 +13,8 @@ const DashboardLayout = () => {
     return <Navigate to="/login" />;
   }
   useEffect(() => {
-    dispatch(setUser(session.user))
-  }, [])
+    dispatch(setUser(session.user));
+  }, []);
 
     return (
       <div className="flex min-h-screen overflow-hidden">
@@ -38,9 +37,10 @@ const DashboardLayout = () => {
                 <Outlet />
             </div>
           </div>
-        </main>
-      </div>
-    );
+        </div>
+      </main>
+    </div>
+  );
 };
 
 export default DashboardLayout;

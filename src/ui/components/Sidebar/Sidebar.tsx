@@ -1,5 +1,5 @@
 import { UserProfile } from "@components";
-import { Link, useLocation, useNavigate  } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import supabase from "../../supabase";
 import { Links, NavbarItemProps } from "./types";
 
@@ -75,9 +75,9 @@ const Sidebar = ({
   ];
 
   const handleLogout = async () => {
-    const {error} = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
     if (error === null) {
-      navigate('/login');
+      navigate("/login");
     }
   };
 

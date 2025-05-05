@@ -4,3 +4,8 @@ export enum NfcReadType {
   CARD_READ = "CARD_READ",
   CARD_WRITE = "CARD_WRITE",
 }
+
+export enum NfcModeEntity {
+  Read = "read",
+  Write = "write",
+}

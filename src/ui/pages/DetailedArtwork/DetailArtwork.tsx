@@ -29,7 +29,6 @@ const DetailArtwork = () => {
   
     if (loading) return <Loading fullScreen={false} />;
     if (!artwork) return <div className="p-6">Artwork not found.</div>;
-
     return (
       <div className="text-base-content">
         <div className="breadcrumbs text-sm">
