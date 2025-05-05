@@ -9,7 +9,7 @@ interface Props {
   onNext: () => Promise<void>;
 }
 
-const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
+const Step4Bibliography = ({ onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState<string[]>([""]);
   const [formErrors, setFormErrors] = useState<FormErrorsEntity<string>>({});
 
@@ -36,7 +36,7 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
     }));
   };
 
-  const handleOnListItemClick = () => {
+  const handleOnListItemClick = async () => {
     setFormData([...formData, ""]);
   };
 
@@ -92,4 +92,4 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step4;
+export default Step4Bibliography;

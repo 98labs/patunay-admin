@@ -9,7 +9,7 @@ interface Props {
   onNext: () => Promise<void>;
 }
 
-const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
+const Step5Collector = ({ onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState<string[]>([""]);
   const [formErrors, setFormErrors] = useState<FormErrorsEntity<string>>({});
 
@@ -36,7 +36,7 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
     }));
   };
 
-  const handleOnListItemClick = () => {
+  const handleOnListItemClick = async () => {
     setFormData([...formData, ""]);
   };
 
@@ -92,4 +92,4 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step5;
+export default Step5Collector;

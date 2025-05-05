@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { FormStepTitle, PageHeader } from "@components";
 import { ArtworkEntity, FormStepsEntity } from "../../typings";
 
-import Step1 from "./components/steps/Step1Image";
-import Step2 from "./components/steps/Step2Info";
-import Step3 from "./components/steps/Step3Size";
-import Step4 from "./components/steps/Step4Bibliography";
-import Step5 from "./components/steps/Step5Collector";
-import Step6 from "./components/steps/Step6AttachNfc";
-import Step7 from "./components/steps/Step7Summary";
+import Step1Image from "./components/steps/Step1Image";
+import Step2Info from "./components/steps/Step2Info";
+import Step3Size from "./components/steps/Step3Size";
+import Step4Bibliography from "./components/steps/Step4Bibliography";
+import Step5Collector from "./components/steps/Step5Collector";
+import Step6AttachNfc from "./components/steps/Step6AttachNfc";
+import Step7Summary from "./components/steps/Step7Summary";
 
 const RegisterArtwork = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -54,8 +54,7 @@ const RegisterArtwork = () => {
   const [addedArtwork, setAddedArtwork] = useState<ArtworkEntity | null>(null);
 
   const handleOnStepClick = (stepNumber: number, _complete: boolean) => {
-    // if (currentStep > stepNumber || complete) setCurrentStep(stepNumber);
-    setCurrentStep(stepNumber);
+    if (currentStep > stepNumber) setCurrentStep(stepNumber);
   };
 
   const handleOnPrev = async () => {
@@ -117,9 +116,9 @@ const RegisterArtwork = () => {
           </ul>
         </div>
         {/* Right Column */}
-        {currentStep === 1 && <Step1 onNext={handleOnNext} />}
+        {currentStep === 1 && <Step1Image onNext={handleOnNext} />}
         {currentStep === 2 && (
-          <Step2
+          <Step2Info
             artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
@@ -127,7 +126,7 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 3 && (
-          <Step3
+          <Step3Size
             artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
@@ -135,7 +134,7 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 4 && (
-          <Step4
+          <Step4Bibliography
             artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
@@ -143,7 +142,7 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 5 && (
-          <Step5
+          <Step5Collector
             artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
@@ -151,7 +150,7 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 6 && (
-          <Step6
+          <Step6AttachNfc
             data={artwork}
             addAddArtworkResult={handleAddArtworkResult}
             onPrev={handleOnPrev}
@@ -159,7 +158,7 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 7 && (
-          <Step7
+          <Step7Summary
             artwork={addedArtwork ?? artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}

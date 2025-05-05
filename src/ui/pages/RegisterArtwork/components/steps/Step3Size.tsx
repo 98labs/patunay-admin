@@ -1,12 +1,12 @@
 import { Button, FormField } from "@components";
-import { ChangeEvent, useEffect, useState } from "react";
 import {
   ArtworkEntity,
   FormErrorsEntity,
   FormInputEntity,
   InputType,
   SizeUnit,
-} from "../../../typings";
+} from "@typings";
+import { ChangeEvent, useEffect, useState } from "react";
 
 interface Props {
   artwork: ArtworkEntity;
@@ -15,7 +15,7 @@ interface Props {
   onNext: () => Promise<void>;
 }
 
-const Step3 = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
+const Step3Size = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState({
     sizeUnit: "",
     height: "",
@@ -130,4 +130,4 @@ const Step3 = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step3;
+export default Step3Size;

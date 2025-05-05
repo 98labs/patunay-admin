@@ -14,7 +14,7 @@ interface Props {
   onNext: () => Promise<void>;
 }
 
-const Step2 = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
+const Step2Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState({
     title: "",
     artist: "",
@@ -154,4 +154,4 @@ const Step2 = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step2;
+export default Step2Info;

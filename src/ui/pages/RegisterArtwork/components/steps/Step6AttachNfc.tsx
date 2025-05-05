@@ -1,5 +1,5 @@
-import { Button, NfcListener, NfcModeSwitcher } from "@components";
-import { ArtworkEntity, NfcModeEntity } from "@typings";
+import { Button } from "@components";
+import { ArtworkEntity } from "@typings";
 import { Nfc } from "lucide-react";
 import { useEffect, useState } from "react";
 import { addArtwork } from "../../../../supabase/rpc/addArtwork";
@@ -18,7 +18,7 @@ interface WriteResult {
   error?: string;
 }
 
-const Step6 = ({ data, addAddArtworkResult, onNext }: Props) => {
+const Step6AttachNfc = ({ data, addAddArtworkResult, onNext }: Props) => {
   const [writeResult, setWriteResult] = useState<WriteResult | null>(null);
   const [isScanning, setisScanning] = useState<boolean>(false);
 
@@ -48,10 +48,7 @@ const Step6 = ({ data, addAddArtworkResult, onNext }: Props) => {
       assets: null,
     };
 
-    console.log("before adding");
-
     const result = (await addArtwork(artwork))[0];
-    console.log("between adding");
 
     const parsedRes: ArtworkEntity = {
       ...result,
@@ -68,7 +65,6 @@ const Step6 = ({ data, addAddArtworkResult, onNext }: Props) => {
           }))
         : null,
     };
-    console.log("after adding");
 
     window.electron.writeOnTag(
       options.attachLater ? "No data" : (parsedRes.id ?? "No Data")
@@ -111,7 +107,7 @@ const Step6 = ({ data, addAddArtworkResult, onNext }: Props) => {
     <div className="flex-2 h-fill flex flex-col justify-between">
       <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col items-center gap-2 p-24">
         <div className="flex flex-col justify-center align-middle gap-2">
-          <Nfc className="w-40 h-50 m-auto text-neutral-black-02" />
+          {/* <Nfc className="w-40 h-50 m-auto text-neutral-black-02" /> */}
           <p className="font-semibold">
             {writeResult && writeResult.success
               ? "Success!"
@@ -137,4 +133,4 @@ const Step6 = ({ data, addAddArtworkResult, onNext }: Props) => {
   );
 };
 
-export default Step6;
+export default Step6AttachNfc;

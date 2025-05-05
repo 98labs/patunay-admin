@@ -13,7 +13,7 @@ interface Detail {
   value?: string | number | null;
 }
 
-const Step7 = ({ artwork, onNext }: Props) => {
+const Step7Summary = ({ artwork, onNext }: Props) => {
   const {
     artist,
     assets,
@@ -78,4 +78,4 @@ const Step7 = ({ artwork, onNext }: Props) => {
   );
 };
 
-export default Step7;
+export default Step7Summary;
