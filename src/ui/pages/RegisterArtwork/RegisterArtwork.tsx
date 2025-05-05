@@ -1,20 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FormStepTitle, PageHeader } from "@components";
 import { ArtworkEntity, FormStepsEntity } from "../../typings";
 
-import Step1 from "./components/Step1";
-import Step2 from "./components/Step2";
-import Step3 from "./components/Step3";
-import Step4 from "./components/Step4";
-import Step5 from "./components/Step5";
-import Step6 from "./components/Step6";
+import Step1Image from "./components/steps/Step1Image";
+import Step2Info from "./components/steps/Step2Info";
+import Step3Size from "./components/steps/Step3Size";
+import Step4Bibliography from "./components/steps/Step4Bibliography";
+import Step5Collector from "./components/steps/Step5Collector";
+import Step6AttachNfc from "./components/steps/Step6AttachNfc";
+import Step7Summary from "./components/steps/Step7Summary";
 
 const RegisterArtwork = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formSteps, setFormSteps] = useState<FormStepsEntity[]>([
     {
       stepNumber: 1,
-      stepName: "Upload Artwork",
+      stepName: "Upload Artwork (WIP)",
       complete: false,
     },
     {
@@ -39,7 +40,7 @@ const RegisterArtwork = () => {
     },
     {
       stepNumber: 6,
-      stepName: "Attach to NFC Tag",
+      stepName: "Attach to NFC Tag (WIP)",
       complete: false,
     },
     {
@@ -50,13 +51,13 @@ const RegisterArtwork = () => {
   ]);
 
   const [artwork, setArtwork] = useState<Partial<ArtworkEntity>>({});
+  const [addedArtwork, setAddedArtwork] = useState<ArtworkEntity | null>(null);
 
   const handleOnStepClick = (stepNumber: number, _complete: boolean) => {
-    // if (currentStep > stepNumber || complete) setCurrentStep(stepNumber);
-    setCurrentStep(stepNumber);
+    if (currentStep > stepNumber) setCurrentStep(stepNumber);
   };
 
-  const handleOnPrev = () => {
+  const handleOnPrev = async () => {
     setCurrentStep(currentStep - 1);
     setFormSteps(
       [...formSteps].map((formStep) =>
@@ -67,7 +68,7 @@ const RegisterArtwork = () => {
     );
   };
 
-  const handleOnNext = () => {
+  const handleOnNext = async () => {
     setCurrentStep(currentStep + 1);
     setFormSteps(
       [...formSteps].map((formStep) =>
@@ -78,9 +79,17 @@ const RegisterArtwork = () => {
     );
   };
 
-  const handleOnDataChange = (data: { [key: string]: string }) => {
+  const handleOnDataChange = (data: { [key: string]: string | string[] }) => {
     setArtwork({ ...artwork, ...data });
   };
+
+  const handleAddArtworkResult = (addedArtwork: ArtworkEntity) => {
+    setAddedArtwork(addedArtwork);
+  };
+
+  useEffect(() => {
+    console.log("Updated artwork:\n", artwork);
+  }, [artwork]);
 
   return (
     <div className="flex flex-col h-full text-base-content">
@@ -107,40 +116,52 @@ const RegisterArtwork = () => {
           </ul>
         </div>
         {/* Right Column */}
-        {currentStep === 1 && <Step1 onNext={handleOnNext} />}
+        {currentStep === 1 && <Step1Image onNext={handleOnNext} />}
         {currentStep === 2 && (
-          <Step2
+          <Step2Info
+            artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
             onDataChange={handleOnDataChange}
           />
         )}
         {currentStep === 3 && (
-          <Step3
+          <Step3Size
+            artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
             onDataChange={handleOnDataChange}
           />
         )}
         {currentStep === 4 && (
-          <Step4
+          <Step4Bibliography
+            artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
             onDataChange={handleOnDataChange}
           />
         )}
         {currentStep === 5 && (
-          <Step5
+          <Step5Collector
+            artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
             onDataChange={handleOnDataChange}
           />
         )}
         {currentStep === 6 && (
-          <Step6
+          <Step6AttachNfc
+            data={artwork}
+            addAddArtworkResult={handleAddArtworkResult}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
-            onDataChange={handleOnDataChange}
+          />
+        )}
+        {currentStep === 7 && (
+          <Step7Summary
+            artwork={addedArtwork ?? artwork}
+            onPrev={handleOnPrev}
+            onNext={handleOnNext}
           />
         )}
       </div>

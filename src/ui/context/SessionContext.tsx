@@ -23,7 +23,8 @@ export const SessionProvider = ({ children }: Props) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.setAttribute("data-theme", "light");
+    document.documentElement.setAttribute("data-theme", "light");
   }, []);
 
   useEffect(() => {
@@ -41,9 +42,8 @@ export const SessionProvider = ({ children }: Props) => {
 
   return (
     <SessionContext.Provider value={{ session }}>
-      {isLoading ? (
-        <Loading />
-      ) : children}
+      {isLoading ? <Loading /> : children}
+      {isLoading ? <Loading /> : children}
     </SessionContext.Provider>
   );
 };

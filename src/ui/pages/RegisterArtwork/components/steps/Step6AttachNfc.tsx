@@ -1,0 +1,136 @@
+import { Button } from "@components";
+import { ArtworkEntity } from "@typings";
+import { Nfc } from "lucide-react";
+import { useEffect, useState } from "react";
+import { addArtwork } from "../../../../supabase/rpc/addArtwork";
+
+interface Props {
+  data: ArtworkEntity;
+  addAddArtworkResult: (result: ArtworkEntity) => void;
+  onPrev: () => void;
+  onNext: () => void;
+}
+
+interface WriteResult {
+  success: boolean;
+  message: string;
+  data?: string;
+  error?: string;
+}
+
+const Step6AttachNfc = ({ data, addAddArtworkResult, onNext }: Props) => {
+  const [writeResult, setWriteResult] = useState<WriteResult | null>(null);
+  const [isScanning, setisScanning] = useState<boolean>(false);
+
+  const handleStartScanning = async () => {
+    setisScanning(true);
+  };
+
+  const handleAddArtwork = async (options: {
+    attachLater: boolean;
+    tagId?: string;
+  }) => {
+    const artwork: ArtworkEntity = {
+      idNumber: data.idNumber,
+      title: data.title,
+      description: data.description,
+      height: data.height,
+      width: data.width,
+      sizeUnit: data.sizeUnit,
+      artist: data.artist,
+      year: new Date().getFullYear().toString(),
+      medium: data.medium,
+      tagId: options.tagId ?? null,
+      expirationDate: new Date("2025-12-31"),
+      readWriteCount: 0,
+      provenance: data.provenance,
+      collectors: data.collectors,
+      assets: null,
+    };
+
+    const result = (await addArtwork(artwork))[0];
+
+    const parsedRes: ArtworkEntity = {
+      ...result,
+      id: result.id,
+      idNumber: result.idnumber,
+      sizeUnit: result.size_unit,
+      tagId: result.tag_id,
+      collectors: result.collectors ? JSON.parse(result.collectors) : [],
+      assets: result.assets
+        ? result.assets.map((asset: any) => ({
+            fileName: asset.filename ?? "",
+            url: asset.url,
+            sortOrder: asset.sort_order,
+          }))
+        : null,
+    };
+
+    window.electron.writeOnTag(
+      options.attachLater ? "No data" : (parsedRes.id ?? "No Data")
+    );
+
+    addAddArtworkResult(parsedRes);
+
+    onNext();
+
+    console.log("Result", parsedRes);
+  };
+
+  useEffect(() => {
+    const unsubscribe = window.electron.subscribeNfcWriteResult((result) => {
+      console.log(result);
+      if (result.success) {
+        setWriteResult(result);
+      } else {
+        alert("Write failed: " + result.message);
+      }
+
+      setisScanning(false);
+
+      return unsubscribe;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isScanning)
+      window.electron.subscribeNfcCardDetection(
+        (card: { uid: string; card: any }) => {
+          handleAddArtwork({ attachLater: false, tagId: card.uid });
+        }
+      );
+
+    return;
+  }, [isScanning, handleAddArtwork]);
+
+  return (
+    <div className="flex-2 h-fill flex flex-col justify-between">
+      <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col items-center gap-2 p-24">
+        <div className="flex flex-col justify-center align-middle gap-2">
+          {/* <Nfc className="w-40 h-50 m-auto text-neutral-black-02" /> */}
+          <p className="font-semibold">
+            {writeResult && writeResult.success
+              ? "Success!"
+              : isScanning
+                ? "Please tap the NFC tag to the NFC reader to write"
+                : "Please connect the NFC reader device to your computer"}
+          </p>
+          <Button
+            onClick={handleStartScanning}
+            buttonLabel={isScanning ? "Scanning..." : "Start scanning"}
+            className={`transition-all ease-out duration-200 w-full font-light`}
+            disabled={isScanning}
+          />
+        </div>
+      </div>
+      {/* <NfcListener /> */}
+      <Button
+        buttonType="secondary"
+        buttonLabel="Attach artwork to NFC tag later"
+        onClick={() => handleAddArtwork({ attachLater: true })}
+      />
+    </div>
+  );
+};
+
+export default Step6AttachNfc;

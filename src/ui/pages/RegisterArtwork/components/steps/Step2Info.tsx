@@ -1,25 +1,32 @@
 import { Button, FormField } from "@components";
-import { FormErrorsEntity, FormInputEntity, InputType } from "../../../typings";
-import { ChangeEvent, useState } from "react";
+import {
+  ArtworkEntity,
+  FormErrorsEntity,
+  FormInputEntity,
+  InputType,
+} from "@typings";
+import { ChangeEvent, useEffect, useState } from "react";
 
 interface Props {
+  artwork: ArtworkEntity;
   onDataChange: (data: { [key: string]: string }) => void;
-  onPrev: () => void;
-  onNext: () => void;
+  onPrev: () => Promise<void>;
+  onNext: () => Promise<void>;
 }
 
-const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
+const Step2Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState({
     title: "",
     artist: "",
     description: "",
     medium: "",
-    identifier: "",
+    idNumber: "",
     provenance: "",
   });
-  type Step4Keys = keyof typeof formData;
 
-  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step4Keys>>({});
+  type Step2Keys = keyof typeof formData;
+
+  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step2Keys>>({});
 
   const artworkFormInputs: FormInputEntity[] = [
     {
@@ -38,8 +45,8 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
       inputType: InputType.TextArea,
       artworkId: "description",
       artworkLabel: "Description",
-      hint: "Enter the description of the artwork (optional)",
-      required: false,
+      hint: "Enter the description of the artwork",
+      required: true,
     },
     {
       artworkId: "medium",
@@ -48,7 +55,7 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
       required: true,
     },
     {
-      artworkId: "identifier",
+      artworkId: "idNumber",
       artworkLabel: "Identifier",
       hint: "Enter its identifier",
       required: true,
@@ -83,12 +90,23 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
     onDataChange({ [name]: value });
   };
 
+  useEffect(() => {
+    if (artwork) {
+      setFormData({
+        title: artwork.title || "",
+        artist: artwork.artist || "",
+        description: artwork.description || "",
+        medium: artwork.medium || "",
+        idNumber: artwork.idNumber || "",
+        provenance: artwork.provenance || "",
+      });
+    }
+  }, [artwork]);
+
   return (
     <div className="flex-2 h-fill flex flex-col justify-between">
       <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
-        <h2 className="text-xl font-semibold">
-          Enter the artwork's bibliography
-        </h2>
+        <h2 className="text-xl font-semibold">Enter the artwork details</h2>
         <ul className="flex flex-col gap-2">
           {artworkFormInputs.map(
             ({
@@ -101,13 +119,14 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
               <FormField
                 key={artworkId}
                 name={artworkId}
+                value={artwork[artworkId as Step2Keys]}
+                error={formErrors[artworkId as Step2Keys]}
                 required={required}
                 isLabelVisible={true}
                 label={artworkLabel}
                 hint={hint}
                 inputType={inputType}
                 onInputChange={handleOnChange}
-                error={formErrors[artworkId as Step4Keys]}
               />
             )
           )}
@@ -124,7 +143,7 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
           className="flex-1"
           buttonType="primary"
           buttonLabel="Continue"
-          onClick={() => {
+          onClick={async () => {
             if (validateForm()) {
               onNext();
             }
@@ -135,4 +154,4 @@ const Step4 = ({ onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step4;
+export default Step2Info;

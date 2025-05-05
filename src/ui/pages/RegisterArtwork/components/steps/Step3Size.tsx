@@ -1,62 +1,47 @@
 import { Button, FormField } from "@components";
-import { FormErrorsEntity, FormInputEntity, InputType } from "../../../typings";
-import { ChangeEvent, useState } from "react";
+import {
+  ArtworkEntity,
+  FormErrorsEntity,
+  FormInputEntity,
+  InputType,
+  SizeUnit,
+} from "@typings";
+import { ChangeEvent, useEffect, useState } from "react";
 
 interface Props {
+  artwork: ArtworkEntity;
   onDataChange: (data: { [key: string]: string }) => void;
-  onPrev: () => void;
-  onNext: () => void;
+  onPrev: () => Promise<void>;
+  onNext: () => Promise<void>;
 }
 
-const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
+const Step3Size = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState({
-    title: "",
-    artist: "",
-    description: "",
-    medium: "",
-    identifier: "",
-    provenance: "",
+    sizeUnit: "",
+    height: "",
+    width: "",
   });
-  type Step5Keys = keyof typeof formData;
-
-  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step5Keys>>({});
+  type Step3Keys = keyof typeof formData;
+  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step3Keys>>({});
 
   const artworkFormInputs: FormInputEntity[] = [
     {
-      artworkId: "title",
-      artworkLabel: "Title",
-      hint: "Enter the title of the artwork",
+      inputType: InputType.Radio,
+      artworkId: "sizeUnit",
+      artworkLabel: "Unit",
+      hint: "Enter the size unit for the artwork",
       required: true,
     },
     {
-      artworkId: "artist",
-      artworkLabel: "Artist",
-      hint: "Enter the artist's name",
+      artworkId: "height",
+      artworkLabel: "Height",
+      hint: "Enter the artwork's height",
       required: true,
     },
     {
-      inputType: InputType.TextArea,
-      artworkId: "description",
-      artworkLabel: "Description",
-      hint: "Enter the description of the artwork (optional)",
-      required: false,
-    },
-    {
-      artworkId: "medium",
-      artworkLabel: "Medium",
-      hint: "Enter the artwork's medium",
-      required: true,
-    },
-    {
-      artworkId: "identifier",
-      artworkLabel: "Identifier",
-      hint: "Enter its identifier",
-      required: true,
-    },
-    {
-      artworkId: "provenance",
-      artworkLabel: "Provenance",
-      hint: "Enter the artwork's provenance",
+      artworkId: "width",
+      artworkLabel: "Width",
+      hint: "Enter the artwork's width",
       required: true,
     },
   ];
@@ -83,12 +68,20 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
     onDataChange({ [name]: value });
   };
 
+  useEffect(() => {
+    if (artwork) {
+      setFormData({
+        sizeUnit: artwork.sizeUnit || "",
+        height: artwork.height?.toString() || "",
+        width: artwork.width?.toString() || "",
+      });
+    }
+  }, []);
+
   return (
     <div className="flex-2 h-fill flex flex-col justify-between">
       <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
-        <h2 className="text-xl font-semibold">
-          Enter the artwork's bibliography
-        </h2>
+        <h2 className="text-xl font-semibold">Enter the artwork details</h2>
         <ul className="flex flex-col gap-2">
           {artworkFormInputs.map(
             ({
@@ -106,8 +99,10 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
                 label={artworkLabel}
                 hint={hint}
                 inputType={inputType}
+                value={formData[artworkId as Step3Keys]}
+                items={artworkId === "sizeUnit" ? Object.entries(SizeUnit) : []}
                 onInputChange={handleOnChange}
-                error={formErrors[artworkId as Step5Keys]}
+                error={formErrors[artworkId as Step3Keys]}
               />
             )
           )}
@@ -124,7 +119,7 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
           className="flex-1"
           buttonType="primary"
           buttonLabel="Continue"
-          onClick={() => {
+          onClick={async () => {
             if (validateForm()) {
               onNext();
             }
@@ -135,4 +130,4 @@ const Step5 = ({ onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step5;
+export default Step3Size;
