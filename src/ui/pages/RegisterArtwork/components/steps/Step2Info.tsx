@@ -45,8 +45,8 @@ const Step2 = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
       inputType: InputType.TextArea,
       artworkId: "description",
       artworkLabel: "Description",
-      hint: "Enter the description of the artwork (optional)",
-      required: false,
+      hint: "Enter the description of the artwork",
+      required: true,
     },
     {
       artworkId: "medium",

@@ -15,7 +15,7 @@ interface Props {
   inputType?: InputType;
   items?: [string, string][];
   isListItem?: boolean;
-  onListItemClick?: () => void;
+  onListItemClick?: () => Promise<void>;
   onInputChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
