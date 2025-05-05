@@ -1,15 +1,14 @@
 import { useId, useState } from "react";
 import { ArtworkImageModalProps } from "./types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import logo from '../../../../assets/logo/patunay-256x256.png'
 
 const ArtworkImageModal = ({ images, title }: ArtworkImageModalProps) => {
   const [currentImage, setCurrentImage] = useState(0);
   const modalId = useId();
 
-  const fallbackImage = "https://placehold.co/600x400?text=No+Image";
-
   const hasImages = images && images.length > 0;
-  const currentSrc = hasImages ? images[currentImage] : fallbackImage;
+  const currentSrc = hasImages ? images[currentImage] : logo;
 
 
   const goNext = () => {

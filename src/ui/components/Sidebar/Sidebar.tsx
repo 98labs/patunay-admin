@@ -2,7 +2,6 @@ import { UserProfile } from "@components";
 import { Link, useLocation, useNavigate  } from "react-router-dom";
 import supabase from "../../supabase";
 import { Links, NavbarItemProps } from "./types";
-import { useState } from "react";
 
 const NavbarItem = ({
   currentPath,

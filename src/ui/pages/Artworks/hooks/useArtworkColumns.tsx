@@ -4,6 +4,8 @@ import { ColumnDef, Row } from "@tanstack/react-table";
 import { Link } from "react-router-dom";
 import DropdownAction from "../components/DropdownAction";
 import { ArtistType } from "../types";
+import logo from '../../../../assets/logo/patunay-256x256.png'
+
 
 export function useArtworkColumns(
   onEdit: (art: ArtistType) => void,
@@ -23,7 +25,7 @@ export function useArtworkColumns(
     {
       header: "Image",
       cell: ({ row }) => {
-        const imageUrl = row.original.assets?.[0]?.url || "https://placehold.co/40?text=No+Image";
+        const imageUrl = row.original.assets?.[0]?.url || logo;
         return imageUrl ? (
           <Link to={`/dashboard/artworks/${row.original.id}`} className="link">
             <img src={imageUrl} alt="Artwork" className="h-10 w-10 object-cover" />
