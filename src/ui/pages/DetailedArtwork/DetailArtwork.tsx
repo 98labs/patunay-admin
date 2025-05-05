@@ -3,29 +3,13 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import moment from "moment";
 import supabase from "../../supabase";
 import { Loading } from "@components";
-
-interface Artwork {
-  idnumber: string;
-  title: string;
-  artist: string;
-  size_unit: string;
-  height: number;
-  width: number;
-  medium: string;
-  description: string;
-  tag_id: string;
-  provenance: string;
-  bibliography: string[];
-  collectors: string[];
-  tag_issued_at: string;
-  assets: { filename: string; url: string }[];
-}
-
+import ArtworkImageModal from "./components/ArtworkImageModal";
+import { ArtworkType } from "./types";
 
 const DetailArtwork = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [artwork, setArtwork] = useState<Artwork | null>(null);
+    const [artwork, setArtwork] = useState<ArtworkType | null>(null);
     const [loading, setLoading] = useState(true);
   
     useEffect(() => {
@@ -56,10 +40,9 @@ const DetailArtwork = () => {
         <section className="hero bg-base-200 text-base-content">
           <div className="hero-content flex-col lg:flex-row">
             <div className="lg:w-1/3">
-              <img
-                src={artwork.assets?.[0]?.url || "https://via.placeholder.com/400"}
-                alt={artwork.title}
-                className="object-cover w-full h-full max-h-[600px]"
+              <ArtworkImageModal
+                images={artwork.assets?.map(asset => asset.url) || []}
+                title={artwork.title}
               />
             </div>
             <div className="flex-1">
