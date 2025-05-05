@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy } from "react";
+import { lazy } from "react";
 import Providers from "../Providers";
 
 const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
@@ -15,7 +16,21 @@ const NfcTags = lazy(() => import("../pages/NfcTags"));
 const RegisterArtwork = lazy(() => import("../pages/RegisterArtwork"));
 const SearchArtwork = lazy(() => import("../pages/SearchArtwork"));
 const Team = lazy(() => import("../pages/Team"));
+const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
+const Admin = lazy(() => import("../pages/Admin"));
+const Artworks = lazy(() => import("../pages/Artworks"));
+const DetailedArtwork = lazy(
+  () => import("../pages/DetailedArtwork/DetailArtwork")
+);
+const Dashboard = lazy(() => import("../pages/Dashboard"));
+const Devices = lazy(() => import("../pages/Devices"));
+const Login = lazy(() => import("../pages/Login"));
+const NfcTags = lazy(() => import("../pages/NfcTags"));
+const RegisterArtwork = lazy(() => import("../pages/RegisterArtwork"));
+const SearchArtwork = lazy(() => import("../pages/SearchArtwork"));
+const Team = lazy(() => import("../pages/Team"));
 // const HomePage = lazy(() => import('../pages/HomePage'));
+const NotFoundPage = lazy(() => import("../pages/404Page"));
 const NotFoundPage = lazy(() => import("../pages/404Page"));
 
 const router = createBrowserRouter([

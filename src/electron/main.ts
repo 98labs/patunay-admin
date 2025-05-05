@@ -4,7 +4,6 @@ import { createRequire } from "module";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData, pollResources } from "./resourceManager.js";
-import { nfcWriteOnTag, initializeNfc } from "./nfc/nfcService.js";
 const require = createRequire(import.meta.url);
 
 if (require("electron-squirrel-startup")) {
