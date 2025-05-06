@@ -1,41 +1,41 @@
-import { useEffect, useState } from "react";
 import { FormStepTitle, PageHeader } from "@components";
+import { useEffect, useState } from "react";
 import { ArtworkEntity, FormStepsEntity } from "../../typings";
 
-import Step1Image from "./components/steps/Step1Image";
-import Step2Info from "./components/steps/Step2Info";
-import Step3Size from "./components/steps/Step3Size";
-import Step4Bibliography from "./components/steps/Step4Bibliography";
-import Step5Collector from "./components/steps/Step5Collector";
-import Step6AttachNfc from "./components/steps/Step6AttachNfc";
-import Step7Summary from "./components/steps/Step7Summary";
+import AttachNfc from "./components/steps/AttachNfc";
+import Bibliography from "./components/steps/Bibliography";
+import Collector from "./components/steps/Collector";
+import Info from "./components/steps/Info";
+import Size from "./components/steps/Size";
+import Summary from "./components/steps/Summary";
+import UploadImage from "./components/steps/UploadImage";
 
 const RegisterArtwork = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formSteps, setFormSteps] = useState<FormStepsEntity[]>([
     {
       stepNumber: 1,
-      stepName: "Upload Artwork (WIP)",
-      complete: false,
-    },
-    {
-      stepNumber: 2,
       stepName: "Enter Artwork",
       complete: false,
     },
     {
-      stepNumber: 3,
+      stepNumber: 2,
       stepName: "Enter Artwork Size",
       complete: false,
     },
     {
-      stepNumber: 4,
+      stepNumber: 3,
       stepName: "Enter Bibliography/s",
       complete: false,
     },
     {
-      stepNumber: 5,
+      stepNumber: 4,
       stepName: "Enter Collector/s",
+      complete: false,
+    },
+    {
+      stepNumber: 5,
+      stepName: "Upload Artwork (WIP)",
       complete: false,
     },
     {
@@ -116,9 +116,16 @@ const RegisterArtwork = () => {
           </ul>
         </div>
         {/* Right Column */}
-        {currentStep === 1 && <Step1Image onNext={handleOnNext} />}
+        {currentStep === 1 && (
+          <Info
+            artwork={artwork}
+            onPrev={handleOnPrev}
+            onNext={handleOnNext}
+            onDataChange={handleOnDataChange}
+          />
+        )}
         {currentStep === 2 && (
-          <Step2Info
+          <Size
             artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
@@ -126,7 +133,7 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 3 && (
-          <Step3Size
+          <Bibliography
             artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
@@ -134,23 +141,16 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 4 && (
-          <Step4Bibliography
+          <Collector
             artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
             onDataChange={handleOnDataChange}
           />
         )}
-        {currentStep === 5 && (
-          <Step5Collector
-            artwork={artwork}
-            onPrev={handleOnPrev}
-            onNext={handleOnNext}
-            onDataChange={handleOnDataChange}
-          />
-        )}
+        {currentStep === 5 && <UploadImage onNext={handleOnNext} />}
         {currentStep === 6 && (
-          <Step6AttachNfc
+          <AttachNfc
             data={artwork}
             addAddArtworkResult={handleAddArtworkResult}
             onPrev={handleOnPrev}
@@ -158,7 +158,7 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 7 && (
-          <Step7Summary
+          <Summary
             artwork={addedArtwork ?? artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}

@@ -18,7 +18,7 @@ interface WriteResult {
   error?: string;
 }
 
-const Step6AttachNfc = ({ data, addAddArtworkResult, onNext }: Props) => {
+const AttachNfc = ({ data, addAddArtworkResult, onNext }: Props) => {
   const [writeResult, setWriteResult] = useState<WriteResult | null>(null);
   const [isScanning, setisScanning] = useState<boolean>(false);
 
@@ -133,4 +133,4 @@ const Step6AttachNfc = ({ data, addAddArtworkResult, onNext }: Props) => {
   );
 };
 
-export default Step6AttachNfc;
+export default AttachNfc;

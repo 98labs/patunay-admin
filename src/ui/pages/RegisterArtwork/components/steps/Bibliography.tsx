@@ -9,7 +9,7 @@ interface Props {
   onNext: () => Promise<void>;
 }
 
-const Step5Collector = ({ onDataChange, onPrev, onNext }: Props) => {
+const Bibliography = ({ onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState<string[]>([""]);
   const [formErrors, setFormErrors] = useState<FormErrorsEntity<string>>({});
 
@@ -23,13 +23,13 @@ const Step5Collector = ({ onDataChange, onPrev, onNext }: Props) => {
       const updated = [...prev];
       updated[index] = value;
 
-      onDataChange({ collectors: updated });
+      onDataChange({ bibliography: updated });
 
       return updated;
     });
 
     // Clear error on change
-    const errorKey = `collectors-${index}`;
+    const errorKey = `bibliography-${index}`;
     setFormErrors((prev) => ({
       ...prev,
       [errorKey]: "",
@@ -44,7 +44,7 @@ const Step5Collector = ({ onDataChange, onPrev, onNext }: Props) => {
     const errors: { [key: string]: string } = {};
     formData.forEach((item, index) => {
       if (!item.trim()) {
-        errors[`collectors-${index}`] = "This field is required.";
+        errors[`bibliography-${index}`] = "This field is required.";
       }
     });
 
@@ -56,16 +56,16 @@ const Step5Collector = ({ onDataChange, onPrev, onNext }: Props) => {
     <div className="flex-2 h-fill flex flex-col justify-between">
       <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
         <h2 className="text-xl font-semibold">
-          Enter the artwork's collectors
+          Enter the artwork's bibliography
         </h2>
         {formData.map((item, index) => (
           <FormField
             key={index}
             isListItem={true}
-            hint="Add the artwork's collector"
+            hint="Add the artwork's bibliography"
             onListItemClick={handleOnListItemClick}
             value={item}
-            error={formErrors[`collectors-${index}`]}
+            error={formErrors[`bibliography-${index}`]}
             onInputChange={(e) => handleOnChange(e, index)}
           />
         ))}
@@ -92,4 +92,4 @@ const Step5Collector = ({ onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step5Collector;
+export default Bibliography;

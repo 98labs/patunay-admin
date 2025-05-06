@@ -1,5 +1,7 @@
 import { Button } from "@components";
 import { ArtworkEntity } from "@typings";
+import JSConfetti from "js-confetti";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 interface Props {
@@ -13,7 +15,7 @@ interface Detail {
   value?: string | number | null;
 }
 
-const Step7Summary = ({ artwork, onNext }: Props) => {
+const Summary = ({ artwork, onNext }: Props) => {
   const {
     artist,
     assets,
@@ -29,6 +31,8 @@ const Step7Summary = ({ artwork, onNext }: Props) => {
     width,
     year,
   } = artwork;
+
+  const jsConfetti = new JSConfetti();
 
   const details: Detail[] = [
     { label: "Title", value: title },
@@ -48,6 +52,14 @@ const Step7Summary = ({ artwork, onNext }: Props) => {
     { label: "Collectors", value: collectors ? collectors.join(", ") : "" },
     { label: "Assets", value: assets ? assets.length.toString() : "" },
   ];
+
+  useEffect(() => {
+    jsConfetti.addConfetti();
+
+    return () => {
+      jsConfetti;
+    };
+  }, [jsConfetti]);
 
   return (
     <div className="flex-2 h-fill flex flex-col justify-between">
@@ -78,4 +90,4 @@ const Step7Summary = ({ artwork, onNext }: Props) => {
   );
 };
 
-export default Step7Summary;
+export default Summary;
