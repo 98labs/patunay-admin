@@ -16,26 +16,25 @@ const DashboardLayout = () => {
     dispatch(setUser(session.user));
   }, []);
 
-    return (
-      <div className="flex min-h-screen overflow-hidden">
-        <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
-        <main className="flex-1 flex flex-col overflow-auto p-6 bg-base-100">
-          {/* Topbar */}
-          <header className="text-base-content md:hidden">
-            <div className="max-w-screen-xl mx-auto px-4 py-4 flex items-center justify-between">
-              <button
-                className="md:hidden text-2xl"
-                onClick={() => setSidebarOpen(true)}
-              >
-                ☰
-              </button>
-            </div>
-          </header>
-          <div className="grow">
-            <div className="px-4 sm:px-6 lg:px-8 py-4 w-full max-w-9xl mx-auto">
-              <NotificationMessage />
-                <Outlet />
-            </div>
+  return (
+    <div className="flex min-h-screen overflow-hidden">
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
+      <main className="flex-1 flex flex-col overflow-auto p-6 bg-base-100">
+        {/* Topbar */}
+        <header className="text-base-content md:hidden">
+          <div className="max-w-screen-xl mx-auto px-4 py-4 flex items-center justify-between">
+            <button
+              className="md:hidden text-2xl"
+              onClick={() => setSidebarOpen(true)}
+            >
+              ☰
+            </button>
+          </div>
+        </header>
+        <div className="grow">
+          <div className="px-4 sm:px-6 lg:px-8 py-4 w-full max-w-9xl mx-auto">
+            <NotificationMessage />
+            <Outlet />
           </div>
         </div>
       </main>

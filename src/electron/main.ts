@@ -33,13 +33,9 @@ const createWindow = () => {
 
   initializeNfc(mainWindow);
 
-  mainWindow.loadFile(path.join(app.getAppPath(), "dist-react/index.html"));
-
-  ipcMain.handle("getStatisticData", () => getStatisticData());
   ipcMain.on("nfc-write-tag", (_event, payload: { data?: string }) => {
     nfcWriteOnTag(payload.data);
   });
-
   ipcMain.handle("getStatisticData", () => getStatisticData());
 };
 app.setAppUserModelId("com.ne-labs.Patunay");
