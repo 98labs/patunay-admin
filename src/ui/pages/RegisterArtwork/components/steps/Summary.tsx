@@ -62,7 +62,7 @@ const Summary = ({ artwork, onNext }: Props) => {
   }, [jsConfetti]);
 
   return (
-    <div className="flex-2 h-fill flex flex-col justify-between">
+    <div className="flex-2 h-fill flex flex-col justify-between gap-2">
       <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
         <h2 className="text-xl font-semibold">
           Successfully registered an artwork!
@@ -79,10 +79,11 @@ const Summary = ({ artwork, onNext }: Props) => {
           )}
         </div>
       </div>
-      <Link to="/dashboard/artworks" className="w-full">
+      <Link to="/dashboard/artworks" className="">
         <Button
           buttonType="primary"
-          buttonLabel="Proceed to Artworks"
+          buttonLabel="Done"
+          className="w-full"
           onClick={onNext}
         />
       </Link>
