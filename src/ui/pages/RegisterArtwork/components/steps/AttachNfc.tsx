@@ -93,14 +93,13 @@ const AttachNfc = ({ data, addAddArtworkResult, onPrev, onNext }: Props) => {
   }, []);
 
   useEffect(() => {
-    if (isScanning)
-      window.electron.subscribeNfcCardDetection(
-        (card: { uid: string; card: any }) => {
-          handleAddArtwork({ attachLater: false, tagId: card.uid });
-        }
-      );
+    if (!isScanning) return;
 
-    return;
+    window.electron.subscribeNfcCardDetection(
+      (card: { uid: string; data: any }) => {
+        handleAddArtwork({ attachLater: false, tagId: card.uid });
+      }
+    );
   }, [isScanning, handleAddArtwork]);
 
   return (

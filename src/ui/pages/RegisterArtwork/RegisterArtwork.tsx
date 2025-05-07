@@ -148,7 +148,9 @@ const RegisterArtwork = () => {
             onDataChange={handleOnDataChange}
           />
         )}
-        {currentStep === 5 && <UploadImage onNext={handleOnNext} />}
+        {currentStep === 5 && (
+          <UploadImage onPrev={handleOnPrev} onNext={handleOnNext} />
+        )}
         {currentStep === 6 && (
           <AttachNfc
             data={artwork}

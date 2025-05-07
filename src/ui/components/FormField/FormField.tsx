@@ -15,6 +15,7 @@ interface Props {
   inputType?: InputType;
   items?: [string, string][];
   isListItem?: boolean;
+  disabled?: boolean;
   onListItemClick?: () => Promise<void>;
   onInputChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 }
@@ -29,6 +30,7 @@ const FormField = ({
   inputType = InputType.Text,
   items = [],
   isListItem = false,
+  disabled = false,
   onListItemClick,
   value,
   error,
@@ -58,6 +60,7 @@ const FormField = ({
             value={value}
             placeholder={isHintVisible ? hint : ""}
             onChange={onInputChange}
+            disabled={disabled}
           />
           {isListItem && (
             <Button

@@ -21,7 +21,7 @@ declare global {
         }) => void
       ) => void;
       subscribeNfcCardDetection: (
-        callback: (data: { uid: string; card: CardData }) => void
+        callback: (data: { uid: string; data: any }) => void
       ) => void;
     };
   }

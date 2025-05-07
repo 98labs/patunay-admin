@@ -4,7 +4,7 @@ import { createRequire } from "module";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData, pollResources } from "./resourceManager.js";
-import { initializeNfc, nfcWriteOnTag } from "./nfc/nfcService.js";
+import { initializeNfc, nfcReadTag, nfcWriteOnTag } from "./nfc/nfcService.js";
 const require = createRequire(import.meta.url);
 
 if (require("electron-squirrel-startup")) {
@@ -35,6 +35,9 @@ const createWindow = () => {
 
   ipcMain.on("nfc-write-tag", (_event, payload: { data?: string }) => {
     nfcWriteOnTag(payload.data);
+  });
+  ipcMain.on("nfc-card-detected", (_event) => {
+    nfcReadTag();
   });
   ipcMain.handle("getStatisticData", () => getStatisticData());
 };
