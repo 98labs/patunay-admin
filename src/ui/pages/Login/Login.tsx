@@ -66,6 +66,9 @@ const Login = () => {
           <h2 className="m-auto text-[32px] leading-10 font-medium">
             Welcome to Patunay
           </h2>
+          <div className="text-sm">
+            Version: {__APP_VERSION__}
+          </div>
         </div>
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
