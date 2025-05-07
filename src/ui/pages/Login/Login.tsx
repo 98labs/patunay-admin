@@ -71,7 +71,7 @@ const Login = () => {
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
           <form className="main-container" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm/6 font-medium text-gray-900 text-white">
+              <label className="block text-sm/6 font-medium">
                 Email address
               </label>
               <div className="mt-2">
@@ -86,7 +86,7 @@ const Login = () => {
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="block text-sm/6 font-medium text-gray-900 text-white">
+                <label className="block text-sm/6 font-medium">
                   Password
                 </label>
                 <div className="text-sm">

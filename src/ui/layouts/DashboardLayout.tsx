@@ -37,9 +37,8 @@ const DashboardLayout = () => {
                 <Outlet />
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
   );
 };
 
