@@ -36,9 +36,6 @@ const createWindow = () => {
   ipcMain.on("nfc-write-tag", (_event, payload: { data?: string }) => {
     nfcWriteOnTag(payload.data);
   });
-  ipcMain.on("nfc-card-detected", (_event) => {
-    nfcReadTag();
-  });
   ipcMain.handle("getStatisticData", () => getStatisticData());
 };
 app.setAppUserModelId("com.ne-labs.Patunay");

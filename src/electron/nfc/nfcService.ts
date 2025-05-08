@@ -33,7 +33,7 @@ export const initializeNfc = (window: BrowserWindow) => {
       switch (mode) {
         case NfcModeEntity.Read:
           try {
-            const data = await reader.read(4, 36);
+            const data = await reader.read(4, 64);
             const payload = data.toString();
             mainWindow?.webContents.send("nfc-card-detected", {
               uid,
@@ -46,11 +46,12 @@ export const initializeNfc = (window: BrowserWindow) => {
 
         case NfcModeEntity.Write:
           try {
-            const data = Buffer.allocUnsafe(36);
-            data.fill(0);
-
             const text = dataToWrite ?? "No data";
             console.log("text", text);
+
+            const data = Buffer.allocUnsafe(text.length);
+            data.fill(0);
+
             data.write(text);
 
             await reader.write(4, data);
