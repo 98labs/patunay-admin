@@ -10,6 +10,8 @@ import {
 } from "@tanstack/react-table";
 
 import supabase from "../../supabase";
+import { deleteArtwork } from "../../supabase/rpc/deleteArtwork";
+
 import UploadButton from "./components/UploadButton";
 import { selectNotif } from "../../components/NotificationMessage/selector";
 import { Loading } from "@components";
@@ -58,7 +60,14 @@ const Artworks = () => {
     const confirmed = confirm(`Are you sure you want to delete ${art.title}?`);
     if (!confirmed) return;
     // Replace with actual delete logic
-    console.log("art", art);
+    console.log("art", art.id);
+
+    try {
+      const result = await deleteArtwork(art.id as string);
+      console.log(result);
+    } catch (error) {
+      console.error("Failed to delete artwork:", error);
+    }
   };
 
   const columns = useArtworkColumns(handleEdit, handleDelete);

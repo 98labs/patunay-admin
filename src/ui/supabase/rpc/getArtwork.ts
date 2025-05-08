@@ -6,6 +6,5 @@ export const getArtwork = async (uuid: string) => {
   });
 
   if (error) throw error;
-
   return data;
 };

@@ -64,6 +64,9 @@ export const initializeNfc = (window: BrowserWindow) => {
               message: "Data written successfully.",
               data: text,
             });
+
+            mode = NfcModeEntity.Read;
+            dataToWrite = null;
           } catch (err) {
             console.error(`error when writing data`, err);
 
