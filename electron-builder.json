@@ -1,5 +1,5 @@
 {
-    "appId": "com.ne-labs.patunay",
+    "appId": "com.patunay.admin.app",
     "files": ["dist-electron", "dist-react"],
     "extraResources": ["dist-electron/preload.cjs"],
     "icon": "./src/ui/assets/logo/patunay-256x256.png",
@@ -12,5 +12,9 @@
     "linux": {
         "target": "AppImg",
         "category": "Utility"
+    },
+    "publish": {
+      "provider": "s3",
+      "bucket": "patunay-admin-dev-release"
     }
 }
