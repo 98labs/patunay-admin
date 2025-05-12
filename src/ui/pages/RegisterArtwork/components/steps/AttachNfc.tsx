@@ -2,6 +2,7 @@ import { Button } from "@components";
 import { ArtworkEntity, NfcModeEntity } from "@typings";
 import { Nfc } from "lucide-react";
 import { useEffect, useState } from "react";
+
 import { addArtwork } from "../../../../supabase/rpc/addArtwork";
 
 interface Props {
@@ -40,10 +41,11 @@ const AttachNfc = ({ data, addAddArtworkResult, onPrev, onNext }: Props) => {
       artist: data.artist,
       year: new Date().getFullYear().toString(),
       medium: data.medium,
-      tagId: options.tagId ?? null,
+      tag_id: options.tagId ?? null,
       expirationDate: new Date("2025-12-31"),
       readWriteCount: 0,
       provenance: data.provenance,
+      bibliography: data.bibliography,
       collectors: data.collectors,
       assets: null,
     };
@@ -55,7 +57,8 @@ const AttachNfc = ({ data, addAddArtworkResult, onPrev, onNext }: Props) => {
       id: result.id,
       idNumber: result.idnumber,
       sizeUnit: result.size_unit,
-      tagId: result.tag_id,
+      tag_id: result.tag_id,
+      bibliography: result.bibliography ? JSON.parse(result.collectors) : [],
       collectors: result.collectors ? JSON.parse(result.collectors) : [],
       assets: result.assets
         ? result.assets.map((asset: any) => ({

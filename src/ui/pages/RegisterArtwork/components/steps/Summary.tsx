@@ -25,7 +25,7 @@ const Summary = ({ artwork, onNext }: Props) => {
     medium,
     provenance,
     sizeUnit,
-    tagId,
+    tag_id,
     title,
     width,
     year,
@@ -44,7 +44,7 @@ const Summary = ({ artwork, onNext }: Props) => {
     },
     { label: "Year", value: year },
     { label: "ID Number", value: idNumber },
-    { label: "Tag ID", value: tagId },
+    { label: "Tag ID", value: tag_id },
     { label: "Provenance", value: provenance },
 
     { label: "Read/Write Count", value: artwork.readWriteCount },

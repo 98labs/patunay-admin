@@ -11,10 +11,12 @@ export interface ArtworkEntity {
   artist?: string;
   year?: string;
   medium?: string;
-  tagId?: string | null;
+  tag_id?: string | null;
+  tag_issued_at?: string;
   expirationDate?: Date;
   readWriteCount?: number;
   provenance?: string;
+  bibliography?: string[];
   collectors?: string[];
   assets?: AssetEntity[] | null;
 }
