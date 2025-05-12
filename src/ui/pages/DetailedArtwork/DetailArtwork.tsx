@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import moment from "moment";
+
 import supabase from "../../supabase";
+import { deleteArtwork } from "../../supabase/rpc/deleteArtwork";
+import { updateArtwork } from "../../supabase/rpc/updateArtwork";
 
 import { ArtworkEntity } from "@typings";
 import { Button, Loading } from "@components";
-import { deleteArtwork } from "../../supabase/rpc/deleteArtwork";
 import { safeJsonParse } from "../Artworks/components/utils";
-import { updateArtwork } from "../../supabase/rpc/updateArtwork";
+import ArtworkImageModal from "./components/ArtworkImageModal";
 
 const DetailArtwork = () => {
   const { id } = useParams();
@@ -156,19 +158,19 @@ const DetailArtwork = () => {
               <Button
                 buttonType="secondary"
                 buttonLabel="Detach NFC Tag"
-                className="btn-sm"
+                className="btn-sm rounded-lg"
                 onClick={handleDetachArtwork}
               />
             ) : (
               <Button
                 buttonType="secondary"
                 buttonLabel={isScanning ? "Attaching..." : "Attach NFC Tag"}
-                className="btn-sm"
+                className="btn-sm rounded-lg"
                 onClick={handleStartScanning}
               />
             )}
             <Button
-              className="transition-all bg-tertiary-red-400 border-none shadow-none btn-sm text-white hover:opacity-95"
+              className="transition-all bg-tertiary-red-400 border-none shadow-none btn-sm rounded-lg text-white hover:opacity-95"
               buttonLabel="Delete artwork"
               onClick={handleOnDelete}
             />
@@ -177,12 +179,26 @@ const DetailArtwork = () => {
       </div>
 
       <section className="hero text-base-content">
-        <div className="hero-content flex-col lg:flex-row">
+        <div className="hero-content flex-col py-24 lg:flex-row">
           <div className="lg:w-1/3">
-            {/* <ArtworkImageModal
-              images={artwork.assets?.map((asset) => asset.url) || []}
-              title={artwork.title}
-            /> */}
+            {!artwork.assets ? (
+              <div className="bg-neutral-gray-01 border border-dashed border-neutral-gray-02 rounded-2xl text-neutral-black-02 text-center p-4 flex flex-col gap-2">
+                <p className="text-sm font-semibold">
+                  Drag and drop the images here (WIP),
+                </p>
+                <span className="text-sm">or</span>
+                <Button
+                  buttonLabel="Upload an artwork"
+                  className="rounded-lg"
+                  onClick={async () => {}}
+                />
+              </div>
+            ) : (
+              <ArtworkImageModal
+                images={artwork.assets?.map((asset) => asset.url) || []}
+                title={artwork.title ?? ""}
+              />
+            )}
           </div>
           <div className="flex-1">
             <ul>
