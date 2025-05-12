@@ -12,10 +12,6 @@ export const nfcWriteOnTag = (data?: string) => {
   dataToWrite = data ? data : null;
 };
 
-export const nfcReadTag = () => {
-  mode = NfcModeEntity.Read;
-};
-
 export const initializeNfc = (window: BrowserWindow) => {
   mainWindow = window;
 

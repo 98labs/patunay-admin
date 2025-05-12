@@ -2,7 +2,6 @@ import { Button } from "@components";
 import { ArtworkEntity } from "@typings";
 import JSConfetti from "js-confetti";
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
 
 interface Props {
   artwork: ArtworkEntity;
@@ -79,14 +78,14 @@ const Summary = ({ artwork, onNext }: Props) => {
           )}
         </div>
       </div>
-      <Link to="/dashboard/artworks" className="">
-        <Button
-          buttonType="primary"
-          buttonLabel="Done"
-          className="w-full"
-          onClick={onNext}
-        />
-      </Link>
+      <Button
+        buttonType="primary"
+        buttonLabel="Done"
+        className="w-full"
+        onClick={async () => {
+          window.location.href = "/dashboard/artworks";
+        }}
+      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { Button } from "@components";
-import { ArtworkEntity } from "@typings";
+import { ArtworkEntity, NfcModeEntity } from "@typings";
 import { Nfc } from "lucide-react";
 import { useEffect, useState } from "react";
 import { addArtwork } from "../../../../supabase/rpc/addArtwork";
@@ -78,17 +78,17 @@ const AttachNfc = ({ data, addAddArtworkResult, onPrev, onNext }: Props) => {
   };
 
   useEffect(() => {
-    const unsubscribe = window.electron.subscribeNfcWriteResult((result) => {
+    window.electron.subscribeNfcWriteResult((result) => {
       console.log(result);
       if (result.success) {
         setWriteResult(result);
+
+        window.electron.setMode(NfcModeEntity.Read);
       } else {
         alert("Write failed: " + result.message);
       }
 
       setisScanning(false);
-
-      return unsubscribe;
     });
   }, []);
 

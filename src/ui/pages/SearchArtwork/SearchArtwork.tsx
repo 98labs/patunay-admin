@@ -16,7 +16,7 @@ const SearchArtwork = () => {
 
       if (artworkData?.id) {
         setArtwork(artworkData);
-        navigate(`/dashboard/artworks/${artworkData.id}`);
+        window.location.href = `/dashboard/artworks/${artworkData.id}`;
       }
     } catch (error) {
       console.error("Failed to fetch artwork:", error);

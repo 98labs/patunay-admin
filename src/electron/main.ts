@@ -4,7 +4,8 @@ import { createRequire } from "module";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData, pollResources } from "./resourceManager.js";
-import { initializeNfc, nfcReadTag, nfcWriteOnTag } from "./nfc/nfcService.js";
+import { initializeNfc, nfcWriteOnTag } from "./nfc/nfcService.js";
+
 const require = createRequire(import.meta.url);
 
 if (require("electron-squirrel-startup")) {
@@ -33,10 +34,11 @@ const createWindow = () => {
 
   initializeNfc(mainWindow);
 
+  ipcMain.handle("getStatisticData", () => getStatisticData());
+
   ipcMain.on("nfc-write-tag", (_event, payload: { data?: string }) => {
     nfcWriteOnTag(payload.data);
   });
-  ipcMain.handle("getStatisticData", () => getStatisticData());
 };
 app.setAppUserModelId("com.ne-labs.Patunay");
 
