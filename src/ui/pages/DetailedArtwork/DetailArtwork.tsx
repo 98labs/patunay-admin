@@ -7,6 +7,7 @@ import { ArtworkEntity } from "@typings";
 import { Button, Loading } from "@components";
 import { deleteArtwork } from "../../supabase/rpc/deleteArtwork";
 import { safeJsonParse } from "../Artworks/components/utils";
+import { updateArtwork } from "../../supabase/rpc/updateArtwork";
 
 const DetailArtwork = () => {
   const { id } = useParams();
@@ -53,12 +54,19 @@ const DetailArtwork = () => {
     },
   ];
 
-  const handleOnDelete = async () => {
-    console.log(artwork!.id);
+  const handleDetachArtwork = async () => {
+    try {
+      const result = await updateArtwork({ ...artwork!, tag_id: null });
 
+      if (result) console.log("✅ Success:", result);
+    } catch (error) {
+      console.error("Failed to detach NFC tag from artwork:", error);
+    }
+  };
+
+  const handleOnDelete = async () => {
     try {
       const result = await deleteArtwork(artwork!.id as string);
-      console.log(result);
 
       if (result) {
         navigate(`/dashboard/artworks/`);
@@ -78,8 +86,6 @@ const DetailArtwork = () => {
         console.error("Error fetching artwork:", error.message);
         navigate("/dashboard/artworks");
       } else {
-        console.log("fetched data:", data[0]);
-
         setArtwork({
           ...data[0],
           bibliography: safeJsonParse(data[0].bibliography),
@@ -90,10 +96,6 @@ const DetailArtwork = () => {
     };
     fetchArtwork();
   }, [id, navigate]);
-
-  useEffect(() => {
-    console.log("artwork", artwork?.collectors);
-  }, [artwork]);
 
   if (loading) return <Loading fullScreen={false} />;
   if (!artwork) return <div className="p-6">Artwork not found.</div>;
@@ -112,12 +114,21 @@ const DetailArtwork = () => {
         </div>
         <div className="flex justify-between items-start">
           <div className="flex gap-2">
-            <Button
-              buttonType="secondary"
-              buttonLabel="Detach NFC Tag"
-              className="btn-sm"
-              onClick={async () => {}}
-            />
+            {artwork.tag_id ? (
+              <Button
+                buttonType="secondary"
+                buttonLabel="Detach NFC Tag"
+                className="btn-sm"
+                onClick={handleDetachArtwork}
+              />
+            ) : (
+              <Button
+                buttonType="secondary"
+                buttonLabel="Attach NFC Tag"
+                className="btn-sm"
+                onClick={async () => {}}
+              />
+            )}
             <Button
               className="transition-all bg-tertiary-red-400 border-none shadow-none btn-sm text-white hover:opacity-95"
               buttonLabel="Delete artwork"
@@ -147,13 +158,11 @@ const DetailArtwork = () => {
             </ul>
             <ul className="flex flex-col gap-4 mt-4 text-sm">
               {detailedArtworkFormats.map(
-                (artworkDetail) =>
-                  artworkDetail.value && (
-                    <div className="flex">
-                      <strong className="flex-1/4">
-                        {artworkDetail.title}
-                      </strong>
-                      <span className="flex-3/4">{artworkDetail.value}</span>
+                ({ title, value }) =>
+                  value && (
+                    <div key={title} className="flex">
+                      <strong className="flex-1/4">{title}</strong>
+                      <span className="flex-3/4">{value}</span>
                     </div>
                   )
               )}

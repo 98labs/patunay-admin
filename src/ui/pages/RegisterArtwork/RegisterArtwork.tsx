@@ -1,5 +1,5 @@
 import { FormStepTitle, PageHeader } from "@components";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ArtworkEntity, FormStepsEntity } from "../../typings";
 
 import AttachNfc from "./components/steps/AttachNfc";
@@ -86,10 +86,6 @@ const RegisterArtwork = () => {
   const handleAddArtworkResult = (addedArtwork: ArtworkEntity) => {
     setAddedArtwork(addedArtwork);
   };
-
-  useEffect(() => {
-    console.log("Updated artwork:\n", artwork);
-  }, [artwork]);
 
   return (
     <div className="flex flex-col h-full text-base-content">

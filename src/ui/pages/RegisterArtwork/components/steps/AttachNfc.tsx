@@ -76,13 +76,10 @@ const AttachNfc = ({ data, addAddArtworkResult, onPrev, onNext }: Props) => {
     addAddArtworkResult(parsedRes);
 
     onNext();
-
-    console.log("Result", parsedRes);
   };
 
   useEffect(() => {
     window.electron.subscribeNfcWriteResult((result) => {
-      console.log(result);
       if (result.success) {
         setWriteResult(result);
 

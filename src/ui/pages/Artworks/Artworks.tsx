@@ -64,7 +64,6 @@ const Artworks = () => {
 
     try {
       const result = await deleteArtwork(art.id as string);
-      console.log(result);
     } catch (error) {
       console.error("Failed to delete artwork:", error);
     }
