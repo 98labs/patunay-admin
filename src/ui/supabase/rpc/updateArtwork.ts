@@ -14,7 +14,7 @@ export const updateArtwork = async (artwork: ArtworkEntity) => {
     p_medium: artwork.medium ?? null,
     p_tag_id: artwork.tag_id ?? null,
     p_expiration_date: artwork.expirationDate ?? null,
-    p_read_write_count: artwork.readWriteCount ?? null,
+    p_read_write_count: artwork.readWriteCount,
     p_assets: artwork.assets ?? null,
     p_provenance: artwork.provenance ?? null,
     p_bibliography: JSON.stringify(artwork.bibliography ?? []),

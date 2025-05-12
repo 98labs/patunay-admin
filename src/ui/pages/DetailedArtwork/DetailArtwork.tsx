@@ -14,6 +14,7 @@ const DetailArtwork = () => {
   const navigate = useNavigate();
   const [artwork, setArtwork] = useState<ArtworkEntity | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isScanning, setIsScanning] = useState(false);
 
   const detailedArtworkFormats: { title: string; value: any }[] = [
     {
@@ -54,11 +55,38 @@ const DetailArtwork = () => {
     },
   ];
 
+  const handleStartScanning = async () => {
+    setIsScanning(true);
+  };
+
+  const handleAttachArtwork = async (tagId: string) => {
+    try {
+      const result = await updateArtwork({ ...artwork!, tag_id: tagId });
+
+      if (result) {
+        setArtwork({
+          ...result[0],
+          tag_id: tagId,
+          bibliography: safeJsonParse(result[0].bibliography),
+          collectors: safeJsonParse(result[0].collectors),
+        });
+        setIsScanning(false);
+      }
+    } catch (error) {
+      console.error("Failed to detach NFC tag from artwork:", error);
+    }
+  };
+
   const handleDetachArtwork = async () => {
     try {
       const result = await updateArtwork({ ...artwork!, tag_id: null });
 
-      if (result) console.log("✅ Success:", result);
+      if (result)
+        setArtwork({
+          ...result[0],
+          bibliography: safeJsonParse(result[0].bibliography),
+          collectors: safeJsonParse(result[0].collectors),
+        });
     } catch (error) {
       console.error("Failed to detach NFC tag from artwork:", error);
     }
@@ -75,6 +103,16 @@ const DetailArtwork = () => {
       console.error("Failed to delete artwork:", error);
     }
   };
+
+  useEffect(() => {
+    if (!isScanning) return;
+
+    window.electron.subscribeNfcCardDetection(
+      (card: { uid: string; data: any }) => {
+        handleAttachArtwork(card.uid);
+      }
+    );
+  }, [isScanning, handleAttachArtwork]);
 
   useEffect(() => {
     const fetchArtwork = async () => {
@@ -124,9 +162,9 @@ const DetailArtwork = () => {
             ) : (
               <Button
                 buttonType="secondary"
-                buttonLabel="Attach NFC Tag"
+                buttonLabel={isScanning ? "Attaching..." : "Attach NFC Tag"}
                 className="btn-sm"
-                onClick={async () => {}}
+                onClick={handleStartScanning}
               />
             )}
             <Button
