@@ -1,4 +1,3 @@
-import React from 'react';
 type DropdownActionProps = {
   artwork: any;
   onAttach: (artwork: any) => void;

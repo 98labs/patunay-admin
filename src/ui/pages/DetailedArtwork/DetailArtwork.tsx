@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import moment from "moment";
 import supabase from "../../supabase";
-import { Loading } from "@components";
+import { Loading, DetachNFCModal } from "@components";
 import ArtworkImageModal from "./components/ArtworkImageModal";
 import { ArtworkType } from "./types";
 
@@ -11,6 +11,8 @@ const DetailArtwork = () => {
     const navigate = useNavigate();
     const [artwork, setArtwork] = useState<ArtworkType | null>(null);
     const [loading, setLoading] = useState(true);
+    const [showDetachModal, setShowDetachModal] = useState(false);
+    const [artworkId, setArtworkId] = useState("");
   
     useEffect(() => {
       const fetchArtwork = async () => {
@@ -26,9 +28,17 @@ const DetailArtwork = () => {
       };
       fetchArtwork();
     }, [id, navigate]);
+
+    const handleDelete = async () => {
+      if (id) {
+         setArtworkId(id);
+        setShowDetachModal(true);
+      }
+      };
   
     if (loading) return <Loading fullScreen={false} />;
     if (!artwork) return <div className="p-6">Artwork not found.</div>;
+    console.log('artwork', artwork)
     return (
       <div className="text-base-content">
         <div className="breadcrumbs text-sm">
@@ -51,7 +61,7 @@ const DetailArtwork = () => {
                   {artwork.title}
                 </h2>
                 <div className="flex gap-2">
-                  <button className="btn btn-outline btn-sm">Detach NFC Tag</button>
+                  <button className={`btn btn-outline btn-sm ${artwork.tag_id ? "" : "hidden"}`} onClick={handleDelete}>Detach NFC Tag</button>
                   <button className="btn btn-error btn-sm text-white">Delete artwork</button>
                 </div>
               </div>
@@ -84,6 +94,14 @@ const DetailArtwork = () => {
               </div>
             </div>
           </div>
+            {showDetachModal && (
+              <DetachNFCModal
+                artworkId={artworkId}
+                onClose={() => {
+                  setShowDetachModal(false);
+                }}
+              />
+            )}
         </section>
       </div>
     );
