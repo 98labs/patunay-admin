@@ -59,7 +59,7 @@ export function useArtworkColumns(
       header: "Status",
       accessorKey: "tag_id",
       cell: ({ row }) => {
-        const status = row.original.tag_id ? "Attached" : "No NFC";
+        const status = row.original.tag_id && row.original.active ? "Attached" : row.original.tag_id && row.original.active === false ? "Detached" : "No NFC";
         return (
           <span className={`badge ${status === "Attached" ? "badge-success" : "badge-error"} whitespace-nowrap`}>
             {status}

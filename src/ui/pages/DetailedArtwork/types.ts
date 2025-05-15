@@ -13,4 +13,5 @@ export interface ArtworkType {
     collectors: string[];
     tag_issued_at: string;
     assets: { filename: string; url: string }[];
+    active?: boolean;
   }

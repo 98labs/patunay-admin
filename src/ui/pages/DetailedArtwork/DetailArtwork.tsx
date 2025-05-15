@@ -5,6 +5,8 @@ import supabase from "../../supabase";
 import { Loading, DetachNFCModal } from "@components";
 import ArtworkImageModal from "./components/ArtworkImageModal";
 import { ArtworkType } from "./types";
+import { selectNotif } from "../../components/NotificationMessage/selector";
+import { useSelector } from "react-redux";
 
 const DetailArtwork = () => {
     const { id } = useParams();
@@ -13,6 +15,7 @@ const DetailArtwork = () => {
     const [loading, setLoading] = useState(true);
     const [showDetachModal, setShowDetachModal] = useState(false);
     const [artworkId, setArtworkId] = useState("");
+    const { status } = useSelector(selectNotif);
   
     useEffect(() => {
       const fetchArtwork = async () => {
@@ -27,7 +30,7 @@ const DetailArtwork = () => {
         setLoading(false);
       };
       fetchArtwork();
-    }, [id, navigate]);
+    }, [id, navigate, status]);
 
     const handleDelete = async () => {
       if (artwork?.tag_id) {
@@ -61,7 +64,7 @@ const DetailArtwork = () => {
                   {artwork.title}
                 </h2>
                 <div className="flex gap-2">
-                  <button className={`btn btn-outline btn-sm ${artwork.tag_id ? "" : "hidden"}`} onClick={handleDelete}>Detach NFC Tag</button>
+                  <button className={`btn btn-outline btn-sm ${artwork.tag_id && artwork.active ? "" : "hidden"}`} onClick={handleDelete}>Detach NFC Tag</button>
                   <button className="btn btn-error btn-sm text-white">Delete artwork</button>
                 </div>
               </div>
