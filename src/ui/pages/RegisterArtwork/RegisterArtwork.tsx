@@ -1,5 +1,5 @@
 import { FormStepTitle, PageHeader } from "@components";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArtworkEntity, FormStepsEntity } from "../../typings";
 
 import AttachNfc from "./components/steps/AttachNfc";
@@ -54,7 +54,8 @@ const RegisterArtwork = () => {
   const [addedArtwork, setAddedArtwork] = useState<ArtworkEntity | null>(null);
 
   const handleOnStepClick = (stepNumber: number, _complete: boolean) => {
-    if (currentStep > stepNumber) setCurrentStep(stepNumber);
+    // if (currentStep > stepNumber) setCurrentStep(stepNumber);
+    setCurrentStep(stepNumber);
   };
 
   const handleOnPrev = async () => {
@@ -86,6 +87,12 @@ const RegisterArtwork = () => {
   const handleAddArtworkResult = (addedArtwork: ArtworkEntity) => {
     setAddedArtwork(addedArtwork);
   };
+
+  useEffect(() => {
+    console.log("artwork", artwork);
+
+    return () => {};
+  }, [artwork]);
 
   return (
     <div className="flex flex-col h-full text-base-content">
@@ -145,7 +152,11 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 5 && (
-          <UploadImage onPrev={handleOnPrev} onNext={handleOnNext} />
+          <UploadImage
+            onDataChange={handleOnDataChange}
+            onPrev={handleOnPrev}
+            onNext={handleOnNext}
+          />
         )}
         {currentStep === 6 && (
           <AttachNfc

@@ -47,7 +47,8 @@ const AttachNfc = ({ data, addAddArtworkResult, onPrev, onNext }: Props) => {
       provenance: data.provenance,
       bibliography: data.bibliography,
       collectors: data.collectors,
-      assets: null,
+      assets:
+        typeof data.assets === "string" ? JSON.parse(data.assets) : data.assets,
     };
 
     const result = (await addArtwork(artwork))[0];
