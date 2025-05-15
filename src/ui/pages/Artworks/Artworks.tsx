@@ -26,7 +26,7 @@ const Artworks = () => {
   const { title, status } = useSelector(selectNotif);
   const [nfcFilter, setNfcFilter] = useState<"all" | "with" | "none">("all");
   const [showDetachModal, setShowDetachModal] = useState(false);
-  const [artworkId, setArtworkId] = useState("");
+  const [tagId, setTagId] = useState("");
 
   const getDataList = async () => {
     const { data, error } = await supabase.rpc("get_artwork_list", {});
@@ -58,8 +58,10 @@ const Artworks = () => {
   };
 
   const handleDelete = async (art: ArtistType) => {
-    setArtworkId(art.id);
-    setShowDetachModal(true);
+    if (art.tag_id) {
+      setTagId(art.tag_id);
+      setShowDetachModal(true);
+    }
   };
 
   const columns = useArtworkColumns(handleEdit, handleDelete);
@@ -158,7 +160,7 @@ const Artworks = () => {
         <TablePagination table={table} />
         {showDetachModal && (
           <DetachNFCModal
-            artworkId={artworkId}
+            tagId={tagId}
             onClose={() => {
               setShowDetachModal(false);
               getDataList();

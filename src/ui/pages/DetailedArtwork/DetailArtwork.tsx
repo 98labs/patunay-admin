@@ -30,15 +30,15 @@ const DetailArtwork = () => {
     }, [id, navigate]);
 
     const handleDelete = async () => {
-      if (id) {
-         setArtworkId(id);
+      if (artwork?.tag_id) {
+         setArtworkId(artwork?.tag_id);
         setShowDetachModal(true);
       }
       };
   
     if (loading) return <Loading fullScreen={false} />;
     if (!artwork) return <div className="p-6">Artwork not found.</div>;
-    console.log('artwork', artwork)
+
     return (
       <div className="text-base-content">
         <div className="breadcrumbs text-sm">
@@ -96,7 +96,7 @@ const DetailArtwork = () => {
           </div>
             {showDetachModal && (
               <DetachNFCModal
-                artworkId={artworkId}
+                tagId={artworkId}
                 onClose={() => {
                   setShowDetachModal(false);
                 }}

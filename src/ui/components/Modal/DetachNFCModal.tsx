@@ -4,11 +4,11 @@ import supabase from "../../supabase";
 import { showNotification } from '../NotificationMessage/slice'
 
 type DetachNFCProps = {
-    artworkId: string;
+    tagId: string;
     onClose: () => void;
   };
 
-const DetachNFCModal = ({ artworkId, onClose }: DetachNFCProps) => {
+const DetachNFCModal = ({ tagId, onClose }: DetachNFCProps) => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
 
@@ -16,9 +16,9 @@ const DetachNFCModal = ({ artworkId, onClose }: DetachNFCProps) => {
     if (loading) return;
     setLoading(true);
     const { error } = await supabase
-      .from('artworks')
-      .update({ tag_id: null })
-      .eq('id', artworkId);
+      .from('tags')
+      .update({ active: false })
+      .eq('id', tagId);
 
     setLoading(false);
 
