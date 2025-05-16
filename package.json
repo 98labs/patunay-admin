@@ -1,10 +1,18 @@
 {
   "name": "patunay-app",
   "private": true,
-  "version": "1.0.10",
+  "version": "1.0.12",
   "type": "module",
   "author": "Geoffrey and JohnHoneyman",
   "main": "dist-electron/main.js",
+  "repository": "https://github.com/gundam0910/patunay-app",
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "gundam0910",
+      "repo": "patunay-app"
+    }
+  ],
   "scripts": {
     "dev": "npm-run-all --parallel dev:react dev:electron",
     "dev:react": "vite",
@@ -58,6 +66,7 @@
     "@tanstack/react-table": "^8.21.3",
     "daisyui": "^5.0.12",
     "electron-squirrel-startup": "^1.0.1",
+    "electron-updater": "^6.6.2",
     "js-confetti": "^0.12.0",
     "lucide-react": "^0.487.0",
     "moment": "^2.30.1",
@@ -127,13 +136,16 @@
       }
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.ico"
     },
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "build/icon.icns"
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "icon": "build/icon.png"
     },
     "nsis": {
       "oneClick": false,
