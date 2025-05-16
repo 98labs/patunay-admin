@@ -153,6 +153,7 @@ const RegisterArtwork = () => {
         )}
         {currentStep === 5 && (
           <UploadImage
+            artwork={artwork}
             onDataChange={handleOnDataChange}
             onPrev={handleOnPrev}
             onNext={handleOnNext}

@@ -1,6 +1,6 @@
 import { Button, FormField } from "@components";
 import { ArtworkEntity, FormErrorsEntity } from "@typings";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 
 interface Props {
   artwork: ArtworkEntity;
@@ -9,7 +9,7 @@ interface Props {
   onNext: () => Promise<void>;
 }
 
-const Bibliography = ({ onDataChange, onPrev, onNext }: Props) => {
+const Bibliography = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState<string[]>([""]);
   const [formErrors, setFormErrors] = useState<FormErrorsEntity<string>>({});
 
@@ -51,6 +51,12 @@ const Bibliography = ({ onDataChange, onPrev, onNext }: Props) => {
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
+
+  useEffect(() => {
+    if (artwork?.bibliography && artwork.bibliography.length > 0) {
+      setFormData(artwork.bibliography);
+    }
+  }, [artwork]);
 
   return (
     <div className="flex-2 h-fill flex flex-col justify-between gap-2">

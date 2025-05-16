@@ -1,18 +1,21 @@
-import { Button } from "@components";
+import { useCallback, useEffect, useState } from "react";
+
 import { ImageUp } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
+import { Button } from "@components";
+
 import supabase from "../../../../supabase/index";
-import { useCallback, useState } from "react";
-import { AssetEntity } from "@typings";
+import { ArtworkEntity, AssetEntity } from "@typings";
 
 interface Props {
+  artwork: ArtworkEntity;
   onDataChange: (data: { [key: string]: string | string[] }) => void;
   onPrev: () => Promise<void>;
   onNext: () => Promise<void>;
 }
 
-const UploadImage = ({ onDataChange, onPrev, onNext }: Props) => {
+const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   const [assets, setAssets] = useState<AssetEntity[]>([]);
 
   const [uploading, setUploading] = useState(false);
@@ -64,6 +67,20 @@ const UploadImage = ({ onDataChange, onPrev, onNext }: Props) => {
     [onDataChange]
   );
 
+  useEffect(() => {
+    if (artwork) {
+      if (artwork.assets) {
+        setAssets(
+          typeof artwork.assets === "string"
+            ? JSON.parse(artwork.assets)
+            : artwork.assets
+        );
+      } else {
+        setAssets([]);
+      }
+    }
+  }, [artwork]);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "image/*": [] },
@@ -74,15 +91,15 @@ const UploadImage = ({ onDataChange, onPrev, onNext }: Props) => {
     <div className="flex-2 h-fill flex flex-col justify-between gap-2">
       <div
         {...getRootProps()}
-        className={`outline outline-neutral-gray-01 rounded-2xl flex flex-col items-center gap-2 overflow-hidden ${assets.length <= 0 && "p-24"}`}
+        className={`outline outline-neutral-gray-01 rounded-2xl flex flex-col items-center gap-2 overflow-hidden ${assets?.length <= 0 && "p-24"}`}
       >
         <input {...getInputProps()} />
-        {assets.length <= 0 && (
+        {assets?.length <= 0 && (
           <div>
             <ImageUp className="h-40 w-40 text-neutral-black-01" />
           </div>
         )}
-        {assets.length <= 0 ? (
+        {assets?.length <= 0 ? (
           uploading ? (
             <p>Uploading...</p>
           ) : (
@@ -129,7 +146,7 @@ const UploadImage = ({ onDataChange, onPrev, onNext }: Props) => {
         <Button
           className="flex-1"
           buttonType="primary"
-          buttonLabel={assets.length > 0 ? "Continue" : "Add image later"}
+          buttonLabel={assets?.length > 0 ? "Continue" : "Add image later"}
           onClick={onNext}
         />
       </div>
