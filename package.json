@@ -1,7 +1,7 @@
 {
   "name": "patunay-app",
   "private": true,
-  "version": "1.0.11",
+  "version": "1.0.14",
   "type": "module",
   "author": "Geoffrey and JohnHoneyman",
   "main": "dist-electron/main.js",
@@ -20,7 +20,7 @@
     "devmac:electron": "npm run transpile:electron; NODE_ENV=development electron .",
     "build:react": "vite build",
     "build:electron": "npm run transpile:electron && electron-builder",
-    "build": "npm run transpile:electron && npm run build:react && electron-builder",
+    "build": "npm run clean && npm run transpile:electron && npm run build:react && electron-builder",
     "lint": "eslint .",
     "preview": "vite preview",
     "transpile:electron": "tsc --project src/electron/tsconfig.json",
@@ -30,7 +30,8 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "electron-forge publish"
+    "publish": "electron-forge publish",
+    "clean": "rimraf dist-electron dist-react dist out"
   },
   "config": {
     "forge": {
@@ -105,6 +106,7 @@
     "postcss": "^8.5.3",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
+    "rimraf": "^6.0.1",
     "tailwindcss": "^4.1.3",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.24.1",
@@ -135,7 +137,7 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "build/icon.ico"  
+      "icon": "build/icon.ico"
     },
     "mac": {
       "target": "dmg",
