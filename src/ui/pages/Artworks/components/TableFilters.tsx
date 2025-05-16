@@ -7,7 +7,7 @@ const TableFilters = <T,>({
   nfcFilter,
   setNfcFilter,
 }: TableFilterProp<T>) => {
-  const handleNfcChange = (value: 'all' | 'with' | 'none') => {
+  const handleNfcChange = (value: 'all' | 'with' | 'detach' | 'none') => {
     setNfcFilter(value);
     table.getColumn('tag_id')?.setFilterValue(value);
   };
@@ -26,6 +26,12 @@ const TableFilters = <T,>({
           onClick={() => handleNfcChange('with')}
         >
           With NFC
+        </button>
+        <button
+          className={`btn btn-sm ${nfcFilter === 'detach' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => handleNfcChange('detach')}
+        >
+          Detached NFC
         </button>
         <button
           className={`btn btn-sm ${nfcFilter === 'none' ? 'btn-primary' : 'btn-outline'}`}

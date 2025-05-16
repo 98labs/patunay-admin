@@ -34,6 +34,6 @@ interface CSVItem {
     table: Table<T>;
     globalFilter: string;
     setGlobalFilter: Dispatch<SetStateAction<string>>;
-    nfcFilter: 'all' | 'with' | 'none';
-    setNfcFilter: Dispatch<SetStateAction<'all' | 'with' | 'none'>>;
+    nfcFilter: 'all' | 'with' | 'detach' | 'none';
+    setNfcFilter: Dispatch<SetStateAction<'all' | 'with' | 'detach' | 'none'>>;
   };

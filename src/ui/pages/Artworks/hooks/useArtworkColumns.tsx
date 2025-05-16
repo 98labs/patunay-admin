@@ -56,19 +56,21 @@ export function useArtworkColumns(
       meta: { className: "hidden lg:table-cell" },
     },
     {
-      header: "Status",
+      header: "NFC",
       accessorKey: "tag_id",
       cell: ({ row }) => {
         const status = row.original.tag_id && row.original.active ? "Attached" : row.original.tag_id && row.original.active === false ? "Detached" : "No NFC";
         return (
-          <span className={`badge ${status === "Attached" ? "badge-success" : "badge-error"} whitespace-nowrap`}>
+          <span className={`badge ${status === "Attached" ? "badge-success" : status === "Detached" ? "badge-warning" : "badge-error"} whitespace-nowrap`}>
             {status}
           </span>
         );
       },
       filterFn: (row: Row<ArtistType>, columnId, filterValue: string) => {
         const hasNfc = !!row.original.tag_id;
-        if (filterValue === "with") return hasNfc;
+        const isActive = !!row.original.active;
+        if (filterValue === "with") return hasNfc && isActive;
+        if (filterValue === "detach") return !isActive && hasNfc;
         if (filterValue === "none") return !hasNfc;
         return true;
       },
