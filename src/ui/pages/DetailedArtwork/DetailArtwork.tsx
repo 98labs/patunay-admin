@@ -7,6 +7,7 @@ import ArtworkImageModal from "./components/ArtworkImageModal";
 import { ArtworkType } from "./types";
 import { selectNotif } from "../../components/NotificationMessage/selector";
 import { useSelector } from "react-redux";
+import AppraisalInfo from "./components/AppraisalInfo";
 
 const DetailArtwork = () => {
     const { id } = useParams();
@@ -106,6 +107,8 @@ const DetailArtwork = () => {
               />
             )}
         </section>
+          <div className="divider"></div>
+          <AppraisalInfo />
       </div>
     );
   };
