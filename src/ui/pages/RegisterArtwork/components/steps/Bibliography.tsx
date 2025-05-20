@@ -1,5 +1,6 @@
 import { Button, FormField } from "@components";
 import { ArtworkEntity, FormErrorsEntity } from "@typings";
+import { Minus, Plus } from "lucide-react";
 import { ChangeEvent, useEffect, useState } from "react";
 
 interface Props {
@@ -36,8 +37,14 @@ const Bibliography = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
     }));
   };
 
-  const handleOnListItemClick = async () => {
-    setFormData([...formData, ""]);
+  const handleOnListItemClick = async (index: number) => {
+    if (!formData[index].trim()) return;
+
+    const isLastItem = index === formData.length - 1;
+
+    if (isLastItem) setFormData([...formData, ""]);
+    else if (formData.length > 1)
+      setFormData(formData.filter((_, itemIndex) => itemIndex !== index));
   };
 
   const validateForm = () => {
@@ -67,9 +74,10 @@ const Bibliography = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
         {formData.map((item, index) => (
           <FormField
             key={index}
-            isListItem={true}
             hint="Add the artwork's bibliography"
-            onListItemClick={handleOnListItemClick}
+            isListItem={true}
+            onListItemClick={() => handleOnListItemClick(index)}
+            buttonIcon={index + 1 !== formData.length ? Minus : Plus}
             value={item}
             error={formErrors[`bibliography-${index}`]}
             onInputChange={(e) => handleOnChange(e, index)}

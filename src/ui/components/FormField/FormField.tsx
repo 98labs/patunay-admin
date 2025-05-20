@@ -1,7 +1,7 @@
 import { InputType } from "@typings";
 import { Button, RadioButton } from "@components";
 import { ChangeEvent } from "react";
-import { Plus } from "lucide-react";
+import { LucideIcon, Plus } from "lucide-react";
 
 interface Props {
   name?: string;
@@ -15,6 +15,7 @@ interface Props {
   inputType?: InputType;
   items?: [string, string][];
   isListItem?: boolean;
+  buttonIcon?: LucideIcon;
   disabled?: boolean;
   onListItemClick?: () => Promise<void>;
   onInputChange?: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -29,8 +30,9 @@ const FormField = ({
   required = false,
   inputType = InputType.Text,
   items = [],
-  isListItem = false,
+  buttonIcon = Plus,
   disabled = false,
+  isListItem = false,
   onListItemClick,
   value,
   error,
@@ -67,7 +69,7 @@ const FormField = ({
               className="w-10 h-10 rounded-full text-lg"
               onClick={onListItemClick!}
               buttonLabel=""
-              buttonIcon={Plus}
+              buttonIcon={buttonIcon}
             />
           )}
         </div>
