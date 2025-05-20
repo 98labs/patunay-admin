@@ -36,17 +36,17 @@ const RegisterArtwork = () => {
     },
     {
       stepNumber: 5,
-      stepName: "Upload Artwork (WIP)",
+      stepName: "Upload Images",
       complete: false,
     },
     {
       stepNumber: 6,
-      stepName: "Review Artwork (WIP)",
+      stepName: "Review Artwork",
       complete: false,
     },
     {
       stepNumber: 7,
-      stepName: "Attach to NFC Tag (WIP)",
+      stepName: "Attach to NFC Tag",
       complete: false,
     },
     {

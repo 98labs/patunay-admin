@@ -17,7 +17,6 @@ interface Detail {
 }
 
 const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const {
     artist,
     assets,
@@ -34,6 +33,8 @@ const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
     width,
     year,
   } = artwork;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const details: Detail[] = [
     {
@@ -62,15 +63,11 @@ const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
     { label: "Collectors", value: collectors ? collectors.join(", ") : "" },
   ];
 
-  // useEffect(() => {
-  //   jsConfetti.addConfetti();
-
-  //   return () => {
-  //     jsConfetti;
-  //   };
-  // }, [jsConfetti]);
-
   const handleSubmitArtwork = async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
     try {
       const res = await handleAddArtwork({ data: artwork });
       console.log("res", res);
@@ -81,6 +78,7 @@ const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
     } catch (error) {
       console.error("Error in submitting artwork:", error);
     }
+    setIsSubmitting(false);
   };
 
   const openModal = async () => {
@@ -89,6 +87,18 @@ const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
 
   const closeModal = async () => {
     setIsModalOpen(false);
+  };
+
+  const handleOnPrev = async () => {
+    if (isSubmitting) return;
+
+    onPrev();
+  };
+
+  const handleOnNext = async () => {
+    if (isSubmitting) return;
+
+    onNext();
   };
 
   return (
@@ -123,12 +133,14 @@ const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
             className="flex-1"
             buttonType="secondary"
             buttonLabel="Back"
+            disabled={isSubmitting}
             onClick={onPrev}
           />
           <Button
             className="flex-1"
             buttonType="primary"
             buttonLabel="Submit"
+            disabled={isSubmitting}
             onClick={handleSubmitArtwork}
           />
         </div>
@@ -145,12 +157,14 @@ const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
               buttonLabel="Attach Later"
               buttonType="secondary"
               className="btn-sm"
-              onClick={onNext}
+              disabled={isSubmitting}
+              onClick={handleOnNext}
             />
             <Button
               buttonLabel="Attach to NFC Tag"
               className="btn-sm"
-              onClick={onNext}
+              disabled={isSubmitting}
+              onClick={handleOnNext}
             />
           </div>
         </div>

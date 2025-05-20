@@ -23,6 +23,7 @@ interface WriteResult {
 const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
   const [writeResult, setWriteResult] = useState<WriteResult | null>(null);
   const [isScanning, setisScanning] = useState<boolean>(false);
+  const [isAttaching, setIsAttaching] = useState(false);
 
   const handleStartScanning = async () => {
     setisScanning(true);
@@ -32,24 +33,46 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
     attachLater: boolean;
     tagId?: string;
   }) => {
-    console.log("data", data);
+    if (isAttaching) return;
+    setIsAttaching(true);
 
-    const result = await updateArtwork({ ...data!, tag_id: options.tagId });
+    try {
+      const result = await updateArtwork({ ...data!, tag_id: options.tagId });
 
-    if (result) {
+      if (!result) {
+        alert("Failed to attach artwork. Please try again.");
+        return;
+      }
+
       onUpdateArtwork({
         ...result[0],
         tag_id: options.tagId,
         bibliography: safeJsonParse(result[0].bibliography),
         collectors: safeJsonParse(result[0].collectors),
       });
+
+      window.electron.writeOnTag(
+        options.attachLater ? "No data" : (data.id ?? "No Data")
+      );
+
+      await onNext();
+    } catch (err) {
+      console.error("Attach artwork error:", err);
+    } finally {
+      setIsAttaching(false);
     }
+  };
 
-    window.electron.writeOnTag(
-      options.attachLater ? "No data" : (data.id ?? "No Data")
-    );
+  const handleAttachArtworkLater = async () => {
+    if (isAttaching) return;
 
-    onNext();
+    await handleAttachArtwork({ attachLater: true });
+  };
+
+  const handleOnPrev = async () => {
+    if (isAttaching) return;
+
+    onPrev();
   };
 
   useEffect(() => {
@@ -70,8 +93,12 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
     if (!isScanning) return;
 
     window.electron.subscribeNfcCardDetection(
-      (card: { uid: string; data: any }) => {
-        handleAttachArtwork({ attachLater: false, tagId: card.uid });
+      async (card: { uid: string; data: any }) => {
+        if (isAttaching) return;
+
+        setIsAttaching(true);
+        await handleAttachArtwork({ attachLater: false, tagId: card.uid });
+        setIsAttaching(false);
       }
     );
   }, [isScanning, handleAttachArtwork]);
@@ -101,12 +128,14 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
           className="flex-1"
           buttonType="secondary"
           buttonLabel="Back"
-          onClick={onPrev}
+          disabled={isAttaching}
+          onClick={handleOnPrev}
         />
         <Button
-          buttonType="primary"
+          buttonType="secondary"
           buttonLabel="Attach artwork to NFC tag later"
-          onClick={() => handleAttachArtwork({ attachLater: true })}
+          disabled={isAttaching}
+          onClick={handleAttachArtworkLater}
         />
       </div>
     </div>

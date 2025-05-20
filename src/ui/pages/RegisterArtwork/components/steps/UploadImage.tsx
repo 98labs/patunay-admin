@@ -87,6 +87,16 @@ const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
     multiple: true,
   });
 
+  const handleOnPrev = async () => {
+    if (uploading) return;
+    onPrev();
+  };
+
+  const handleOnNext = async () => {
+    if (uploading) return;
+    onNext();
+  };
+
   return (
     <div className="flex-2 h-fill flex flex-col justify-between gap-2">
       <div
@@ -141,13 +151,15 @@ const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
           className="flex-1"
           buttonType="secondary"
           buttonLabel="Back"
-          onClick={onPrev}
+          disabled={uploading}
+          onClick={handleOnPrev}
         />
         <Button
           className="flex-1"
           buttonType="primary"
           buttonLabel={assets?.length > 0 ? "Continue" : "Add image later"}
-          onClick={onNext}
+          disabled={uploading}
+          onClick={handleOnNext}
         />
       </div>
     </div>
