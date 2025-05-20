@@ -60,8 +60,7 @@ const RegisterArtwork = () => {
   const [addedArtwork, setAddedArtwork] = useState<ArtworkEntity | null>(null);
 
   const handleOnStepClick = (stepNumber: number, _complete: boolean) => {
-    // if (currentStep > stepNumber) setCurrentStep(stepNumber);
-    setCurrentStep(stepNumber);
+    if (currentStep > stepNumber) setCurrentStep(stepNumber);
   };
 
   const handleOnPrev = async () => {

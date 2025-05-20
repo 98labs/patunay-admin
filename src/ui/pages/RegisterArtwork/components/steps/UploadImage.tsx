@@ -57,8 +57,6 @@ const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
       }
 
       setAssets(uploadedAssets);
-      console.log("uploadedAssets", uploadedAssets);
-      console.log("stringified uploadedAssets", JSON.stringify(uploadedAssets));
 
       onDataChange({ assets: JSON.stringify(uploadedAssets) });
 

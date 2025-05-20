@@ -70,7 +70,6 @@ const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
 
     try {
       const res = await handleAddArtwork({ data: artwork });
-      console.log("res", res);
 
       onAddArtwork(res);
 
