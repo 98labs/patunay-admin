@@ -1,7 +1,7 @@
 {
   "name": "patunay-app",
   "private": true,
-  "version": "1.0.12",
+  "version": "1.0.13",
   "type": "module",
   "author": "Geoffrey and JohnHoneyman",
   "main": "dist-electron/main.js",

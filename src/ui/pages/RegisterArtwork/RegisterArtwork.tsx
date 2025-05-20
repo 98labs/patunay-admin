@@ -7,8 +7,9 @@ import Bibliography from "./components/steps/Bibliography";
 import Collector from "./components/steps/Collector";
 import Info from "./components/steps/Info";
 import Size from "./components/steps/Size";
-import Summary from "./components/steps/Summary";
+import ReviewArtwork from "./components/steps/ReviewArtwork";
 import UploadImage from "./components/steps/UploadImage";
+import Summary from "./components/steps/Summary";
 
 const RegisterArtwork = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -40,12 +41,17 @@ const RegisterArtwork = () => {
     },
     {
       stepNumber: 6,
-      stepName: "Attach to NFC Tag (WIP)",
+      stepName: "Review Artwork (WIP)",
       complete: false,
     },
     {
       stepNumber: 7,
-      stepName: "Artwork Details",
+      stepName: "Attach to NFC Tag (WIP)",
+      complete: false,
+    },
+    {
+      stepNumber: 8,
+      stepName: "Registration Complete",
       complete: false,
     },
   ]);
@@ -160,19 +166,23 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 6 && (
-          <AttachNfc
-            data={artwork}
-            addAddArtworkResult={handleAddArtworkResult}
+          <ReviewArtwork
+            artwork={addedArtwork ?? artwork}
+            onAddArtwork={handleAddArtworkResult}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
           />
         )}
         {currentStep === 7 && (
-          <Summary
-            artwork={addedArtwork ?? artwork}
+          <AttachNfc
+            data={addedArtwork ?? artwork}
+            onUpdateArtwork={handleAddArtworkResult}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
           />
+        )}
+        {currentStep === 8 && (
+          <Summary artwork={addedArtwork ?? artwork} onPrev={handleOnPrev} />
         )}
       </div>
     </div>

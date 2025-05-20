@@ -3,11 +3,12 @@ import { ArtworkEntity, NfcModeEntity } from "@typings";
 import { Nfc } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { addArtwork } from "../../../../supabase/rpc/addArtwork";
+import { updateArtwork } from "../../../../supabase/rpc/updateArtwork";
+import { safeJsonParse } from "../../../Artworks/components/utils";
 
 interface Props {
   data: ArtworkEntity;
-  addAddArtworkResult: (result: ArtworkEntity) => void;
+  onUpdateArtwork: (result: ArtworkEntity) => void;
   onPrev: () => Promise<void>;
   onNext: () => Promise<void>;
 }
@@ -19,7 +20,7 @@ interface WriteResult {
   error?: string;
 }
 
-const AttachNfc = ({ data, addAddArtworkResult, onPrev, onNext }: Props) => {
+const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
   const [writeResult, setWriteResult] = useState<WriteResult | null>(null);
   const [isScanning, setisScanning] = useState<boolean>(false);
 
@@ -27,54 +28,26 @@ const AttachNfc = ({ data, addAddArtworkResult, onPrev, onNext }: Props) => {
     setisScanning(true);
   };
 
-  const handleAddArtwork = async (options: {
+  const handleAttachArtwork = async (options: {
     attachLater: boolean;
     tagId?: string;
   }) => {
-    const artwork: ArtworkEntity = {
-      idNumber: data.idNumber,
-      title: data.title,
-      description: data.description,
-      height: data.height,
-      width: data.width,
-      sizeUnit: data.sizeUnit,
-      artist: data.artist,
-      year: new Date().getFullYear().toString(),
-      medium: data.medium,
-      tag_id: options.tagId ?? null,
-      expirationDate: new Date("2025-12-31"),
-      readWriteCount: 0,
-      provenance: data.provenance,
-      bibliography: data.bibliography,
-      collectors: data.collectors,
-      assets:
-        typeof data.assets === "string" ? JSON.parse(data.assets) : data.assets,
-    };
+    console.log("data", data);
 
-    const result = (await addArtwork(artwork))[0];
+    const result = await updateArtwork({ ...data!, tag_id: options.tagId });
 
-    const parsedRes: ArtworkEntity = {
-      ...result,
-      id: result.id,
-      idNumber: result.idnumber,
-      sizeUnit: result.size_unit,
-      tag_id: result.tag_id,
-      bibliography: result.bibliography ? JSON.parse(result.collectors) : [],
-      collectors: result.collectors ? JSON.parse(result.collectors) : [],
-      assets: result.assets
-        ? result.assets.map((asset: any) => ({
-            fileName: asset.filename ?? "",
-            url: asset.url,
-            sortOrder: asset.sort_order,
-          }))
-        : null,
-    };
+    if (result) {
+      onUpdateArtwork({
+        ...result[0],
+        tag_id: options.tagId,
+        bibliography: safeJsonParse(result[0].bibliography),
+        collectors: safeJsonParse(result[0].collectors),
+      });
+    }
 
     window.electron.writeOnTag(
-      options.attachLater ? "No data" : (parsedRes.id ?? "No Data")
+      options.attachLater ? "No data" : (data.id ?? "No Data")
     );
-
-    addAddArtworkResult(parsedRes);
 
     onNext();
   };
@@ -98,10 +71,10 @@ const AttachNfc = ({ data, addAddArtworkResult, onPrev, onNext }: Props) => {
 
     window.electron.subscribeNfcCardDetection(
       (card: { uid: string; data: any }) => {
-        handleAddArtwork({ attachLater: false, tagId: card.uid });
+        handleAttachArtwork({ attachLater: false, tagId: card.uid });
       }
     );
-  }, [isScanning, handleAddArtwork]);
+  }, [isScanning, handleAttachArtwork]);
 
   return (
     <div className="flex-2 h-fill flex flex-col justify-between gap-2">
@@ -133,7 +106,7 @@ const AttachNfc = ({ data, addAddArtworkResult, onPrev, onNext }: Props) => {
         <Button
           buttonType="primary"
           buttonLabel="Attach artwork to NFC tag later"
-          onClick={() => handleAddArtwork({ attachLater: true })}
+          onClick={() => handleAttachArtwork({ attachLater: true })}
         />
       </div>
     </div>

@@ -36,8 +36,9 @@ const DashboardLayout = () => {
             <NotificationMessage />
             <Outlet />
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
+    </div>
   );
 };
 
