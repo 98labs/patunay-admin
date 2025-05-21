@@ -3,7 +3,7 @@ export interface ArtworkImageModalProps {
     title: string;
   }
 
-interface AuctionRefProps {
+export interface AuctionRefProps {
   id: number;
   title: string;
   size: string;
