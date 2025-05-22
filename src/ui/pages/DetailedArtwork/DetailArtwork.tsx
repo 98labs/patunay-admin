@@ -4,7 +4,7 @@ import moment from "moment";
 import supabase from "../../supabase";
 import { Loading, DetachNFCModal } from "@components";
 import ArtworkImageModal from "./components/ArtworkImageModal";
-import { ArtworkType } from "./types";
+import { Appraisal, ArtworkType } from "./types";
 import { selectNotif } from "../../components/NotificationMessage/selector";
 import { useSelector } from "react-redux";
 import AppraisalInfo from "./components/AppraisalInfo";
@@ -13,9 +13,10 @@ const DetailArtwork = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [artwork, setArtwork] = useState<ArtworkType | null>(null);
+    const [appraisals, setAppraisals] =  useState<Appraisal[]>([]);
     const [loading, setLoading] = useState(true);
     const [showDetachModal, setShowDetachModal] = useState(false);
-    const [artworkId, setArtworkId] = useState("");
+    const [tagId, setTagId] = useState("");
     const { status } = useSelector(selectNotif);
   
     useEffect(() => {
@@ -33,9 +34,17 @@ const DetailArtwork = () => {
       fetchArtwork();
     }, [id, navigate, status]);
 
+    useEffect(() => {
+      if (artwork?.artwork_appraisals) {
+        setAppraisals(artwork?.artwork_appraisals);
+      }
+      
+    }, [artwork])
+    
+
     const handleDelete = async () => {
       if (artwork?.tag_id) {
-         setArtworkId(artwork?.tag_id);
+         setTagId(artwork?.tag_id);
         setShowDetachModal(true);
       }
       };
@@ -100,7 +109,7 @@ const DetailArtwork = () => {
           </div>
             {showDetachModal && (
               <DetachNFCModal
-                tagId={artworkId}
+                tagId={tagId}
                 onClose={() => {
                   setShowDetachModal(false);
                 }}
@@ -110,7 +119,7 @@ const DetailArtwork = () => {
         {artwork.artwork_appraisals && (
           <>
             <div className="divider"></div>
-            <AppraisalInfo appraisals={artwork.artwork_appraisals} />
+            <AppraisalInfo appraisals={appraisals} artwork_id={artwork.id} />
           </>
         )}
           

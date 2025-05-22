@@ -8,37 +8,12 @@ import {
   flexRender,
   SortingState,
 } from "@tanstack/react-table";
-import moment from "moment";
 import { AuctionProps, } from "./types";
-import { Appraisal } from "../types";
 import { useAppraisalColumns } from "../hooks/useAppraisalColumns";
 
 export default function AuctionRef({auctions, addRow }: AuctionProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([])
-  const [newRow, setNewRow] = useState<Appraisal | null>(null);
-
-  // const handleAddRow = () => {
-  //   setNewRow({
-  //     id: auctions.length + 1,
-  //     title: "",
-  //     size: "",
-  //     price: "",
-  //     description: "",
-  //     date: moment().format("YYYY"), // Default to today's date
-  //   });
-  // };
-
-  // const handleSaveRow = () => {
-  //   if (newRow) {
-  //     addRow(newRow); // Pass newRow to parent to update data
-  //     setNewRow(null);
-  //   }
-  // };
-
-  // const handleCancelRow = () => {
-  //   setNewRow(null);
-  // };
   
     const columns = useAppraisalColumns();
 
@@ -69,23 +44,6 @@ export default function AuctionRef({auctions, addRow }: AuctionProps) {
                   Add Appraisal
                 </button>
               </div>
-              {/* {newRow && (
-                <table className="table table-sm table-pin-rows table-pin-cols md:table-fixed table-zebra">
-                  <tbody>
-                    <tr>
-                      <td><input value={newRow.title} onChange={e => setNewRow({ ...newRow, title: e.target.value })} className="input input-sm input-bordered w-full" /></td>
-                      <td><input value={newRow.date} onChange={e => setNewRow({ ...newRow, date: e.target.value })} className="input input-sm input-bordered w-full" /></td>
-                      <td><input value={newRow.size} onChange={e => setNewRow({ ...newRow, size: e.target.value })} className="input input-sm input-bordered w-full" /></td>
-                      <td><input value={newRow.price} onChange={e => setNewRow({ ...newRow, price: e.target.value })} className="input input-sm input-bordered w-full" /></td>
-                      <td><input value={newRow.description} onChange={e => setNewRow({ ...newRow, description: e.target.value })} className="input input-sm input-bordered w-full" /></td>
-                      <td className="flex gap-2">
-                        <button className="btn btn-sm btn-success" onClick={handleSaveRow}>Save</button>
-                        <button className="btn btn-sm btn-ghost" onClick={handleCancelRow}>X</button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              )} */}
               <div className="overflow-x-auto border border-base-content/5 bg-base-100 md:rounded-lg">
                   <table className="table table-sm table-pin-rows table-pin-cols md:table-fixed table-zebra">
                     <thead>
@@ -112,23 +70,26 @@ export default function AuctionRef({auctions, addRow }: AuctionProps) {
                     </thead>
                     <tbody>
                       
-                      {table.getRowModel().rows.map((row) => (
-                        <tr key={row.id}>
-                          {row.getVisibleCells().map((cell) => (
-                            <td
-                              key={cell.id}
-                              className={
-                                cell.column.columnDef.meta?.className ?? ""
-                              }
-                            >
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                              )}
-                            </td>
-                          ))}
+                      {table.getRowModel().rows.length === 0 ? (
+                        <tr>
+                          <td colSpan={columns.length} className="text-center py-6">
+                            No appraisals available.
+                          </td>
                         </tr>
-                      ))}
+                      ) : (
+                        table.getRowModel().rows.map((row) => (
+                          <tr key={row.id}>
+                            {row.getVisibleCells().map((cell) => (
+                              <td
+                                key={cell.id}
+                                className={cell.column.columnDef.meta?.className ?? ""}
+                              >
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
               </div>

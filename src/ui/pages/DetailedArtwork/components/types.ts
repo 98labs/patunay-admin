@@ -21,3 +21,10 @@ export interface AuctionProps {
   auctions: Appraisal[];
   addRow: () => void;
 }
+
+export interface AppraisalModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: Appraisal) => void;
+  initialData?: Appraisal;
+}

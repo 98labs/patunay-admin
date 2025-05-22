@@ -1,4 +1,5 @@
 export interface ArtworkType {
+    id: string;
     idnumber: string;
     title: string;
     artist: string;
@@ -18,7 +19,7 @@ export interface ArtworkType {
   }
 
 export interface Appraisal {
-    id: string;
+    id?: string;
     condition: string;
     acquisitionCost: number;
     appraisedValue: number;
