@@ -1,3 +1,5 @@
+import { Appraisal } from "../types";
+
 export interface ArtworkImageModalProps {
     images: string[]; // Array of image URLs
     title: string;
@@ -5,16 +7,17 @@ export interface ArtworkImageModalProps {
 
 export interface AuctionRefProps {
   id: number;
-  title: string;
-  size: string;
-  price: string;
-  href: string;
-  description: string;
-  date: string;
-  datetime: string;
-  category: { title: string; href: string };
-  author: { name: string; role: string; href: string; imageUrl: string };
+  condition: string;
+  acquisitionCost: number;
+  appraisedValue: number;
+  artistInfo: string;
+  recentAuctionReferences: string[];
+  notes: string;
+  recommendation: string;
+  appraisalDate: string; // or Date if you normalize it
+  appraisedBy: { name: string }[];
 }
 export interface AuctionProps {
-  auctions: AuctionRefProps[];
+  auctions: Appraisal[];
+  addRow: () => void;
 }

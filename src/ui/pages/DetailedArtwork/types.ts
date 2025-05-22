@@ -14,4 +14,18 @@ export interface ArtworkType {
     tag_issued_at: string;
     assets: { filename: string; url: string }[];
     active?: boolean;
+    artwork_appraisals?: Appraisal[];
+  }
+
+export interface Appraisal {
+    id: string;
+    condition: string;
+    acquisitionCost: number;
+    appraisedValue: number;
+    artistInfo: string;
+    recentAuctionReferences: string[];
+    notes: string;
+    recommendation: string;
+    appraisalDate: string;
+    appraisedBy: { name: string }[];
   }

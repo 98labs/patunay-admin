@@ -107,8 +107,13 @@ const DetailArtwork = () => {
               />
             )}
         </section>
-          <div className="divider"></div>
-          <AppraisalInfo />
+        {artwork.artwork_appraisals && (
+          <>
+            <div className="divider"></div>
+            <AppraisalInfo appraisals={artwork.artwork_appraisals} />
+          </>
+        )}
+          
       </div>
     );
   };

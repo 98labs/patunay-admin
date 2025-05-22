@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import supabase from "../../supabase";
 import { showNotification } from '../NotificationMessage/slice'
+import { selectUser } from '../../pages/Login/selector';
 
 type DetachNFCProps = {
     tagId: string;
@@ -10,18 +11,21 @@ type DetachNFCProps = {
 
 const DetachNFCModal = ({ tagId, onClose }: DetachNFCProps) => {
   const dispatch = useDispatch();
+  const {user} = useSelector(selectUser)
   const [loading, setLoading] = useState(false);
 
   const handleDetach = async () => {
     if (loading) return;
     setLoading(true);
+    console.log('user?.id', user?.id)
+    console.log('tagId', tagId)
     const { error } = await supabase
       .from('tags')
-      .update({ active: false })
+      .update({ active: false, updated_by: user?.id, updated_at: new Date() })
       .eq('id', tagId);
 
     setLoading(false);
-
+console.log('error', error)
     if (error) {
       dispatch(
         showNotification({
