@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { ImageUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImageUp } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
 import { Button } from "@components";
 
 import supabase from "../../../../supabase/index";
 import { ArtworkEntity, AssetEntity } from "@typings";
+import ImageSlider from "../ImageSlider";
 
 interface Props {
   artwork: ArtworkEntity;
@@ -17,7 +18,6 @@ interface Props {
 
 const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   const [assets, setAssets] = useState<AssetEntity[]>([]);
-
   const [uploading, setUploading] = useState(false);
 
   const onDrop = useCallback(
@@ -101,11 +101,13 @@ const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
         {...getRootProps()}
         className={`outline outline-neutral-gray-01 rounded-2xl flex flex-col items-center gap-2 overflow-hidden ${assets?.length <= 0 && "p-24"}`}
       >
-        <input {...getInputProps()} />
         {assets?.length <= 0 && (
-          <div>
-            <ImageUp className="h-40 w-40 text-neutral-black-01" />
-          </div>
+          <>
+            <input {...getInputProps()} />
+            <div>
+              <ImageUp className="h-40 w-40 text-neutral-black-01" />
+            </div>
+          </>
         )}
         {assets?.length <= 0 ? (
           uploading ? (
@@ -132,16 +134,7 @@ const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
             </>
           )
         ) : (
-          <div className="grid grid-cols-2 gap-4 p-4">
-            {assets.map((asset, index) => (
-              <img
-                key={index}
-                src={asset.url}
-                alt={`Uploaded ${index}`}
-                className="rounded-lg w-full h-auto"
-              />
-            ))}
-          </div>
+          <ImageSlider assets={assets} />
         )}
       </div>
       <div className="flex gap-2">

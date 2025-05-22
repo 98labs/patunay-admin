@@ -64,9 +64,7 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
   };
 
   const handleAttachArtworkLater = async () => {
-    if (isAttaching) return;
-
-    await handleAttachArtwork({ attachLater: true });
+    onNext();
   };
 
   const handleOnPrev = async () => {

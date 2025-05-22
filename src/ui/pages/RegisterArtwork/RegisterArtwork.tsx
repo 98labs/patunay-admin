@@ -41,17 +41,17 @@ const RegisterArtwork = () => {
     },
     {
       stepNumber: 6,
-      stepName: "Review Artwork",
+      stepName: "Review and Save Artwork",
       complete: false,
     },
     {
       stepNumber: 7,
-      stepName: "Attach to NFC Tag",
+      stepName: "Issue NFC Tag",
       complete: false,
     },
     {
       stepNumber: 8,
-      stepName: "Registration Complete",
+      stepName: "Complete Registration",
       complete: false,
     },
   ]);
@@ -60,7 +60,8 @@ const RegisterArtwork = () => {
   const [addedArtwork, setAddedArtwork] = useState<ArtworkEntity | null>(null);
 
   const handleOnStepClick = (stepNumber: number, _complete: boolean) => {
-    if (currentStep > stepNumber) setCurrentStep(stepNumber);
+    // if (currentStep > stepNumber) setCurrentStep(stepNumber);
+    setCurrentStep(stepNumber);
   };
 
   const handleOnPrev = async () => {
