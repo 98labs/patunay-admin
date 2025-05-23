@@ -33,6 +33,11 @@ export default function AppraisalInfo(appraisals: { appraisals: Appraisal[], art
         }
   };
 
+  const handleSelectedAppraisal = (rowData: any) => {
+    setSelectedAppraisal(rowData);
+    setModalOpen(true);
+  };
+
   const addRow = () => {
     setModalOpen(true)
   };
@@ -46,6 +51,7 @@ export default function AppraisalInfo(appraisals: { appraisals: Appraisal[], art
         <AuctionRef
           auctions={appraisals.appraisals}
           addRow={addRow}
+          selectedAppraisal={handleSelectedAppraisal}
         />
 
         <AppraisalModal

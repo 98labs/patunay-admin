@@ -11,7 +11,7 @@ import {
 import { AuctionProps, } from "./types";
 import { useAppraisalColumns } from "../hooks/useAppraisalColumns";
 
-export default function AuctionRef({auctions, addRow }: AuctionProps) {
+export default function AuctionRef({auctions, addRow, selectedAppraisal }: AuctionProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([])
   
@@ -78,11 +78,16 @@ export default function AuctionRef({auctions, addRow }: AuctionProps) {
                         </tr>
                       ) : (
                         table.getRowModel().rows.map((row) => (
-                          <tr key={row.id}>
+                          <tr 
+                            key={row.id}
+                            onClick={() => {
+                              if (selectedAppraisal) selectedAppraisal(row.original);
+                            }}
+                            >
                             {row.getVisibleCells().map((cell) => (
                               <td
                                 key={cell.id}
-                                className={cell.column.columnDef.meta?.className ?? ""}
+                                className={`${cell.column.columnDef.meta?.className ?? ""} cursor-pointer`}
                               >
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </td>

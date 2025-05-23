@@ -18,10 +18,16 @@ export default function AppraisalModal({ isOpen, onClose, onSubmit, initialData 
   const [form, setForm] = useState<Appraisal>(initialData || initialFormState);
 
     useEffect(() => {
-        if (initialData) {
-            setForm(initialData);
-        }
-    }, [initialData]);
+      if (isOpen && initialData) {
+        const safeData = {
+          ...initialData,
+          artistInfo: initialData?.artist_info || "",
+          appraisedBy: initialData?.appraisedBy || [{ name: "" }],
+          recentAuctionReferences: initialData?.recent_auction_references ?? [],
+        };
+        setForm(safeData || initialFormState);
+      }
+    }, [initialData, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -67,7 +73,7 @@ export default function AppraisalModal({ isOpen, onClose, onSubmit, initialData 
                 <input
                 type="text"
                 name="condition"
-                value={form.condition}
+                value={form.condition ?? ''}
                 onChange={handleChange}
                 className="input input-sm input-bordered w-full"
                 />
@@ -77,7 +83,7 @@ export default function AppraisalModal({ isOpen, onClose, onSubmit, initialData 
                 <input
                 type="number"
                 name="acquisitionCost"
-                value={form.acquisitionCost}
+                value={form.acquisitionCost ?? 0}
                 onChange={handleChange}
                 className="input input-sm input-bordered w-full"
                 />
@@ -87,7 +93,7 @@ export default function AppraisalModal({ isOpen, onClose, onSubmit, initialData 
                 <input
                 type="number"
                 name="appraisedValue"
-                value={form.appraisedValue}
+                value={form.appraisedValue ?? 0}
                 onChange={handleChange}
                 className="input input-sm input-bordered w-full"
                 />
@@ -97,7 +103,7 @@ export default function AppraisalModal({ isOpen, onClose, onSubmit, initialData 
                 <input
                 type="date"
                 name="appraisalDate"
-                value={form.appraisalDate.split("T")[0]}
+                value={form.appraisalDate?.split("T")?.[0] || ""}
                 onChange={(e) =>
                     setForm({ ...form, appraisalDate: new Date(e.target.value).toISOString() })
                 }
@@ -114,7 +120,7 @@ export default function AppraisalModal({ isOpen, onClose, onSubmit, initialData 
                 type="text"
                 name="artistInfo"
                 placeholder="Artist Info"
-                value={form.artistInfo}
+                value={form.artistInfo ?? ''}
                 onChange={handleChange}
                 className="input input-bordered w-full mb-2"
                 />
@@ -125,7 +131,7 @@ export default function AppraisalModal({ isOpen, onClose, onSubmit, initialData 
                 type="text"
                 name="recommendation"
                 placeholder="Recommendation"
-                value={form.recommendation}
+                value={form.recommendation ?? ''}
                 onChange={handleChange}
                 className="input input-bordered w-full mb-2"
                 />
@@ -135,7 +141,7 @@ export default function AppraisalModal({ isOpen, onClose, onSubmit, initialData 
                 <textarea
                 name="notes"
                 placeholder="Notes"
-                value={form.notes}
+                value={form.notes ?? ''}
                 onChange={handleChange}
                 className="textarea textarea-bordered w-full mb-2"
                 />

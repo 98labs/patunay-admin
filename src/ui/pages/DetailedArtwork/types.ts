@@ -29,4 +29,6 @@ export interface Appraisal {
     recommendation: string;
     appraisalDate: string;
     appraisedBy: { name: string }[];
+    recent_auction_references?: string[];
+    artist_info?: string;
   }
