@@ -15,7 +15,7 @@ export function useAppraisalColumns(): ColumnDef<AuctionRefProps>[] {
     header: "Acquisition Cost",
     cell: info => {
       const value = info.getValue();
-      return typeof value === 'number' ? `$${value.toLocaleString()}` : "—";
+      return typeof value === 'number' ? `${value.toLocaleString()}` : "—";
     }
   },
   {
@@ -23,7 +23,7 @@ export function useAppraisalColumns(): ColumnDef<AuctionRefProps>[] {
     header: "Appraised Value",
     cell: info => {
       const value = info.getValue();
-      return typeof value === 'number' ? `$${value.toLocaleString()}` : "—";
+      return typeof value === 'number' ? `${value.toLocaleString()}` : "—";
     }
   },
   {
