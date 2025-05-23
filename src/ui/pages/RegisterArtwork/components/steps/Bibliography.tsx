@@ -75,7 +75,7 @@ const Bibliography = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
           <FormField
             key={index}
             hint="Add the artwork's bibliography"
-            isListItem={true}
+            isListItem
             onListItemClick={() => handleOnListItemClick(index)}
             buttonIcon={index + 1 !== formData.length ? Minus : Plus}
             listButtonDisabled={!formData[index]}

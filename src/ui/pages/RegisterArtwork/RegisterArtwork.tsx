@@ -69,7 +69,7 @@ const RegisterArtwork = () => {
     setFormSteps(
       [...formSteps].map((formStep) =>
         formStep.stepNumber === currentStep
-          ? { ...formStep, active: true, complete: false }
+          ? { ...formStep, active: true, complete: false, skip: false }
           : formStep
       )
     );
@@ -80,9 +80,27 @@ const RegisterArtwork = () => {
     setFormSteps(
       [...formSteps].map((formStep) =>
         formStep.stepNumber === currentStep
-          ? { ...formStep, active: false, complete: true }
+          ? { ...formStep, active: false, complete: true, skip: false }
           : formStep
       )
+    );
+  };
+
+  const handleOnSkip = async (stepsToSkip: number = 1) => {
+    setCurrentStep(currentStep + stepsToSkip + 1);
+    setFormSteps(
+      formSteps.map((formStep) => {
+        if (formStep.stepNumber === currentStep)
+          return { ...formStep, active: false, complete: true, skip: false };
+
+        if (
+          formStep.stepNumber > currentStep &&
+          formStep.stepNumber <= currentStep + stepsToSkip
+        )
+          return { ...formStep, active: false, complete: false, skip: true };
+
+        return formStep;
+      })
     );
   };
 
@@ -107,7 +125,7 @@ const RegisterArtwork = () => {
         {/* Left Column */}
         <div className="flex-1">
           <ul>
-            {formSteps.map(({ stepNumber, stepName, complete }) => (
+            {formSteps.map(({ stepNumber, stepName, complete, skip }) => (
               <FormStepTitle
                 key={stepNumber}
                 className={
@@ -119,6 +137,7 @@ const RegisterArtwork = () => {
                 stepName={stepName}
                 active={currentStep === stepNumber}
                 complete={complete}
+                skip={skip}
                 onClick={() => handleOnStepClick(stepNumber, complete)}
               />
             ))}
@@ -171,6 +190,7 @@ const RegisterArtwork = () => {
             onAddArtwork={handleAddArtworkResult}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
+            onSkipNfc={handleOnSkip}
           />
         )}
         {currentStep === 7 && (
@@ -178,7 +198,9 @@ const RegisterArtwork = () => {
             data={addedArtwork ?? artwork}
             onUpdateArtwork={handleAddArtworkResult}
             onPrev={handleOnPrev}
-            onNext={handleOnNext}
+            onNext={async () => {
+              handleOnSkip(0);
+            }}
           />
         )}
         {currentStep === 8 && (

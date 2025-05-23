@@ -3,12 +3,14 @@ import { ArtworkEntity, AssetEntity } from "@typings";
 
 import { handleAddArtwork } from "../../hooks/handleAddArtwork";
 import { useState } from "react";
+import ImageSlider from "../ImageSlider";
 
 interface Props {
   artwork: ArtworkEntity;
   onAddArtwork: (result: ArtworkEntity) => void;
   onPrev: () => Promise<void>;
   onNext: () => Promise<void>;
+  onSkipNfc: () => Promise<void>;
 }
 
 interface Detail {
@@ -16,7 +18,13 @@ interface Detail {
   value?: AssetEntity[] | string | number | null;
 }
 
-const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
+const ReviewArtwork = ({
+  artwork,
+  onAddArtwork,
+  onPrev,
+  onNext,
+  onSkipNfc,
+}: Props) => {
   const {
     artist,
     assets,
@@ -71,7 +79,7 @@ const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
     try {
       const res = await handleAddArtwork({ data: artwork });
 
-      onAddArtwork(res);
+      onAddArtwork({ ...res, assets: assets });
 
       openModal();
     } catch (error) {
@@ -86,6 +94,12 @@ const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
 
   const closeModal = async () => {
     setIsModalOpen(false);
+  };
+
+  const handleOnSkip = async () => {
+    if (isSubmitting) return;
+
+    onSkipNfc();
   };
 
   const handleOnPrev = async () => {
@@ -103,21 +117,25 @@ const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
   return (
     <>
       <div className="flex-2 h-fill flex flex-col justify-between gap-2">
-        <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
-          <h2 className="text-xl font-semibold">
+        <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2">
+          <h2 className="text-xl font-semibold px-4 pt-4">
             Review the details before submitting
           </h2>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2  pb-4">
             {details.map(({ label, value }) => {
               if (!value) return null;
 
               if (Array.isArray(value))
                 return (
-                  <img className="mx-auto" src={value[0].url} width={200} />
+                  <ImageSlider
+                    key={label}
+                    assets={value}
+                    showOtherImages={false}
+                  />
                 );
 
               return (
-                <div key={label} className="flex gap-2">
+                <div key={label} className="flex gap-2 px-4">
                   {label !== "Assets" && (
                     <span className="font-semibold">{label}:</span>
                   )}
@@ -157,7 +175,7 @@ const ReviewArtwork = ({ artwork, onAddArtwork, onPrev, onNext }: Props) => {
               buttonType="secondary"
               className="btn-sm"
               disabled={isSubmitting}
-              onClick={handleOnNext}
+              onClick={handleOnSkip}
             />
             <Button
               buttonLabel="Attach to NFC Tag"

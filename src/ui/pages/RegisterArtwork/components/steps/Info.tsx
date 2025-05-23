@@ -122,7 +122,7 @@ const Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
                 value={artwork[artworkId as Step2Keys]}
                 error={formErrors[artworkId as Step2Keys]}
                 required={required}
-                isLabelVisible={true}
+                isLabelVisible
                 label={artworkLabel}
                 hint={hint}
                 inputType={inputType}

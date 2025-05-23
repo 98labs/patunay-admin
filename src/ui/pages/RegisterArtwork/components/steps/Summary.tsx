@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Button } from "@components";
 import { ArtworkEntity, AssetEntity } from "@typings";
 import { jsConfetti } from "../../../../lib/confetti/confetti";
+import ImageSlider from "../ImageSlider";
 
 interface Props {
   artwork: ArtworkEntity;
@@ -69,19 +70,25 @@ const Summary = ({ artwork, onPrev }: Props) => {
 
   return (
     <div className="flex-2 h-fill flex flex-col justify-between gap-2">
-      <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
-        <h2 className="text-xl font-semibold">
+      <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2">
+        <h2 className="text-xl font-semibold px-4 pt-4">
           Successfully added an artwork!
         </h2>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 pb-4">
           {details.map(({ label, value }) => {
             if (!value) return null;
 
             if (Array.isArray(value))
-              return <img className="mx-auto" src={value[0].url} width={200} />;
+              return (
+                <ImageSlider
+                  assets={value}
+                  showImageIndicator={true}
+                  showOtherImages={false}
+                />
+              );
 
             return (
-              <div key={label} className="flex gap-2">
+              <div key={label} className="flex gap-2 px-4">
                 {label !== "Assets" && (
                   <span className="font-semibold">{label}:</span>
                 )}

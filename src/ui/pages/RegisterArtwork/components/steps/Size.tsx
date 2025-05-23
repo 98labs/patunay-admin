@@ -95,7 +95,7 @@ const Size = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
                 key={artworkId}
                 name={artworkId}
                 required={required}
-                isLabelVisible={true}
+                isLabelVisible
                 label={artworkLabel}
                 hint={hint}
                 inputType={inputType}

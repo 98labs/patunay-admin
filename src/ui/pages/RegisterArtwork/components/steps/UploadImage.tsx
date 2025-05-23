@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { ChevronLeft, ChevronRight, ImageUp } from "lucide-react";
+import { ImageUp } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
 import { Button } from "@components";
@@ -134,7 +134,7 @@ const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
             </>
           )
         ) : (
-          <ImageSlider assets={assets} />
+          <ImageSlider assets={assets} showImageIndicator={false} />
         )}
       </div>
       <div className="flex gap-2">

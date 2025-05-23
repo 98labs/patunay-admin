@@ -4,9 +4,17 @@ import { useEffect, useRef, useState } from "react";
 
 interface Props {
   assets: AssetEntity[];
+  showOtherImages?: boolean;
+  showImageIndicator?: boolean;
+  imageDirection?: "vertical" | "horizontal";
 }
 
-const ImageSlider = ({ assets }: Props) => {
+const ImageSlider = ({
+  assets,
+  showOtherImages = true,
+  showImageIndicator = true,
+  imageDirection = "horizontal",
+}: Props) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeAsset, setActiveAsset] = useState<AssetEntity>(
     assets[activeIndex]
@@ -67,24 +75,37 @@ const ImageSlider = ({ assets }: Props) => {
               </div>
             </div>
           </div>
-        </div>
-        <div className="flex gap-2 px-2 pb-2 overflow-x-auto ">
-          {assets.map((asset, index) => (
-            <div
-              key={index}
-              ref={(el) => {
-                thumbnailRefs.current[index] = el;
-              }}
-              className="w-[calc(100%/3)] flex-shrink-0 h-40"
-              onClick={() => handleSetActiveAsset(asset, index)}
-            >
-              <img
-                src={asset.url}
-                className={`transition-all rounded-lg object-cover w-full h-full cursor-pointer ${asset.url === activeAsset.url && "border-3 border-neutral-black-01/50 p-0.5 overflow-hidden"}`}
-              />
+          {showImageIndicator && (
+            <div className="absolute bottom-0 flex justify-center gap-1 w-full p-2">
+              {assets.map((asset, index) => (
+                <div
+                  key={index}
+                  className={`w-2 h-2 rounded-full cursor-pointer transition-colors ${asset.url === activeAsset.url ? "bg-primary-400" : "bg-neutral-gray-01"}`}
+                  onClick={() => handleSetActiveAsset(asset, index)}
+                />
+              ))}
             </div>
-          ))}
+          )}
         </div>
+        {showOtherImages && imageDirection === "horizontal" && (
+          <div className="flex gap-2 px-2 pb-2 overflow-x-auto">
+            {assets.map((asset, index) => (
+              <div
+                key={index}
+                ref={(el) => {
+                  thumbnailRefs.current[index] = el;
+                }}
+                className="w-[calc(100%/3)] flex-shrink-0 h-40"
+                onClick={() => handleSetActiveAsset(asset, index)}
+              >
+                <img
+                  src={asset.url}
+                  className={`transition-all rounded-lg object-cover w-full h-full cursor-pointer ${asset.url === activeAsset.url && "border-3 border-neutral-black-01/50 p-0.5 overflow-hidden"}`}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );

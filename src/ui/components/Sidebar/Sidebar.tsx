@@ -9,7 +9,7 @@ const NavbarItem = ({
   path,
   childrenLinks,
   isChild = false,
-  onNavigate
+  onNavigate,
 }: NavbarItemProps) => (
   <>
     <Link to={path} onClick={onNavigate}>
@@ -34,7 +34,7 @@ const NavbarItem = ({
             key={child.path}
             name={child.name}
             path={child.path}
-            isChild={true}
+            isChild
             onNavigate={onNavigate}
           />
         ))}

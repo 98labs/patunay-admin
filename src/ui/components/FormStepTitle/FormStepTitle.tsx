@@ -6,6 +6,7 @@ interface Props {
   stepName: string;
   active?: boolean;
   complete?: boolean;
+  skip?: boolean;
   onClick?: () => void;
 }
 
@@ -15,6 +16,7 @@ const FormStepTitle = ({
   stepName,
   active = false,
   complete = false,
+  skip = false,
   onClick,
 }: Props) => {
   return (
@@ -23,7 +25,7 @@ const FormStepTitle = ({
       onClick={onClick}
     >
       <div
-        className={`outline rounded-full w-6 h-6 flex justify-center items-center ${complete && "bg-semantic-success text-white"} `}
+        className={`outline rounded-full w-6 h-6 flex justify-center items-center ${complete && !skip && "bg-semantic-success"} ${!complete && skip && "bg-semantic-warning"} ${(complete || skip) && "text-white"}`}
       >
         {complete ? (
           <span>

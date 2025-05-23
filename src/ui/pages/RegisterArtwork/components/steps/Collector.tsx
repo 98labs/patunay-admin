@@ -74,7 +74,7 @@ const Collector = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
         {formData.map((item, index) => (
           <FormField
             key={index}
-            isListItem={true}
+            isListItem
             onListItemClick={() => handleOnListItemClick(index)}
             buttonIcon={index + 1 !== formData.length ? Minus : Plus}
             listButtonDisabled={!formData[index]}
