@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { version } from "./package.json";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -19,5 +20,8 @@ export default defineConfig({
       "@hooks": path.resolve(__dirname, "./src/ui/hooks"),
       "@typings": path.resolve(__dirname, "./src/ui/typings"),
     },
+  },
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
   },
 });

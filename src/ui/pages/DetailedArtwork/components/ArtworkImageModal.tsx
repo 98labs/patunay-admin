@@ -2,14 +2,19 @@ import { useId, useState } from "react";
 import { ArtworkImageModalProps } from "./types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import logo from '../../../../assets/logo/patunay-256x256.png'
+import { checkImage } from "./utils";
 
 const ArtworkImageModal = ({ images, title }: ArtworkImageModalProps) => {
   const [currentImage, setCurrentImage] = useState(0);
+  const [isValidImg, setisValidImg] = useState(false);
   const modalId = useId();
-
+  checkImage(images[currentImage])
+    .then((isValid) => {
+      setisValidImg(isValid as boolean);
+      return isValid;
+    });
   const hasImages = images && images.length > 0;
-  const currentSrc = hasImages ? images[currentImage] : logo;
-
+  const currentSrc = hasImages && isValidImg ? images[currentImage] : logo;
 
   const goNext = () => {
     setCurrentImage((prev) => (prev + 1) % images.length);
@@ -20,8 +25,7 @@ const ArtworkImageModal = ({ images, title }: ArtworkImageModalProps) => {
       prev === 0 ? images.length - 1 : prev - 1
     );
   };
-
-
+  
   return (
     <>
       {/* Trigger image */}

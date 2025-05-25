@@ -2,15 +2,22 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import moment from "moment";
 import supabase from "../../supabase";
-import { Loading } from "@components";
+import { Loading, DetachNFCModal } from "@components";
 import ArtworkImageModal from "./components/ArtworkImageModal";
-import { ArtworkType } from "./types";
+import { Appraisal, ArtworkType } from "./types";
+import { selectNotif } from "../../components/NotificationMessage/selector";
+import { useSelector } from "react-redux";
+import AppraisalInfo from "./components/AppraisalInfo";
 
 const DetailArtwork = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [artwork, setArtwork] = useState<ArtworkType | null>(null);
+    const [appraisals, setAppraisals] =  useState<Appraisal[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showDetachModal, setShowDetachModal] = useState(false);
+    const [tagId, setTagId] = useState("");
+    const { status } = useSelector(selectNotif);
   
     useEffect(() => {
       const fetchArtwork = async () => {
@@ -25,10 +32,26 @@ const DetailArtwork = () => {
         setLoading(false);
       };
       fetchArtwork();
-    }, [id, navigate]);
+    }, [id, navigate, status]);
+
+    useEffect(() => {
+      if (artwork?.artwork_appraisals) {
+        setAppraisals(artwork?.artwork_appraisals);
+      }
+      
+    }, [artwork])
+    
+
+    const handleDelete = async () => {
+      if (artwork?.tag_id) {
+         setTagId(artwork?.tag_id);
+        setShowDetachModal(true);
+      }
+      };
   
     if (loading) return <Loading fullScreen={false} />;
     if (!artwork) return <div className="p-6">Artwork not found.</div>;
+
     return (
       <div className="text-base-content">
         <div className="breadcrumbs text-sm">
@@ -51,7 +74,7 @@ const DetailArtwork = () => {
                   {artwork.title}
                 </h2>
                 <div className="flex gap-2">
-                  <button className="btn btn-outline btn-sm">Detach NFC Tag</button>
+                  <button className={`btn btn-outline btn-sm ${artwork.tag_id && artwork.active ? "" : "hidden"}`} onClick={handleDelete}>Detach NFC Tag</button>
                   <button className="btn btn-error btn-sm text-white">Delete artwork</button>
                 </div>
               </div>
@@ -84,7 +107,22 @@ const DetailArtwork = () => {
               </div>
             </div>
           </div>
+            {showDetachModal && (
+              <DetachNFCModal
+                tagId={tagId}
+                onClose={() => {
+                  setShowDetachModal(false);
+                }}
+              />
+            )}
         </section>
+        {artwork.artwork_appraisals && (
+          <>
+            <div className="divider"></div>
+            <AppraisalInfo appraisals={appraisals} artwork_id={artwork.id} />
+          </>
+        )}
+          
       </div>
     );
   };
