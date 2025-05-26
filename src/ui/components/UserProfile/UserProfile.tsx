@@ -6,24 +6,32 @@ import logo from '../../../assets/logo/patunay-256x256.png'
 import { selectUser } from '../../pages/Login/selector';
 
 const UserProfile = () => {
-  const [currentTheme, setCurrentTheme] = useState(localStorage.getItem("theme"))
+  const [currentTheme, setCurrentTheme] = useState("light");
   const {user} = useSelector(selectUser)
   useEffect(() => {
     themeChange(false);
-    let savedTheme = localStorage.getItem("theme");
-  
-    if (!savedTheme) {
-      savedTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    try {
+      let savedTheme = localStorage.getItem("theme");
+    
+      if (!savedTheme) {
+        savedTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+    
+      localStorage.setItem("theme", savedTheme);
+      document.documentElement.setAttribute("data-theme", savedTheme);
+      setCurrentTheme(savedTheme);
+    } catch (error) {
+      console.error("Error initializing themeChange:", error);
     }
-  
-    localStorage.setItem("theme", savedTheme);
-    document.documentElement.setAttribute("data-theme", savedTheme);
-    setCurrentTheme(savedTheme);
   }, []);
   
   const toggleTheme = () => {
     const newTheme = currentTheme === "dark" ? "light" : "dark";
-    localStorage.setItem("theme", newTheme);
+    try {
+      localStorage.setItem("theme", newTheme);
+    } catch (error) {
+      console.error("Error toggling theme:", error);
+    }
     document.documentElement.setAttribute("data-theme", newTheme);
     setCurrentTheme(newTheme);
   };

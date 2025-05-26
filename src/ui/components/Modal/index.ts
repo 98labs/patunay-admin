@@ -1,3 +1,4 @@
 import Modal from "./Modal";
+import DetachNFCModal from "./DetachNFCModal";
 
-export default Modal;
+export { Modal, DetachNFCModal };

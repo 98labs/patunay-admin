@@ -6,4 +6,5 @@ export type ArtistType = {
     artist: string;
     tag_id?: string;
     tag_issued_at: string;
+    active?: boolean;
   };

@@ -19,6 +19,7 @@ import { ArtistType } from "./types";
 import { useArtworkColumns } from "./hooks/useArtworkColumns";
 import TablePagination from "./components/TablePagination";
 import TableFilters from "./components/TableFilters";
+import DetachNFCModal from "../../components/Modal/DetachNFCModal";
 
 const Artworks = () => {
   const [artList, setArtList] = useState<ArtistType[]>([]);
@@ -26,6 +27,8 @@ const Artworks = () => {
   const [globalFilter, setGlobalFilter] = useState("");
   const { title, status } = useSelector(selectNotif);
   const [nfcFilter, setNfcFilter] = useState<"all" | "with" | "none">("all");
+  const [showDetachModal, setShowDetachModal] = useState(false);
+  const [tagId, setTagId] = useState("");
 
   const getDataList = async () => {
     const { data, error } = await supabase.rpc("get_artwork_list", {});
@@ -57,15 +60,9 @@ const Artworks = () => {
   };
 
   const handleDelete = async (art: ArtistType) => {
-    const confirmed = confirm(`Are you sure you want to delete ${art.title}?`);
-    if (!confirmed) return;
-    // Replace with actual delete logic
-    console.log("art", art.id);
-
-    try {
-      const result = await deleteArtwork(art.id as string);
-    } catch (error) {
-      console.error("Failed to delete artwork:", error);
+    if (art.tag_id) {
+      setTagId(art.tag_id);
+      setShowDetachModal(true);
     }
   };
 
@@ -163,6 +160,15 @@ const Artworks = () => {
         </div>
 
         <TablePagination table={table} />
+        {showDetachModal && (
+          <DetachNFCModal
+            tagId={tagId}
+            onClose={() => {
+              setShowDetachModal(false);
+              getDataList();
+            }}
+          />
+        )}
       </div>
     </section>
   );

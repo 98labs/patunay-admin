@@ -1,66 +1,42 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import moment from "moment";
+import { Button, Loading, DetachNFCModal } from "@components";
+import ArtworkImageModal from "./components/ArtworkImageModal";
+import { Appraisal, ArtworkType } from "./types";
+import { selectNotif } from "../../components/NotificationMessage/selector";
+import { useSelector } from "react-redux";
+import AppraisalInfo from "./components/AppraisalInfo";
 
 import supabase from "../../supabase";
 import { deleteArtwork } from "../../supabase/rpc/deleteArtwork";
 import { updateArtwork } from "../../supabase/rpc/updateArtwork";
 
-import { ArtworkEntity } from "@typings";
-import { Button, Loading } from "@components";
 import { safeJsonParse } from "../Artworks/components/utils";
-import ArtworkImageModal from "./components/ArtworkImageModal";
 
 const DetailArtwork = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [artwork, setArtwork] = useState<ArtworkEntity | null>(null);
+  const [artwork, setArtwork] = useState<ArtworkType | null>(null);
   const [loading, setLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
 
-  const detailedArtworkFormats: { title: string; value: any }[] = [
-    {
-      title: "Size",
-      value: `${artwork?.height}cm by ${artwork?.width}cm`,
-    },
-    {
-      title: "Medium",
-      value: artwork?.medium,
-    },
-    {
-      title: "Description",
-      value: artwork?.description,
-    },
-    {
-      title: "Identifier",
-      value: artwork?.idNumber,
-    },
-    {
-      title: "Provenance",
-      value: `${artwork?.height}cm by ${artwork?.width}cm`,
-    },
-    {
-      title: "Bibliography",
-      value: artwork?.bibliography?.join(", ") ?? "No bibliography available",
-    },
-    {
-      title: "Collector",
-      value: artwork?.collectors?.join(", ") ?? "No collectors available",
-    },
-    {
-      title: "Artwork ID",
-      value: artwork?.id,
-    },
-    {
-      title: "NFC Tag ID",
-      value: artwork?.tag_id,
-    },
-  ];
+  const [appraisals, setAppraisals] =  useState<Appraisal[]>([]);
+  const [showDetachModal, setShowDetachModal] = useState(false);
+  const [tagId, setTagId] = useState("");
+  const { status } = useSelector(selectNotif);
 
   const handleStartScanning = async () => {
     setIsScanning(true);
   };
 
+  const handleDelete = async () => {
+    if (artwork?.tag_id) {
+        setTagId(artwork?.tag_id);
+      setShowDetachModal(true);
+    }
+  };
+  
   const handleAttachArtwork = async (tagId: string) => {
     try {
       const result = await updateArtwork({ ...artwork!, tag_id: tagId });
@@ -79,20 +55,20 @@ const DetailArtwork = () => {
     }
   };
 
-  const handleDetachArtwork = async () => {
-    try {
-      const result = await updateArtwork({ ...artwork!, tag_id: null });
+  // const handleDetachArtwork = async () => {
+  //   try {
+  //     const result = await updateArtwork({ ...artwork!, tag_id: null });
 
-      if (result)
-        setArtwork({
-          ...result[0],
-          bibliography: safeJsonParse(result[0].bibliography),
-          collectors: safeJsonParse(result[0].collectors),
-        });
-    } catch (error) {
-      console.error("Failed to detach NFC tag from artwork:", error);
-    }
-  };
+  //     if (result)
+  //       setArtwork({
+  //         ...result[0],
+  //         bibliography: safeJsonParse(result[0].bibliography),
+  //         collectors: safeJsonParse(result[0].collectors),
+  //       });
+  //   } catch (error) {
+  //     console.error("Failed to detach NFC tag from artwork:", error);
+  //   }
+  // };
 
   const handleOnDelete = async () => {
     try {
@@ -135,8 +111,15 @@ const DetailArtwork = () => {
       setLoading(false);
     };
     fetchArtwork();
-  }, [id, navigate]);
+  }, [id, navigate, status]);
 
+  useEffect(() => {
+    if (artwork?.artwork_appraisals) {
+      setAppraisals(artwork?.artwork_appraisals);
+    }
+    
+  }, [artwork])
+  
   if (loading) return <Loading fullScreen={false} />;
   if (!artwork) return <div className="p-6">Artwork not found.</div>;
   return (
@@ -145,11 +128,11 @@ const DetailArtwork = () => {
         <div className="breadcrumbs text-sm">
           <ul className="font-semibold">
             <li>
-              <Link to="/dashboard/artworks" className="text-2xl">
+              <Link to="/dashboard/artworks">
                 Artworks
               </Link>
             </li>
-            <li className="text-base">{artwork.title}</li>
+            <li>{artwork.title}</li>
           </ul>
         </div>
         <div className="flex justify-between items-start">
@@ -159,7 +142,7 @@ const DetailArtwork = () => {
                 buttonType="secondary"
                 buttonLabel="Detach NFC Tag"
                 className="btn-sm rounded-lg"
-                onClick={handleDetachArtwork}
+                onClick={handleDelete}
               />
             ) : (
               <Button
@@ -179,7 +162,7 @@ const DetailArtwork = () => {
       </div>
 
       <section className="hero text-base-content">
-        <div className="hero-content flex-col py-24 lg:flex-row">
+        <div className="hero-content flex-col lg:flex-row">
           <div className="lg:w-1/3">
             {!artwork.assets ? (
               <div className="bg-neutral-gray-01 border border-dashed border-neutral-gray-02 rounded-2xl text-neutral-black-02 text-center p-4 flex flex-col gap-2">
@@ -210,20 +193,49 @@ const DetailArtwork = () => {
                 </span>
               </p>
             </ul>
-            <ul className="flex flex-col gap-4 mt-4 text-sm">
-              {detailedArtworkFormats.map(
-                ({ title, value }) =>
-                  value && (
-                    <div key={title} className="flex">
-                      <strong className="flex-1/4">{title}</strong>
-                      <span className="flex-3/4">{value}</span>
-                    </div>
-                  )
-              )}
-            </ul>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+                <div><strong>Size:</strong> {artwork.height}cm by {artwork.width}cm</div>
+                <div><strong>Medium:</strong> {artwork.medium}</div>
+                <div className="col-span-2">
+                  <strong>Description:</strong>
+                  <p>{artwork.description}</p>
+                </div>
+                <div><strong>Identifier:</strong> {artwork.idnumber}</div>
+                <div><strong>Provenance:</strong> {artwork.provenance}</div>
+                <div><strong>Bibliography:</strong>
+                  {typeof artwork.bibliography === 'string' ? <p>No bibliography available</p> : 
+                    <ul>
+                      {artwork.bibliography.map((item, i) => <li key={i}>{item}</li>)}
+                    </ul>
+                  }
+                </div>
+                <div><strong>Collector:</strong>
+                  {typeof artwork.collectors === 'string' ? <p>No collectors available</p> :
+                    <ul>
+                      {artwork.collectors.map((item, i) => <li key={i}>{item}</li>)}
+                    </ul>
+                  }
+                </div>
+                <div><strong>Artwork ID:</strong> {artwork.tag_id}</div>
+                <div><strong>NFC Tag ID:</strong> 00:00:00:00:00:00</div> 
+              </div>
           </div>
         </div>
-      </section>
+          {showDetachModal && (
+              <DetachNFCModal
+                tagId={tagId}
+                onClose={() => {
+                  setShowDetachModal(false);
+                }}
+              />
+            )}
+        </section>
+        {artwork.artwork_appraisals && (
+          <>
+            <div className="divider"></div>
+            <AppraisalInfo appraisals={appraisals} artwork_id={artwork.id} />
+          </>
+        )}
     </div>
   );
 };
