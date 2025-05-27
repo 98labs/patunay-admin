@@ -4,6 +4,7 @@ import {
   FormErrorsEntity,
   FormInputEntity,
   InputType,
+  SizeUnit,
 } from "@typings";
 import { ChangeEvent, useEffect, useState } from "react";
 
@@ -14,56 +15,33 @@ interface Props {
   onNext: () => Promise<void>;
 }
 
-const Step2Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
+const Size = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState({
-    title: "",
-    artist: "",
-    description: "",
-    medium: "",
-    idNumber: "",
-    provenance: "",
+    sizeUnit: "",
+    height: "",
+    width: "",
   });
-
-  type Step2Keys = keyof typeof formData;
-
-  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step2Keys>>({});
+  type Step3Keys = keyof typeof formData;
+  const [formErrors, setFormErrors] = useState<FormErrorsEntity<Step3Keys>>({});
 
   const artworkFormInputs: FormInputEntity[] = [
     {
-      artworkId: "title",
-      artworkLabel: "Title",
-      hint: "Enter the title of the artwork",
+      inputType: InputType.Radio,
+      artworkId: "sizeUnit",
+      artworkLabel: "Unit",
+      hint: "Enter the size unit for the artwork",
       required: true,
     },
     {
-      artworkId: "artist",
-      artworkLabel: "Artist",
-      hint: "Enter the artist's name",
+      artworkId: "height",
+      artworkLabel: "Height",
+      hint: "Enter the artwork's height",
       required: true,
     },
     {
-      inputType: InputType.TextArea,
-      artworkId: "description",
-      artworkLabel: "Description",
-      hint: "Enter the description of the artwork",
-      required: true,
-    },
-    {
-      artworkId: "medium",
-      artworkLabel: "Medium",
-      hint: "Enter the artwork's medium",
-      required: true,
-    },
-    {
-      artworkId: "idNumber",
-      artworkLabel: "Identifier",
-      hint: "Enter its identifier",
-      required: true,
-    },
-    {
-      artworkId: "provenance",
-      artworkLabel: "Provenance",
-      hint: "Enter the artwork's provenance",
+      artworkId: "width",
+      artworkLabel: "Width",
+      hint: "Enter the artwork's width",
       required: true,
     },
   ];
@@ -93,18 +71,15 @@ const Step2Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   useEffect(() => {
     if (artwork) {
       setFormData({
-        title: artwork.title || "",
-        artist: artwork.artist || "",
-        description: artwork.description || "",
-        medium: artwork.medium || "",
-        idNumber: artwork.idNumber || "",
-        provenance: artwork.provenance || "",
+        sizeUnit: artwork.sizeUnit || "",
+        height: artwork.height?.toString() || "",
+        width: artwork.width?.toString() || "",
       });
     }
-  }, [artwork]);
+  }, []);
 
   return (
-    <div className="flex-2 h-fill flex flex-col justify-between">
+    <div className="flex-2 h-fill flex flex-col justify-between gap-2">
       <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
         <h2 className="text-xl font-semibold">Enter the artwork details</h2>
         <ul className="flex flex-col gap-2">
@@ -119,14 +94,15 @@ const Step2Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
               <FormField
                 key={artworkId}
                 name={artworkId}
-                value={artwork[artworkId as Step2Keys]}
-                error={formErrors[artworkId as Step2Keys]}
                 required={required}
-                isLabelVisible={true}
+                isLabelVisible
                 label={artworkLabel}
                 hint={hint}
                 inputType={inputType}
+                value={formData[artworkId as Step3Keys]}
+                items={artworkId === "sizeUnit" ? Object.entries(SizeUnit) : []}
                 onInputChange={handleOnChange}
+                error={formErrors[artworkId as Step3Keys]}
               />
             )
           )}
@@ -154,4 +130,4 @@ const Step2Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step2Info;
+export default Size;

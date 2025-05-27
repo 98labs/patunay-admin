@@ -12,12 +12,12 @@ export const addArtwork = async (artwork: ArtworkEntity) => {
     p_artist: artwork.artist,
     p_year: artwork.year,
     p_medium: artwork.medium,
-    p_tag_id: artwork.tagId,
+    p_tag_id: artwork.tag_id,
     p_expiration_date: artwork.expirationDate!.toISOString(),
     p_read_write_count: artwork.readWriteCount,
     p_assets: artwork.assets,
     p_provenance: artwork.provenance,
-    p_bibliography: JSON.stringify([]),
+    p_bibliography: JSON.stringify(artwork.bibliography),
     p_collectors: JSON.stringify(artwork.collectors),
   });
 

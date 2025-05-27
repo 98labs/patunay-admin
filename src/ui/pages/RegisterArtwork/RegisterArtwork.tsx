@@ -1,51 +1,57 @@
-import { useEffect, useState } from "react";
 import { FormStepTitle, PageHeader } from "@components";
+import { useEffect, useState } from "react";
 import { ArtworkEntity, FormStepsEntity } from "../../typings";
 
-import Step1Image from "./components/steps/Step1Image";
-import Step2Info from "./components/steps/Step2Info";
-import Step3Size from "./components/steps/Step3Size";
-import Step4Bibliography from "./components/steps/Step4Bibliography";
-import Step5Collector from "./components/steps/Step5Collector";
-import Step6AttachNfc from "./components/steps/Step6AttachNfc";
-import Step7Summary from "./components/steps/Step7Summary";
+import AttachNfc from "./components/steps/AttachNfc";
+import Bibliography from "./components/steps/Bibliography";
+import Collector from "./components/steps/Collector";
+import Info from "./components/steps/Info";
+import Size from "./components/steps/Size";
+import ReviewArtwork from "./components/steps/ReviewArtwork";
+import UploadImage from "./components/steps/UploadImage";
+import Summary from "./components/steps/Summary";
 
 const RegisterArtwork = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formSteps, setFormSteps] = useState<FormStepsEntity[]>([
     {
       stepNumber: 1,
-      stepName: "Upload Artwork (WIP)",
-      complete: false,
-    },
-    {
-      stepNumber: 2,
       stepName: "Enter Artwork",
       complete: false,
     },
     {
-      stepNumber: 3,
+      stepNumber: 2,
       stepName: "Enter Artwork Size",
       complete: false,
     },
     {
-      stepNumber: 4,
+      stepNumber: 3,
       stepName: "Enter Bibliography/s",
       complete: false,
     },
     {
-      stepNumber: 5,
+      stepNumber: 4,
       stepName: "Enter Collector/s",
       complete: false,
     },
     {
+      stepNumber: 5,
+      stepName: "Upload Images",
+      complete: false,
+    },
+    {
       stepNumber: 6,
-      stepName: "Attach to NFC Tag (WIP)",
+      stepName: "Review and Save Artwork",
       complete: false,
     },
     {
       stepNumber: 7,
-      stepName: "Artwork Details",
+      stepName: "Issue NFC Tag",
+      complete: false,
+    },
+    {
+      stepNumber: 8,
+      stepName: "Complete Registration",
       complete: false,
     },
   ]);
@@ -54,7 +60,8 @@ const RegisterArtwork = () => {
   const [addedArtwork, setAddedArtwork] = useState<ArtworkEntity | null>(null);
 
   const handleOnStepClick = (stepNumber: number, _complete: boolean) => {
-    if (currentStep > stepNumber) setCurrentStep(stepNumber);
+    // if (currentStep > stepNumber) setCurrentStep(stepNumber);
+    setCurrentStep(stepNumber);
   };
 
   const handleOnPrev = async () => {
@@ -62,7 +69,7 @@ const RegisterArtwork = () => {
     setFormSteps(
       [...formSteps].map((formStep) =>
         formStep.stepNumber === currentStep
-          ? { ...formStep, active: true, complete: false }
+          ? { ...formStep, active: true, complete: false, skip: false }
           : formStep
       )
     );
@@ -73,9 +80,27 @@ const RegisterArtwork = () => {
     setFormSteps(
       [...formSteps].map((formStep) =>
         formStep.stepNumber === currentStep
-          ? { ...formStep, active: false, complete: true }
+          ? { ...formStep, active: false, complete: true, skip: false }
           : formStep
       )
+    );
+  };
+
+  const handleOnSkip = async (stepsToSkip: number = 1) => {
+    setCurrentStep(currentStep + stepsToSkip + 1);
+    setFormSteps(
+      formSteps.map((formStep) => {
+        if (formStep.stepNumber === currentStep)
+          return { ...formStep, active: false, complete: true, skip: false };
+
+        if (
+          formStep.stepNumber > currentStep &&
+          formStep.stepNumber <= currentStep + stepsToSkip
+        )
+          return { ...formStep, active: false, complete: false, skip: true };
+
+        return formStep;
+      })
     );
   };
 
@@ -88,7 +113,9 @@ const RegisterArtwork = () => {
   };
 
   useEffect(() => {
-    console.log("Updated artwork:\n", artwork);
+    console.log("artwork", artwork);
+
+    return () => {};
   }, [artwork]);
 
   return (
@@ -98,7 +125,7 @@ const RegisterArtwork = () => {
         {/* Left Column */}
         <div className="flex-1">
           <ul>
-            {formSteps.map(({ stepNumber, stepName, complete }) => (
+            {formSteps.map(({ stepNumber, stepName, complete, skip }) => (
               <FormStepTitle
                 key={stepNumber}
                 className={
@@ -110,15 +137,23 @@ const RegisterArtwork = () => {
                 stepName={stepName}
                 active={currentStep === stepNumber}
                 complete={complete}
+                skip={skip}
                 onClick={() => handleOnStepClick(stepNumber, complete)}
               />
             ))}
           </ul>
         </div>
         {/* Right Column */}
-        {currentStep === 1 && <Step1Image onNext={handleOnNext} />}
+        {currentStep === 1 && (
+          <Info
+            artwork={artwork}
+            onPrev={handleOnPrev}
+            onNext={handleOnNext}
+            onDataChange={handleOnDataChange}
+          />
+        )}
         {currentStep === 2 && (
-          <Step2Info
+          <Size
             artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
@@ -126,7 +161,7 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 3 && (
-          <Step3Size
+          <Bibliography
             artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
@@ -134,7 +169,7 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 4 && (
-          <Step4Bibliography
+          <Collector
             artwork={artwork}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
@@ -142,27 +177,34 @@ const RegisterArtwork = () => {
           />
         )}
         {currentStep === 5 && (
-          <Step5Collector
+          <UploadImage
             artwork={artwork}
+            onDataChange={handleOnDataChange}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
-            onDataChange={handleOnDataChange}
           />
         )}
         {currentStep === 6 && (
-          <Step6AttachNfc
-            data={artwork}
-            addAddArtworkResult={handleAddArtworkResult}
+          <ReviewArtwork
+            artwork={addedArtwork ?? artwork}
+            onAddArtwork={handleAddArtworkResult}
             onPrev={handleOnPrev}
             onNext={handleOnNext}
+            onSkipNfc={handleOnSkip}
           />
         )}
         {currentStep === 7 && (
-          <Step7Summary
-            artwork={addedArtwork ?? artwork}
+          <AttachNfc
+            data={addedArtwork ?? artwork}
+            onUpdateArtwork={handleAddArtworkResult}
             onPrev={handleOnPrev}
-            onNext={handleOnNext}
+            onNext={async () => {
+              handleOnSkip(0);
+            }}
           />
+        )}
+        {currentStep === 8 && (
+          <Summary artwork={addedArtwork ?? artwork} onPrev={handleOnPrev} />
         )}
       </div>
     </div>

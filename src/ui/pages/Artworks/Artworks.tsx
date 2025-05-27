@@ -10,14 +10,14 @@ import {
 } from "@tanstack/react-table";
 
 import supabase from "../../supabase";
+
 import UploadButton from "./components/UploadButton";
 import { selectNotif } from "../../components/NotificationMessage/selector";
-import { Loading } from "@components";
 import { ArtistType } from "./types";
 import { useArtworkColumns } from "./hooks/useArtworkColumns";
 import TablePagination from "./components/TablePagination";
 import TableFilters from "./components/TableFilters";
-import DetachNFCModal from "../../components/Modal/DetachNFCModal";
+import { Loading, DetachNFCModal, DeleteArtworkModal } from "@components";
 
 const Artworks = () => {
   const [artList, setArtList] = useState<ArtistType[]>([]);
@@ -26,7 +26,9 @@ const Artworks = () => {
   const { title, status } = useSelector(selectNotif);
   const [nfcFilter, setNfcFilter] = useState<"all" | "with" | "none">("all");
   const [showDetachModal, setShowDetachModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [tagId, setTagId] = useState("");
+  const [artworkId, setArtworkId] = useState("");
 
   const getDataList = async () => {
     const { data, error } = await supabase.rpc("get_artwork_list", {});
@@ -57,14 +59,21 @@ const Artworks = () => {
     console.log("art", art);
   };
 
-  const handleDelete = async (art: ArtistType) => {
+  const handleDetach = async (art: ArtistType) => {
     if (art.tag_id) {
       setTagId(art.tag_id);
       setShowDetachModal(true);
     }
   };
 
-  const columns = useArtworkColumns(handleEdit, handleDelete);
+  const handleDelete = async (art: ArtistType) => {
+    if (art.id) {
+      setArtworkId(art.id);
+      setShowDeleteModal(true);
+    }
+  };
+
+  const columns = useArtworkColumns(handleEdit, handleDetach, handleDelete);
 
   const table = useReactTable({
     data: artList,
@@ -164,6 +173,14 @@ const Artworks = () => {
             onClose={() => {
               setShowDetachModal(false);
               getDataList();
+            }}
+          />
+        )}
+        {showDeleteModal && (
+          <DeleteArtworkModal
+            artworkId={artworkId as string}
+            onClose={() => {
+              setShowDeleteModal(false);
             }}
           />
         )}

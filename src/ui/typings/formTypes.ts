@@ -4,6 +4,7 @@ export interface FormStepsEntity {
   stepNumber: number;
   stepName: string;
   complete: boolean;
+  skip?: boolean;
 }
 
 export interface FormInputEntity {

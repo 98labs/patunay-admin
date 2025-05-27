@@ -1,6 +1,7 @@
 import { Button, FormField } from "@components";
 import { ArtworkEntity, FormErrorsEntity } from "@typings";
-import { ChangeEvent, useState } from "react";
+import { Minus, Plus } from "lucide-react";
+import { ChangeEvent, useEffect, useState } from "react";
 
 interface Props {
   artwork: ArtworkEntity;
@@ -9,7 +10,7 @@ interface Props {
   onNext: () => Promise<void>;
 }
 
-const Step4Bibliography = ({ onDataChange, onPrev, onNext }: Props) => {
+const Bibliography = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   const [formData, setFormData] = useState<string[]>([""]);
   const [formErrors, setFormErrors] = useState<FormErrorsEntity<string>>({});
 
@@ -36,8 +37,14 @@ const Step4Bibliography = ({ onDataChange, onPrev, onNext }: Props) => {
     }));
   };
 
-  const handleOnListItemClick = async () => {
-    setFormData([...formData, ""]);
+  const handleOnListItemClick = async (index: number) => {
+    if (!formData[index].trim()) return;
+
+    const isLastItem = index === formData.length - 1;
+
+    if (isLastItem) setFormData([...formData, ""]);
+    else if (formData.length > 1)
+      setFormData(formData.filter((_, itemIndex) => itemIndex !== index));
   };
 
   const validateForm = () => {
@@ -52,8 +59,14 @@ const Step4Bibliography = ({ onDataChange, onPrev, onNext }: Props) => {
     return Object.keys(errors).length === 0;
   };
 
+  useEffect(() => {
+    if (artwork?.bibliography && artwork.bibliography.length > 0) {
+      setFormData(artwork.bibliography);
+    }
+  }, [artwork]);
+
   return (
-    <div className="flex-2 h-fill flex flex-col justify-between">
+    <div className="flex-2 h-fill flex flex-col justify-between gap-2">
       <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
         <h2 className="text-xl font-semibold">
           Enter the artwork's bibliography
@@ -61,9 +74,11 @@ const Step4Bibliography = ({ onDataChange, onPrev, onNext }: Props) => {
         {formData.map((item, index) => (
           <FormField
             key={index}
-            isListItem={true}
             hint="Add the artwork's bibliography"
-            onListItemClick={handleOnListItemClick}
+            isListItem
+            onListItemClick={() => handleOnListItemClick(index)}
+            buttonIcon={index + 1 !== formData.length ? Minus : Plus}
+            listButtonDisabled={!formData[index]}
             value={item}
             error={formErrors[`bibliography-${index}`]}
             onInputChange={(e) => handleOnChange(e, index)}
@@ -92,4 +107,4 @@ const Step4Bibliography = ({ onDataChange, onPrev, onNext }: Props) => {
   );
 };
 
-export default Step4Bibliography;
+export default Bibliography;
