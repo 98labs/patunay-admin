@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import moment from "moment";
-import { Button, Loading, DetachNFCModal } from "@components";
+import { Button, Loading, DetachNFCModal, DeleteArtworkModal } from "@components";
 import ArtworkImageModal from "./components/ArtworkImageModal";
 import { Appraisal, ArtworkType } from "./types";
 import { selectNotif } from "../../components/NotificationMessage/selector";
@@ -9,7 +9,6 @@ import { useSelector } from "react-redux";
 import AppraisalInfo from "./components/AppraisalInfo";
 
 import supabase from "../../supabase";
-import { deleteArtwork } from "../../supabase/rpc/deleteArtwork";
 import { updateArtwork } from "../../supabase/rpc/updateArtwork";
 
 import { safeJsonParse } from "../Artworks/components/utils";
@@ -23,6 +22,7 @@ const DetailArtwork = () => {
 
   const [appraisals, setAppraisals] =  useState<Appraisal[]>([]);
   const [showDetachModal, setShowDetachModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [tagId, setTagId] = useState("");
   const { status } = useSelector(selectNotif);
 
@@ -30,10 +30,16 @@ const DetailArtwork = () => {
     setIsScanning(true);
   };
 
-  const handleDelete = async () => {
+  const handleDetach = async () => {
     if (artwork?.tag_id) {
         setTagId(artwork?.tag_id);
       setShowDetachModal(true);
+    }
+  };
+  
+  const handleDelete = async () => {
+    if (artwork?.id) {
+      setShowDeleteModal(true);
     }
   };
   
@@ -70,17 +76,17 @@ const DetailArtwork = () => {
   //   }
   // };
 
-  const handleOnDelete = async () => {
-    try {
-      const result = await deleteArtwork(artwork!.id as string);
+  // const handleOnDelete = async () => {
+  //   try {
+  //     const result = await deleteArtwork(artwork!.id as string);
 
-      if (result) {
-        navigate(`/dashboard/artworks/`);
-      }
-    } catch (error) {
-      console.error("Failed to delete artwork:", error);
-    }
-  };
+  //     if (result) {
+  //       navigate(`/dashboard/artworks/`);
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to delete artwork:", error);
+  //   }
+  // };
 
   useEffect(() => {
     if (!isScanning) return;
@@ -142,7 +148,7 @@ const DetailArtwork = () => {
                 buttonType="secondary"
                 buttonLabel="Detach NFC Tag"
                 className="btn-sm rounded-lg"
-                onClick={handleDelete}
+                onClick={handleDetach}
               />
             ) : (
               <Button
@@ -155,7 +161,7 @@ const DetailArtwork = () => {
             <Button
               className="transition-all bg-tertiary-red-400 border-none shadow-none btn-sm rounded-lg text-white hover:opacity-95"
               buttonLabel="Delete artwork"
-              onClick={handleOnDelete}
+              onClick={handleDelete}
             />
           </div>
         </div>
@@ -226,6 +232,14 @@ const DetailArtwork = () => {
                 tagId={tagId}
                 onClose={() => {
                   setShowDetachModal(false);
+                }}
+              />
+            )}
+          {showDeleteModal && (
+              <DeleteArtworkModal
+                artworkId={artwork.id as string}
+                onClose={() => {
+                  setShowDeleteModal(false);
                 }}
               />
             )}

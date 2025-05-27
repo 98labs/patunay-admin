@@ -2,7 +2,7 @@ export { default as Button } from "./Button";
 export { default as Cards } from "./Cards";
 export { default as FormField } from "./FormField";
 export { default as FormStepTitle } from "./FormStepTitle";
-export { Modal, DetachNFCModal } from "./Modal";
+export { Modal, DetachNFCModal, DeleteArtworkModal } from "./Modal";
 export { default as NfcListener } from "./NfcListener";
 export { default as PageHeader } from "./PageHeader";
 export { default as RadioButton } from "./RadioButton";

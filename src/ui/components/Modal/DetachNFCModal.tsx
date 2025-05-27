@@ -17,15 +17,12 @@ const DetachNFCModal = ({ tagId, onClose }: DetachNFCProps) => {
   const handleDetach = async () => {
     if (loading) return;
     setLoading(true);
-    console.log('user?.id', user?.id)
-    console.log('tagId', tagId)
     const { error } = await supabase
       .from('tags')
       .update({ active: false, updated_by: user?.id, updated_at: new Date() })
       .eq('id', tagId);
 
     setLoading(false);
-console.log('error', error)
     if (error) {
       dispatch(
         showNotification({

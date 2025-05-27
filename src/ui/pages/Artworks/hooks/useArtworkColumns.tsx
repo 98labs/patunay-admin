@@ -9,6 +9,7 @@ import logo from '../../../../assets/logo/patunay-256x256.png'
 
 export function useArtworkColumns(
   onEdit: (art: ArtistType) => void,
+  onDetach: (art: ArtistType) => void,
   onDelete: (art: ArtistType) => void
 ): ColumnDef<ArtistType>[] {
   return useMemo<ColumnDef<ArtistType>[]>(() => [
@@ -81,10 +82,10 @@ export function useArtworkColumns(
         <DropdownAction
           artwork={row.original}
           onAttach={onEdit}
-          onDetach={onDelete}
+          onDetach={onDetach}
           onDelete={onDelete}
         />
       ),
     },
-  ], [onEdit, onDelete]);
+  ], [onEdit, onDetach, onDelete]);
 }
