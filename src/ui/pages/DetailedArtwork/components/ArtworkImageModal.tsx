@@ -1,13 +1,13 @@
-import { useId, useState } from "react";
+import { useState } from "react";
 import { ArtworkImageModalProps } from "./types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import logo from '../../../../assets/logo/patunay-256x256.png'
 import { checkImage } from "./utils";
 
-const ArtworkImageModal = ({ images, title }: ArtworkImageModalProps) => {
+const ArtworkImageModal = ({ images, title, modalId, onClose }: ArtworkImageModalProps) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [isValidImg, setisValidImg] = useState(false);
-  const modalId = useId();
+  // const modalId = useId();
   checkImage(images[currentImage])
     .then((isValid) => {
       setisValidImg(isValid as boolean);
@@ -29,17 +29,9 @@ const ArtworkImageModal = ({ images, title }: ArtworkImageModalProps) => {
   return (
     <>
       {/* Trigger image */}
-      <label htmlFor={modalId} className="cursor-pointer">
-        <img
-          src={currentSrc}
-          alt={title}
-          className="rounded-lg object-cover w-full max-h-[500px]"
-        />
-      </label>
 
       {/* Modal */}
-      <input type="checkbox" id={modalId} className="modal-toggle" />
-      <div className="modal">
+      <div className="modal modal-open">
         <div className="modal-box max-w-5xl w-full">
           <h3 className="font-bold text-xl mb-2">{title}</h3>
           {/* Arrows + Main Image */}
@@ -82,7 +74,7 @@ const ArtworkImageModal = ({ images, title }: ArtworkImageModalProps) => {
             ))}
           </div>
           <div className="modal-action">
-            <label htmlFor={modalId} className="btn">Close</label>
+            <label htmlFor={modalId} className="btn" onClick={onClose}>Close</label>
           </div>
         </div>
       </div>
