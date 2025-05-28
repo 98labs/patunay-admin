@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import moment from "moment";
 import { Button, Loading, DetachNFCModal, DeleteArtworkModal } from "@components";
@@ -19,10 +19,12 @@ const DetailArtwork = () => {
   const [artwork, setArtwork] = useState<ArtworkType | null>(null);
   const [loading, setLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
+  const modalId = useId();
 
   const [appraisals, setAppraisals] =  useState<Appraisal[]>([]);
   const [showDetachModal, setShowDetachModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [tagId, setTagId] = useState("");
   const { status } = useSelector(selectNotif);
 
@@ -61,33 +63,6 @@ const DetailArtwork = () => {
     }
   };
 
-  // const handleDetachArtwork = async () => {
-  //   try {
-  //     const result = await updateArtwork({ ...artwork!, tag_id: null });
-
-  //     if (result)
-  //       setArtwork({
-  //         ...result[0],
-  //         bibliography: safeJsonParse(result[0].bibliography),
-  //         collectors: safeJsonParse(result[0].collectors),
-  //       });
-  //   } catch (error) {
-  //     console.error("Failed to detach NFC tag from artwork:", error);
-  //   }
-  // };
-
-  // const handleOnDelete = async () => {
-  //   try {
-  //     const result = await deleteArtwork(artwork!.id as string);
-
-  //     if (result) {
-  //       navigate(`/dashboard/artworks/`);
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to delete artwork:", error);
-  //   }
-  // };
-
   useEffect(() => {
     if (!isScanning) return;
 
@@ -125,9 +100,10 @@ const DetailArtwork = () => {
     }
     
   }, [artwork])
-  
+
   if (loading) return <Loading fullScreen={false} />;
   if (!artwork) return <div className="p-6">Artwork not found.</div>;
+  const image = artwork.assets?.map((asset) => asset.url) || []
   return (
     <div className="text-base-content">
       <div className="flex justify-between items-center">
@@ -183,10 +159,16 @@ const DetailArtwork = () => {
                 />
               </div>
             ) : (
-              <ArtworkImageModal
-                images={artwork.assets?.map((asset) => asset.url) || []}
-                title={artwork.title ?? ""}
-              />
+              <>
+                <label htmlFor={modalId} className="cursor-pointer">
+                  <img
+                    src={image[0]}
+                    alt={artwork.title ?? ""}
+                    className="rounded-lg object-cover w-full max-h-[500px]"
+                    onClick={() => setShowImageModal(true)}
+                  />
+                </label>
+              </>
             )}
           </div>
           <div className="flex-1">
@@ -249,6 +231,14 @@ const DetailArtwork = () => {
             <div className="divider"></div>
             <AppraisalInfo appraisals={appraisals} artwork_id={artwork.id} />
           </>
+        )}
+        {showImageModal && (
+          <ArtworkImageModal
+            images={artwork.assets?.map((asset) => asset.url) || []}
+            title={artwork.title ?? ""}
+            modalId={modalId}
+            onClose={() => setShowImageModal(false)}
+          />
         )}
     </div>
   );

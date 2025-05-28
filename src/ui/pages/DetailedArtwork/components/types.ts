@@ -3,6 +3,8 @@ import { Appraisal } from "../types";
 export interface ArtworkImageModalProps {
     images: string[]; // Array of image URLs
     title: string;
+    modalId?: string; // Optional ID for the modal
+    onClose?: () => void; // Optional close handler
   }
 
 export interface AuctionRefProps {
