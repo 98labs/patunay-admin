@@ -1,5 +1,5 @@
 import { LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, memo, useCallback } from "react";
 
 interface Props {
   className?: string;
@@ -25,15 +25,16 @@ const Button = ({
     buttonType === "primary" ? "btn-primary" : "btn-outline btn-primary";
   const disabledBtn = disabled && "opacity-50 cursor-not-allowed";
 
-  const handleOnClick = async () => {
+  const handleOnClick = useCallback(async () => {
     setIsLoading(true);
     try {
-      onClick();
+      await onClick();
     } catch (error) {
+      console.error('Button onClick error:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [onClick]);
 
   return (
     <button
@@ -50,4 +51,4 @@ const Button = ({
   );
 };
 
-export default Button;
+export default memo(Button);

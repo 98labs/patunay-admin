@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import {
@@ -55,27 +55,27 @@ const Artworks = () => {
     }
   }, [status, title]);
 
-  const handleEdit = (art: ArtistType) => {
+  const handleEdit = useCallback((art: ArtistType) => {
     console.log("art", art);
-  };
+  }, []);
 
-  const handleDetach = async (art: ArtistType) => {
+  const handleDetach = useCallback(async (art: ArtistType) => {
     if (art.tag_id) {
       setTagId(art.tag_id);
       setShowDetachModal(true);
     }
-  };
+  }, []);
 
-  const handleDelete = async (art: ArtistType) => {
+  const handleDelete = useCallback(async (art: ArtistType) => {
     if (art.id) {
       setArtworkId(art.id);
       setShowDeleteModal(true);
     }
-  };
+  }, []);
 
   const columns = useArtworkColumns(handleEdit, handleDetach, handleDelete);
 
-  const table = useReactTable({
+  const tableConfig = useMemo(() => ({
     data: artList,
     columns,
     state: {
@@ -88,12 +88,14 @@ const Artworks = () => {
       pagination: { pageSize: 10 },
     },
     getFilteredRowModel: getFilteredRowModel(),
-  });
+  }), [artList, columns, globalFilter, setGlobalFilter]);
 
-  const handleFile = (file: any) => {
+  const table = useReactTable(tableConfig);
+
+  const handleFile = useCallback((file: any) => {
     console.log("Selected file:", file);
     // You can do something with the file here
-  };
+  }, []);
 
   return (
     <section className="container text-base-content">

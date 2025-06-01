@@ -17,15 +17,15 @@
   - Mixed file extensions (.cts vs .ts)
   - Missing strict TypeScript configuration
 
-  4. State Management
+  4. State Management [✅ DONE]
   - Limited Redux structure for a growing app
   - Consider implementing RTK Query for better data fetching
-  - No proper state management for NFC operations [✅ DONE]
+  - No proper state management for NFC operations
 
   ⚡ Performance Optimizations
 
-  5. Bundle Size Concerns
-  - Replace deprecated moment.js with date-fns or dayjs
+  5. Bundle Size Concerns [✅ DONE]
+  - Replace deprecated moment.js with date-fns
   - Missing React performance optimizations (memo, useMemo, useCallback)
   - No code splitting strategy
 

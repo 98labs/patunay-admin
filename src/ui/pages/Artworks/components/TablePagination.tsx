@@ -1,6 +1,9 @@
+import { memo, useMemo } from "react";
 import { TableProps } from "./types";
 
 const TablePagination = <T,>({ table }: TableProps<T>) => {
+  const pageSizeOptions = useMemo(() => [10, 20, 30, 40, 50], []);
+  
   return (
     <div className="flex items-center justify-between mt-6">
       <button
@@ -22,7 +25,7 @@ const TablePagination = <T,>({ table }: TableProps<T>) => {
         value={table.getState().pagination.pageSize}
         onChange={e => table.setPageSize(Number(e.target.value))}
       >
-        {[10, 20, 30, 40, 50].map(size => (
+        {pageSizeOptions.map(size => (
           <option key={size} value={size}>
             Show {size}
           </option>
@@ -40,4 +43,4 @@ const TablePagination = <T,>({ table }: TableProps<T>) => {
   );
 };
 
-export default TablePagination;
+export default memo(TablePagination) as typeof TablePagination;

@@ -1,22 +1,23 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy } from "react";
 import Providers from "../Providers";
+import SuspenseWrapper from "../layouts/SuspenseWrapper";
+import {
+  Dashboard,
+  Artworks,
+  RegisterArtwork,
+  SearchArtwork,
+  DetailedArtwork,
+  Admin,
+  NfcTags,
+  Team,
+  Devices,
+  Login,
+  NotFoundPage
+} from "./LazyComponents";
 
+// Layout components are loaded separately for better optimization
 const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
-const Admin = lazy(() => import("../pages/Admin"));
-const Artworks = lazy(() => import("../pages/Artworks"));
-const DetailedArtwork = lazy(
-  () => import("../pages/DetailedArtwork/DetailArtwork")
-);
-const Dashboard = lazy(() => import("../pages/Dashboard"));
-const Devices = lazy(() => import("../pages/Devices"));
-const Login = lazy(() => import("../pages/Login"));
-const NfcTags = lazy(() => import("../pages/NfcTags"));
-const RegisterArtwork = lazy(() => import("../pages/RegisterArtwork"));
-const SearchArtwork = lazy(() => import("../pages/SearchArtwork"));
-const Team = lazy(() => import("../pages/Team"));
-
-const NotFoundPage = lazy(() => import("../pages/404Page"));
 
 const router = createBrowserRouter([
   // I recommend you reflect the routes here in the pages folder
@@ -31,7 +32,11 @@ const router = createBrowserRouter([
       },
       {
         path: "/login",
-        element: <Login />,
+        element: (
+          <SuspenseWrapper>
+            <Login />
+          </SuspenseWrapper>
+        ),
       },
       {
         path: "/sign-up",
@@ -40,47 +45,91 @@ const router = createBrowserRouter([
       // Auth Protected routes
       {
         path: "/",
-        element: <DashboardLayout />,
+        element: (
+          <SuspenseWrapper>
+            <DashboardLayout />
+          </SuspenseWrapper>
+        ),
         children: [
           {
             path: "/dashboard/admin",
-            element: <Admin />,
+            element: (
+              <SuspenseWrapper>
+                <Admin />
+              </SuspenseWrapper>
+            ),
           },
           {
             path: "/dashboard/artworks",
-            element: <Artworks />,
+            element: (
+              <SuspenseWrapper>
+                <Artworks />
+              </SuspenseWrapper>
+            ),
           },
           {
             path: "/dashboard/artworks/:id",
-            element: <DetailedArtwork />,
+            element: (
+              <SuspenseWrapper>
+                <DetailedArtwork />
+              </SuspenseWrapper>
+            ),
           },
           {
             path: "/dashboard",
-            element: <Dashboard />,
+            element: (
+              <SuspenseWrapper>
+                <Dashboard />
+              </SuspenseWrapper>
+            ),
           },
           {
             path: "/dashboard/admin/device",
-            element: <Devices />,
+            element: (
+              <SuspenseWrapper>
+                <Devices />
+              </SuspenseWrapper>
+            ),
           },
           {
             path: "/dashboard/admin/nfc-tags",
-            element: <NfcTags />,
+            element: (
+              <SuspenseWrapper>
+                <NfcTags />
+              </SuspenseWrapper>
+            ),
           },
           {
             path: "/dashboard/artworks/register",
-            element: <RegisterArtwork />,
+            element: (
+              <SuspenseWrapper>
+                <RegisterArtwork />
+              </SuspenseWrapper>
+            ),
           },
           {
             path: "/dashboard/artworks/search",
-            element: <SearchArtwork />,
+            element: (
+              <SuspenseWrapper>
+                <SearchArtwork />
+              </SuspenseWrapper>
+            ),
           },
           {
             path: "/dashboard/admin/team",
-            element: <Team />,
+            element: (
+              <SuspenseWrapper>
+                <Team />
+              </SuspenseWrapper>
+            ),
           },
           {
             path: "*",
-            element: <NotFoundPage />,
+            element: (
+              <SuspenseWrapper>
+                <NotFoundPage />
+              </SuspenseWrapper>
+            ),
           },
         ],
       },

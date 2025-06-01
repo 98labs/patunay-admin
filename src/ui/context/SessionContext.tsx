@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import supabase from "../supabase";
 import { Loading } from "@components";
 import { Session } from "@supabase/supabase-js";
@@ -40,8 +40,10 @@ export const SessionProvider = ({ children }: Props) => {
     };
   }, [supabase]);
 
+  const contextValue = useMemo(() => ({ session }), [session]);
+
   return (
-    <SessionContext.Provider value={{ session }}>
+    <SessionContext.Provider value={contextValue}>
       {isLoading ? <Loading /> : children}
     </SessionContext.Provider>
   );

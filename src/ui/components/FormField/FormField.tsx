@@ -1,6 +1,6 @@
 import { InputType } from "@typings";
 import { Button, RadioButton } from "@components";
-import { ChangeEvent } from "react";
+import { ChangeEvent, memo } from "react";
 import { LucideIcon, Plus } from "lucide-react";
 
 interface Props {
@@ -83,4 +83,4 @@ const FormField = ({
   );
 };
 
-export default FormField;
+export default memo(FormField);

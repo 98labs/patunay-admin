@@ -2,6 +2,7 @@ import { UserProfile } from "@components";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../../store/api/userApi";
 import { Links, NavbarItemProps } from "./types";
+import { useMemo, useCallback } from "react";
 
 const NavbarItem = ({
   currentPath,
@@ -54,7 +55,7 @@ const Sidebar = ({
   const navigate = useNavigate();
   const [logout] = useLogoutMutation();
 
-  const links: Links[] = [
+  const links: Links[] = useMemo(() => [
     { name: "Dashboard", path: "/dashboard" },
     {
       name: "Artworks",
@@ -73,9 +74,9 @@ const Sidebar = ({
         { name: "Devices", path: "/dashboard/admin/devices" },
       ],
     },
-  ];
+  ], []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await logout().unwrap();
       navigate("/login");
@@ -83,11 +84,11 @@ const Sidebar = ({
       console.error('Logout failed:', error);
       navigate("/login");
     }
-  };
+  }, [logout, navigate]);
 
-  const handleNavigate = () => {
+  const handleNavigate = useCallback(() => {
     if (window.innerWidth < 768) setIsOpen(false); // only close on small screens
-  };
+  }, [setIsOpen]);
 
   return (
     <div
