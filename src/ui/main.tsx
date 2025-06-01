@@ -7,7 +7,7 @@ import "./App.css";
 import router from "./router";
 import { RouterProvider } from "react-router-dom";
 import SuspenseContent from './layouts/SuspenseContent.tsx';
-import store from './lib/store.ts'
+import store from './store/store.ts'
 
 createRoot(document.getElementById("root")!).render(
   <Suspense fallback={<SuspenseContent />}>
