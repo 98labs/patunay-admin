@@ -6,6 +6,8 @@ import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData } from "./resourceManager.js";
 import { initializeNfc, nfcWriteOnTag, cleanupNfc } from "./nfc/nfcService.js";
+import { electronLogger } from "./logging/electronLogger.js";
+import { LogCategory } from "../shared/logging/types.js";
 
 const require = createRequire(import.meta.url);
 const { autoUpdater } = pkg;
@@ -32,11 +34,11 @@ const createWindow = () => {
     const devPort = process.env["VITE_DEV_PORT"] || "5173";
     const devUrl = `http://localhost:${devPort}/login`;
     mainWindow.loadURL(devUrl);
-    console.log(`Loading URL: ${devUrl}`);
+    electronLogger.info("Loading development URL", LogCategory.SYSTEM, { component: "Main" }, { url: devUrl });
     mainWindow.webContents.openDevTools();
   } else {
     const indexPath = path.join(app.getAppPath(), "dist-react/index.html");
-    console.log(`Loading file: ${indexPath}`);
+    electronLogger.info("Loading production file", LogCategory.SYSTEM, { component: "Main" }, { path: indexPath });
     mainWindow.loadFile(indexPath);
 
     autoUpdater.checkForUpdatesAndNotify();
@@ -46,10 +48,32 @@ const createWindow = () => {
 
   ipcMain.handle("getStatisticData", () => getStatisticData());
 
+  // Handle log entries from renderer process
+  ipcMain.on("log-entry", (_event, logEntry) => {
+    try {
+      electronLogger.info(
+        `[Renderer] ${logEntry.message}`,
+        logEntry.category || LogCategory.UI,
+        {
+          component: 'RendererProcess',
+          originalContext: logEntry.context
+        },
+        {
+          level: logEntry.level,
+          data: logEntry.data,
+          error: logEntry.error,
+          duration: logEntry.duration
+        }
+      );
+    } catch (error) {
+      electronLogger.error("Failed to process renderer log entry", LogCategory.SYSTEM, { component: "IPC" }, { logEntry }, error as Error);
+    }
+  });
+
   ipcMain.on("nfc-write-tag", (_event, payload: unknown) => {
     // Validate IPC payload
     if (!payload || typeof payload !== 'object') {
-      console.error('Invalid nfc-write-tag payload: expected object');
+      electronLogger.error('Invalid nfc-write-tag payload: expected object', LogCategory.SECURITY, { component: "IPC" }, { payload });
       return;
     }
 
@@ -57,10 +81,11 @@ const createWindow = () => {
     
     // Validate data field if present
     if (typedPayload["data"] !== undefined && typeof typedPayload["data"] !== 'string') {
-      console.error('Invalid nfc-write-tag payload: data must be string or undefined');
+      electronLogger.error('Invalid nfc-write-tag payload: data must be string or undefined', LogCategory.SECURITY, { component: "IPC" }, { payload: typedPayload });
       return;
     }
 
+    electronLogger.info("Processing NFC write request", LogCategory.NFC, { component: "IPC" }, { hasData: !!typedPayload["data"] });
     nfcWriteOnTag(typedPayload["data"] as string | undefined);
   });
 };
@@ -80,11 +105,11 @@ app.whenReady().then(() => {
 // ===========================
 
 autoUpdater.on("checking-for-update", () => {
-  console.log("Checking for updates...");
+  electronLogger.info("Checking for updates", LogCategory.SYSTEM, { component: "AutoUpdater" });
 });
 
 autoUpdater.on("update-available", () => {
-  console.log("Update available. Downloading...");
+  electronLogger.info("Update available, downloading", LogCategory.SYSTEM, { component: "AutoUpdater" });
 
   dialog
     .showMessageBox(mainWindow, {
@@ -94,20 +119,20 @@ autoUpdater.on("update-available", () => {
       buttons: ["OK"],
     })
     .then(() => {
-      console.log("User acknowledged update download.");
+      electronLogger.info("User acknowledged update download", LogCategory.SYSTEM, { component: "AutoUpdater" });
     });
 });
 
 autoUpdater.on("update-not-available", () => {
-  console.log("No updates available.");
+  electronLogger.info("No updates available", LogCategory.SYSTEM, { component: "AutoUpdater" });
 });
 
 autoUpdater.on("download-progress", (progress) => {
-  console.log(`Download progress: ${progress.percent.toFixed(2)}%`);
+  electronLogger.debug("Update download progress", LogCategory.SYSTEM, { component: "AutoUpdater" }, { percent: progress.percent.toFixed(2) });
 });
 
 autoUpdater.on("update-downloaded", () => {
-  console.log("Update downloaded.");
+  electronLogger.info("Update downloaded", LogCategory.SYSTEM, { component: "AutoUpdater" });
 
   dialog
     .showMessageBox(mainWindow, {
@@ -118,21 +143,21 @@ autoUpdater.on("update-downloaded", () => {
     })
     .then((result) => {
       if (result.response === 0) {
-        console.log("User chose to restart and install.");
+        electronLogger.info("User chose to restart and install update", LogCategory.SYSTEM, { component: "AutoUpdater" });
         autoUpdater.quitAndInstall();
       } else {
-        console.log("User chose to install later.");
+        electronLogger.info("User chose to install update later", LogCategory.SYSTEM, { component: "AutoUpdater" });
       }
     });
 });
 
 autoUpdater.on("error", (error) => {
-  console.error("Error during update process:", error.message);
+  electronLogger.error("Error during update process", LogCategory.SYSTEM, { component: "AutoUpdater" }, { errorMessage: error.message }, error);
 });
 
 // Cleanup on app exit
 app.on("before-quit", () => {
-  console.log("Application shutting down, cleaning up NFC service...");
+  electronLogger.info("Application shutting down, cleaning up NFC service", LogCategory.SYSTEM, { component: "Main" });
   cleanupNfc();
 });
 

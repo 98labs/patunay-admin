@@ -17,7 +17,7 @@
     "package:electron": "electron-builder",
     "dist": "npm run build",
     "dist:mac": "npm run build && electron-builder --mac --arm64",
-    "dist:win": "npm run build && electron-builder --win --x64", 
+    "dist:win": "npm run build && electron-builder --win --x64",
     "dist:linux": "npm run build && electron-builder --linux --x64",
     "clean": "rimraf dist-electron dist-react dist out coverage",
     "test": "vitest",
@@ -73,6 +73,7 @@
     "cross-env": "^7.0.3",
     "electron": "^35.1.1",
     "electron-builder": "^26.0.12",
+    "electron-log": "^5.4.0",
     "electron-rebuild": "^3.2.9",
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^5.1.0",
@@ -88,7 +89,8 @@
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.24.1",
     "vite": "^6.2.0",
-    "vitest": "^3.1.4"
+    "vitest": "^3.1.4",
+    "winston": "^3.17.0"
   },
   "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
   "keywords": [],

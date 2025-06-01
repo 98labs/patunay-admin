@@ -66,6 +66,11 @@ export interface ElectronAPI {
   getStaticData: () => Promise<StaticData>;
   subscribeStatistics: (callback: (statistics: Statistics) => void) => void;
 
+  // Logging support
+  ipcRenderer: {
+    send: (channel: string, data: any) => void;
+  };
+
   // NFC operations
   setMode: (mode: NfcModeEntity, data?: string) => void;
   writeOnTag: (data?: string) => void;

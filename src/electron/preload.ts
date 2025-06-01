@@ -16,6 +16,11 @@ const electronAPI: ElectronAPI = {
   // System information
   getStaticData: (): Promise<StaticData> => ipcRenderer.invoke("getStatisticData"),
   
+  // Logging support
+  ipcRenderer: {
+    send: (channel: string, data: any) => ipcRenderer.send(channel, data)
+  },
+  
   subscribeStatistics: (callback: (statistics: Statistics) => void): void => {
     ipcRenderer.on("statistics", (_, stats: Statistics) => {
       callback(stats);
