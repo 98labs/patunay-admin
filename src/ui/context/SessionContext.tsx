@@ -23,8 +23,16 @@ export const SessionProvider = ({ children }: Props) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", "light");
-    document.documentElement.setAttribute("data-theme", "light");
+    // Initialize theme from localStorage or default to light
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    
+    // Also set the class for Tailwind dark mode
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   }, []);
 
   useEffect(() => {

@@ -148,12 +148,14 @@ const Modal = ({
   if (!isOpen) return null;
 
   const modalClasses = [
-    'bg-white dark:bg-gray-800',
+    'bg-base-100 dark:bg-base-100',
     'rounded-xl',
     'shadow-xl',
+    'border border-base-300 dark:border-base-300',
     'p-0',
     'relative',
     'w-full',
+    'max-h-[90vh] overflow-auto',
     sizeClasses[size],
     className
   ].filter(Boolean).join(' ');
@@ -163,7 +165,7 @@ const Modal = ({
     `z-${zIndex}`,
     'flex items-center justify-center',
     'p-4',
-    showBackdrop ? 'bg-black/50 backdrop-blur-sm' : 'bg-black/20'
+    showBackdrop ? 'bg-black/60 dark:bg-black/80 backdrop-blur-sm' : 'bg-black/30 dark:bg-black/50'
   ].filter(Boolean).join(' ');
 
   return (
@@ -178,13 +180,13 @@ const Modal = ({
       <div className={modalClasses}>
         {/* Header */}
         {(title || header || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-6 border-b border-base-300 dark:border-base-300">
             <div className="flex-1">
               {header || (
                 title && (
                   <h2 
                     id="modal-title"
-                    className="text-xl font-semibold text-gray-900 dark:text-white"
+                    className="text-xl font-semibold text-base-content dark:text-base-content"
                   >
                     {title}
                   </h2>
@@ -207,13 +209,13 @@ const Modal = ({
         )}
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 text-base-content dark:text-base-content">
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="px-6 py-4 border-t border-base-300 dark:border-base-300">
             {footer}
           </div>
         )}

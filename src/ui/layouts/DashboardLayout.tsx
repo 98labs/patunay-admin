@@ -28,14 +28,14 @@ const DashboardLayout = () => {
   }
 
   return (
-    <div className="flex min-h-screen overflow-hidden">
+    <div className="flex min-h-screen overflow-hidden bg-base-100 dark:bg-base-100">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
-      <main className="flex-1 flex flex-col overflow-auto p-6 bg-base-100">
+      <main className="flex-1 flex flex-col overflow-auto p-6 bg-base-100 dark:bg-base-100">
         {/* Topbar */}
-        <header className="text-base-content md:hidden">
+        <header className="text-base-content dark:text-base-content md:hidden">
           <div className="max-w-screen-xl mx-auto px-4 py-4 flex items-center justify-between">
             <button
-              className="md:hidden text-2xl"
+              className="md:hidden text-2xl text-base-content dark:text-base-content hover:text-primary dark:hover:text-primary transition-colors duration-200"
               onClick={() => setSidebarOpen(true)}
             >
               ☰
@@ -49,6 +49,14 @@ const DashboardLayout = () => {
           </div>
         </div>
       </main>
+      
+      {/* Mobile sidebar overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 dark:bg-black/70 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 };

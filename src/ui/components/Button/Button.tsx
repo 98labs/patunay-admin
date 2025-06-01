@@ -106,10 +106,10 @@ interface ButtonProps extends BaseComponentProps {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'btn-primary',
-  secondary: 'btn-outline btn-primary',
-  danger: 'btn-error',
-  outline: 'btn-outline'
+  primary: 'btn-primary dark:btn-primary',
+  secondary: 'btn-outline btn-primary dark:btn-outline dark:btn-primary border-2 border-primary dark:border-primary text-primary dark:text-primary bg-transparent dark:bg-transparent hover:bg-primary dark:hover:bg-primary hover:text-primary-content dark:hover:text-primary-content',
+  danger: 'btn-error dark:btn-error',
+  outline: 'btn-outline dark:btn-outline border-2 border-base-content/30 dark:border-base-content/50 text-base-content dark:text-base-content hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/20'
 };
 
 const sizeClasses: Record<ComponentSize, string> = {
@@ -198,6 +198,8 @@ const Button = ({
   const buttonClasses = [
     'btn',
     'active:border-0',
+    'transition-colors duration-200',
+    'dark:border-base-300',
     variantClasses[finalVariant],
     sizeClasses[size],
     fullWidth ? 'w-full' : '',

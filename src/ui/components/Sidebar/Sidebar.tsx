@@ -16,12 +16,12 @@ const NavbarItem = ({
     <Link to={path} onClick={onNavigate}>
       <li
         key={path}
-        className={`transition-all duration-300 ease-in-out overflow-hidden py-4 cursor-pointer hover:text-white ${
+        className={`transition-all duration-300 ease-in-out overflow-hidden py-4 cursor-pointer hover:text-white dark:hover:text-gray-200 ${
           isChild ? "px-12" : "px-8"
         } ${
           currentPath === path
-            ? "bg-primary-100 text-white"
-            : "hover:bg-primary-100 hover:opacity-50"
+            ? "bg-primary text-white dark:bg-primary dark:text-white"
+            : "hover:bg-primary/20 dark:hover:bg-primary/30 text-base-content dark:text-base-content"
         }`}
       >
         {name}
@@ -92,7 +92,7 @@ const Sidebar = ({
 
   return (
     <div
-      className={`fixed z-50 top-0 left-0 h-full w-[300px] bg-neutral-gray-01 transform transition-transform duration-300 ease-in-out ${
+      className={`fixed z-50 top-0 left-0 h-full w-[300px] bg-base-200 dark:bg-base-200 border-r border-base-300 dark:border-base-300 transform transition-transform duration-300 ease-in-out ${
         isOpen ? "translate-x-0" : "-translate-x-full"
       } md:relative md:translate-x-0 md:flex`}
     >
@@ -100,7 +100,7 @@ const Sidebar = ({
         {/* Close button on mobile */}
         <button
           onClick={() => setIsOpen(false)}
-          className="md:hidden self-end m-4"
+          className="md:hidden self-end m-4 text-base-content dark:text-base-content hover:text-primary dark:hover:text-primary"
         >
           ✖
         </button>
@@ -122,7 +122,7 @@ const Sidebar = ({
         <div className="mt-auto">
           <button
             onClick={handleLogout}
-            className="w-full hover:bg-primary-100 hover:opacity-50 hover:text-white px-3 py-2 rounded mt-4"
+            className="w-full hover:bg-primary/20 dark:hover:bg-primary/30 hover:text-primary dark:hover:text-primary text-base-content dark:text-base-content px-3 py-2 rounded mt-4 transition-colors duration-200"
           >
             Logout
           </button>

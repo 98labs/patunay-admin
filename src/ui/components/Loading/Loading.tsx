@@ -77,11 +77,11 @@ const Loading = ({
 
   const LoadingContent = () => (
     <div className="text-center" data-testid={dataTestId}>
-      <span className={spinnerClass} aria-label="Loading spinner" />
+      <span className={`${spinnerClass} text-primary dark:text-primary`} aria-label="Loading spinner" />
       {showText && (
-        <p className="mt-4 text-lg font-semibold">
+        <p className="mt-4 text-lg font-semibold text-base-content dark:text-base-content">
           {text}
-          {showDots && <span className={dotsClass} aria-hidden="true" />}
+          {showDots && <span className={`${dotsClass} text-primary dark:text-primary`} aria-hidden="true" />}
         </p>
       )}
     </div>
@@ -90,7 +90,7 @@ const Loading = ({
   if (fullScreen) {
     return (
       <div 
-        className={`h-screen flex items-center justify-center bg-base-100 text-base-content ${className}`}
+        className={`h-screen flex items-center justify-center bg-base-100 dark:bg-base-100 text-base-content dark:text-base-content ${className}`}
         role="status"
         aria-live="polite"
         aria-label={`${text}${showDots ? '...' : ''}`}
@@ -102,7 +102,7 @@ const Loading = ({
 
   return (
     <div 
-      className={`card bg-base-100 shadow p-6 ${className}`}
+      className={`card bg-base-100 dark:bg-base-100 border border-base-300 dark:border-base-300 shadow p-6 ${className}`}
       role="status"
       aria-live="polite"
       aria-label={`${text}${showDots ? '...' : ''}`}

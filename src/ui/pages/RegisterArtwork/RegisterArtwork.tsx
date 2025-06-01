@@ -119,19 +119,19 @@ const RegisterArtwork = () => {
   }, [artwork]);
 
   return (
-    <div className="flex flex-col h-full text-base-content">
+    <div className="flex flex-col h-full text-base-content dark:text-base-content bg-base-100 dark:bg-base-100">
       <PageHeader name="Register Artwork" />
       <div className="flex flex-1">
         {/* Left Column */}
-        <div className="flex-1">
-          <ul>
+        <div className="flex-1 bg-base-100 dark:bg-base-100 border-r border-base-300 dark:border-base-300 p-4">
+          <ul className="space-y-2">
             {formSteps.map(({ stepNumber, stepName, complete, skip }) => (
               <FormStepTitle
                 key={stepNumber}
                 className={
                   currentStep < stepNumber && !complete
-                    ? "cursor-not-allowed"
-                    : "cursor-pointer"
+                    ? "cursor-not-allowed opacity-50"
+                    : "cursor-pointer hover:bg-base-200 dark:hover:bg-base-200 rounded-lg"
                 }
                 stepNumber={stepNumber.toString()}
                 stepName={stepName}
