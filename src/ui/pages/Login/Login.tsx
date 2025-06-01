@@ -4,27 +4,22 @@ import { useDispatch } from "react-redux";
 
 import { FormField, NotificationMessage } from "@components";
 import { useSession } from "../../context/SessionContext";
-import supabase from "../../supabase";
 import { InputType } from "@typings";
-import { setUser } from "./slice";
+import { useLoginMutation } from "../../store/api/userApi";
 import { showNotification } from "../../components/NotificationMessage/slice";
 
 import logo from "@/assets/logo/patunay-logo.png";
 
 const Login = () => {
   const dispatch = useDispatch();
-  // ==============================
-  // If user is already logged in, redirect to home
-  // This logic is being repeated in SignIn and SignUp..
   const { session } = useSession();
-
-  if (session) return <Navigate to="/dashboard" />;
-
-  const [status, setStatus] = useState("");
+  const [login, { isLoading }] = useLoginMutation();
   const [formValues, setFormValues] = useState({
     email: "",
     password: "",
   });
+
+  if (session) return <Navigate to="/dashboard" />;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormValues({ ...formValues, [e.target.name]: e.target.value });
@@ -32,88 +27,91 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setStatus("Logging in...");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: formValues.email,
-      password: formValues.password,
-    });
-    if (data) {
-      const msg = {
+    try {
+      await login({
+        email: formValues.email,
+        password: formValues.password,
+      }).unwrap();
+      
+      dispatch(showNotification({
         message: "Successfully Login",
         status: "success",
-      };
-      dispatch(showNotification(msg));
-      dispatch(setUser(data.user));
-    }
-
-    if (error) {
-      const msg = {
-        message: error.message,
+      }));
+    } catch (error: any) {
+      dispatch(showNotification({
+        message: error.message || "Login failed",
         status: "error",
-      };
-      dispatch(showNotification(msg));
+      }));
     }
-    setStatus("");
   };
 
   return (
-    <div className="w-full h-screen flex justify-center items-center">
+    <div className="w-full h-screen flex justify-center items-center bg-base-100 dark:bg-base-100">
       <NotificationMessage />
-      <div className="m-auto flex flex-col items-center gap-2">
-        <div className="flex flex-col gap-2 items-center ">
-          <img src={logo} />
-          <h2 className="m-auto text-[32px] leading-10 font-medium">
+      <div className="m-auto flex flex-col items-center gap-8 p-8 bg-base-200 dark:bg-base-200 rounded-xl shadow-lg border border-base-300 dark:border-base-300 max-w-md w-full">
+        <div className="flex flex-col gap-4 items-center text-center">
+          <div className="p-4 bg-primary/10 dark:bg-primary/20 rounded-full">
+            <img src={logo} className="w-16 h-16" alt="Patunay Logo" />
+          </div>
+          <h2 className="text-3xl font-semibold text-base-content dark:text-base-content">
             Welcome to Patunay
           </h2>
-          <div className="text-sm">
+          <div className="text-sm text-base-content/60 dark:text-base-content/60">
             Version: {__APP_VERSION__}
           </div>
         </div>
 
-        <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-          <form className="main-container" onSubmit={handleSubmit}>
+        <div className="w-full">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm/6 font-medium">
+              <label className="block text-sm font-medium text-base-content dark:text-base-content mb-2">
                 Email address
               </label>
-              <div className="mt-2">
-                <FormField
-                  name="email"
-                  inputType={InputType.Email}
-                  hint="Email"
-                  onInputChange={handleInputChange}
-                />
-              </div>
+              <FormField
+                name="email"
+                inputType={InputType.Email}
+                hint="Enter your email"
+                onInputChange={handleInputChange}
+              />
             </div>
 
             <div>
-              <div className="flex items-center justify-between">
-                <label className="block text-sm/6 font-medium">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-base-content dark:text-base-content">
                   Password
                 </label>
                 <div className="text-sm">
                   <a
                     href="#"
-                    className="font-semibold text-indigo-600 hover:text-indigo-500"
+                    className="font-semibold text-primary dark:text-primary hover:text-primary/80 dark:hover:text-primary/80"
                   >
                     Forgot password?
                   </a>
                 </div>
               </div>
-              <div className="mt-2">
-                <FormField
-                  name="password"
-                  inputType={InputType.Password}
-                  hint="Password"
-                  onInputChange={handleInputChange}
-                />
-              </div>
+              <FormField
+                name="password"
+                inputType={InputType.Password}
+                hint="Enter your password"
+                onInputChange={handleInputChange}
+              />
             </div>
 
-            <div className="mt-2">
-              <button type="submit" className="btn btn-primary btn-block">
-                {status ? status : "Sign in"}
+            <div className="pt-4">
+              <button 
+                type="submit" 
+                className="btn btn-primary w-full" 
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign in"
+                )}
               </button>
             </div>
           </form>

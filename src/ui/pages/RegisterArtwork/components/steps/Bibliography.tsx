@@ -66,42 +66,87 @@ const Bibliography = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   }, [artwork]);
 
   return (
-    <div className="flex-2 h-fill flex flex-col justify-between gap-2">
-      <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2 p-4">
-        <h2 className="text-xl font-semibold">
-          Enter the artwork's bibliography
-        </h2>
-        {formData.map((item, index) => (
-          <FormField
-            key={index}
-            hint="Add the artwork's bibliography"
-            isListItem
-            onListItemClick={() => handleOnListItemClick(index)}
-            buttonIcon={index + 1 !== formData.length ? Minus : Plus}
-            listButtonDisabled={!formData[index]}
-            value={item}
-            error={formErrors[`bibliography-${index}`]}
-            onInputChange={(e) => handleOnChange(e, index)}
-          />
-        ))}
+    <div className="flex-2 h-fill flex flex-col justify-between gap-6 p-6 bg-base-100 dark:bg-base-100">
+      <div className="border border-base-300 dark:border-base-300 rounded-xl flex flex-col gap-4 p-6 bg-base-200 dark:bg-base-200">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+            <span className="text-primary dark:text-primary font-bold text-sm">3</span>
+          </div>
+          <h2 className="text-xl font-semibold text-base-content dark:text-base-content">
+            Enter the artwork's bibliography
+          </h2>
+        </div>
+        
+        <div className="space-y-3">
+          {formData.map((item, index) => {
+            const isLastItem = index + 1 === formData.length;
+            const canRemove = formData.length > 1;
+            
+            return (
+              <div key={index} className="flex gap-3 items-start">
+                <div className="flex-1">
+                  <FormField
+                    hint={`Bibliography entry ${index + 1}`}
+                    value={item}
+                    error={formErrors[`bibliography-${index}`]}
+                    onInputChange={(e) => handleOnChange(e, index)}
+                  />
+                </div>
+                
+                <div className="flex gap-2 mt-0">
+                  {isLastItem ? (
+                    // Add button for the last item
+                    <button
+                      type="button"
+                      onClick={() => handleOnListItemClick(index)}
+                      disabled={!formData[index]?.trim()}
+                      className="btn btn-circle btn-sm btn-primary dark:btn-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105"
+                      title="Add new bibliography entry"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    // Remove button for existing items
+                    <button
+                      type="button"
+                      onClick={() => handleOnListItemClick(index)}
+                      disabled={!canRemove}
+                      className="btn btn-circle btn-sm btn-error dark:btn-error disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105"
+                      title="Remove this bibliography entry"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        <div className="text-sm text-base-content/60 dark:text-base-content/60 mt-2">
+          <p>💡 Add multiple bibliography entries for this artwork. Click the + button to add more entries.</p>
+        </div>
       </div>
-      <div className="flex gap-2">
+      
+      <div className="flex gap-3">
         <Button
+          variant="secondary"
           className="flex-1"
-          buttonType="secondary"
-          buttonLabel="Back"
           onClick={onPrev}
-        />
+        >
+          Back
+        </Button>
         <Button
+          variant="primary"
           className="flex-1"
-          buttonType="primary"
-          buttonLabel="Continue"
           onClick={async () => {
             if (validateForm()) {
               onNext();
             }
           }}
-        />
+        >
+          Continue
+        </Button>
       </div>
     </div>
   );

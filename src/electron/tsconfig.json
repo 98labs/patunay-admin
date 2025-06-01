@@ -4,12 +4,21 @@
     "module": "ESNext",  // Prefer "ESNext" over "NodeNext" for cleaner behavior
     "moduleResolution": "node",
     "outDir": "../../dist-electron",
+    "rootDir": "..",
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["node", "electron", "../../types"],
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    
+    /* Additional strict checks - practical balance */
+    "noImplicitReturns": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["./**/*.ts", "./**/*.cts"]
+  "include": ["../electron/**/*.ts", "../shared/**/*.ts"]
 }

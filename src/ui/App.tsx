@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 import { HashRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
+import { ErrorBoundary } from "@components";
 
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'))
 const Admin = lazy(() => import('./pages/Admin'));
@@ -15,27 +16,69 @@ const Team = lazy(() => import('./pages/Team'));
 
 function App() {
   return (
-    <HashRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<Dashboard />} />
+    <ErrorBoundary>
+      <HashRouter>
+        <Routes>
+          <Route path="/login" element={
+            <ErrorBoundary>
+              <Login />
+            </ErrorBoundary>
+          } />
+          <Route path="/dashboard" element={
+            <ErrorBoundary>
+              <DashboardLayout />
+            </ErrorBoundary>
+          }>
+            <Route index element={
+              <ErrorBoundary>
+                <Dashboard />
+              </ErrorBoundary>
+            } />
 
-          <Route path="artworks" element={<Artworks />} />
-          <Route path="artworks/register" element={<RegisterArtwork />} />
-          <Route path="artworks/search" element={<SearchArtwork />} />
+            <Route path="artworks" element={
+              <ErrorBoundary>
+                <Artworks />
+              </ErrorBoundary>
+            } />
+            <Route path="artworks/register" element={
+              <ErrorBoundary>
+                <RegisterArtwork />
+              </ErrorBoundary>
+            } />
+            <Route path="artworks/search" element={
+              <ErrorBoundary>
+                <SearchArtwork />
+              </ErrorBoundary>
+            } />
 
-          <Route path="admin" element={<Admin />} />
-          <Route path="admin/nfc-tags" element={<NfcTags />} />
-          <Route path="admin/team" element={<Team />} />
-          <Route path="admin/devices" element={<Devices />} />
+            <Route path="admin" element={
+              <ErrorBoundary>
+                <Admin />
+              </ErrorBoundary>
+            } />
+            <Route path="admin/nfc-tags" element={
+              <ErrorBoundary>
+                <NfcTags />
+              </ErrorBoundary>
+            } />
+            <Route path="admin/team" element={
+              <ErrorBoundary>
+                <Team />
+              </ErrorBoundary>
+            } />
+            <Route path="admin/devices" element={
+              <ErrorBoundary>
+                <Devices />
+              </ErrorBoundary>
+            } />
+
+            <Route path="*" element={<Login />} />
+          </Route>
 
           <Route path="*" element={<Login />} />
-        </Route>
-
-        <Route path="*" element={<Login />} />
-      </Routes>
-    </HashRouter>
+        </Routes>
+      </HashRouter>
+    </ErrorBoundary>
   );
 }
 

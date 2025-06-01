@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import supabase from "../supabase";
 import { Loading } from "@components";
 import { Session } from "@supabase/supabase-js";
@@ -23,8 +23,16 @@ export const SessionProvider = ({ children }: Props) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", "light");
-    document.documentElement.setAttribute("data-theme", "light");
+    // Initialize theme from localStorage or default to light
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    
+    // Also set the class for Tailwind dark mode
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   }, []);
 
   useEffect(() => {
@@ -40,8 +48,10 @@ export const SessionProvider = ({ children }: Props) => {
     };
   }, [supabase]);
 
+  const contextValue = useMemo(() => ({ session }), [session]);
+
   return (
-    <SessionContext.Provider value={{ session }}>
+    <SessionContext.Provider value={contextValue}>
       {isLoading ? <Loading /> : children}
     </SessionContext.Provider>
   );

@@ -1,6 +1,2 @@
-interface WriteResult {
-  success: boolean;
-  message: string;
-  data?: string;
-  error?: string;
-}
+// Re-export shared WriteResult type for consistency
+export type { WriteResult } from "../../shared/types/electron.js";

@@ -8,6 +8,7 @@ import { Button } from "@components";
 import supabase from "../../../../supabase/index";
 import { ArtworkEntity, AssetEntity } from "@typings";
 import ImageSlider from "../ImageSlider";
+import { useNotification } from "../../../../hooks/useNotification";
 
 interface Props {
   artwork: ArtworkEntity;
@@ -19,6 +20,7 @@ interface Props {
 const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
   const [assets, setAssets] = useState<AssetEntity[]>([]);
   const [uploading, setUploading] = useState(false);
+  const { showError } = useNotification();
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -37,7 +39,7 @@ const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
           .upload(filePath, file);
 
         if (uploadError) {
-          alert(`Failed to upload ${file.name}: ${uploadError.message}`);
+          showError(`Failed to upload ${file.name}: ${uploadError.message}`, "Upload Error");
           continue;
         }
 
@@ -46,7 +48,7 @@ const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
           .createSignedUrl(filePath, 60 * 60);
 
         if (urlError) {
-          alert(`Failed to create URL for ${file.name}: ${urlError.message}`);
+          showError(`Failed to create URL for ${file.name}: ${urlError.message}`, "URL Generation Error");
           continue;
         }
 

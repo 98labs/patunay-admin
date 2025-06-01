@@ -1,4 +1,2 @@
-export interface StaticData {
-  userId: string;
-  username: string;
-}
+// Re-export shared StaticData type for consistency
+export type { StaticData } from "../../shared/types/electron.js";

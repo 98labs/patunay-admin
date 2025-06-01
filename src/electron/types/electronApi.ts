@@ -1,9 +1,11 @@
-export interface ElectronAPI {
-  getStaticData: () => Promise<StaticData>;
-  subscribeStatistics: (callback: (statistics: Statistics) => void) => void;
-  subscribeNfcWriteResult: (callback: (result: WriteResult) => void) => void;
-  subscribeNfcCardDetection: (
-    callback: (data: { uid: string; card: CardData }) => void
-  ) => void;
-  writeOnTag: (data?: string) => void;
-}
+// Re-export shared types for consistency
+export type {
+  ElectronAPI,
+  Statistics,
+  StaticData,
+  CardData,
+  WriteResult,
+  NfcOperationError,
+  NfcReaderStatus,
+  NfcServiceError
+} from "../../shared/types/electron.js";

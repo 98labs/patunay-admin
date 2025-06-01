@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import moment from "moment";
+import { format } from "date-fns";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { Link } from "react-router-dom";
 import DropdownAction from "../components/DropdownAction";
@@ -53,7 +53,7 @@ export function useArtworkColumns(
     },
     {
       header: "Date Added",
-      cell: ({ row }) => moment(row.original.tag_issued_at).format("MMM DD, YYYY"),
+      cell: ({ row }) => format(new Date(row.original.tag_issued_at), "MMM dd, yyyy"),
       meta: { className: "hidden lg:table-cell" },
     },
     {

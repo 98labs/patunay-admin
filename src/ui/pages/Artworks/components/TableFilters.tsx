@@ -1,3 +1,4 @@
+import { memo, useCallback } from "react";
 import { TableFilterProp } from "./types";
 
 const TableFilters = <T,>({
@@ -7,10 +8,10 @@ const TableFilters = <T,>({
   nfcFilter,
   setNfcFilter,
 }: TableFilterProp<T>) => {
-  const handleNfcChange = (value: 'all' | 'with' | 'detach' | 'none') => {
+  const handleNfcChange = useCallback((value: 'all' | 'with' | 'detach' | 'none') => {
     setNfcFilter(value);
     table.getColumn('tag_id')?.setFilterValue(value);
-  };
+  }, [setNfcFilter, table]);
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 my-4">
@@ -52,4 +53,4 @@ const TableFilters = <T,>({
   );
 };
 
-export default TableFilters;
+export default memo(TableFilters) as typeof TableFilters;

@@ -4,8 +4,10 @@ import path from "path";
 import { createRequire } from "module";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
-import { getStatisticData, pollResources } from "./resourceManager.js";
-import { initializeNfc, nfcWriteOnTag } from "./nfc/nfcService.js";
+import { getStatisticData } from "./resourceManager.js";
+import { initializeNfc, nfcWriteOnTag, cleanupNfc } from "./nfc/nfcService.js";
+import { electronLogger } from "./logging/electronLogger.js";
+import { LogCategory } from "../shared/logging/types.js";
 
 const require = createRequire(import.meta.url);
 const { autoUpdater } = pkg;
@@ -18,23 +20,83 @@ autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
 let mainWindow: any;
 
+// Set Chromium flags to reduce warnings
+app.commandLine.appendSwitch('--disable-features', 'VizDisplayCompositor');
+app.commandLine.appendSwitch('--disable-dev-tools-fonts');
+app.commandLine.appendSwitch('--disable-extensions');
+app.commandLine.appendSwitch('--disable-plugins');
+
+// Suppress DevTools autofill warnings at the process level
+if (isDev()) {
+  const originalConsoleError = console.error;
+  console.error = (...args: any[]) => {
+    const message = args.join(' ');
+    if (message.includes('Autofill.enable') || 
+        message.includes('Autofill.setAddresses') ||
+        message.includes('Request Autofill')) {
+      return; // Suppress these specific warnings
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
+
 const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 1080,
     height: 800,
     webPreferences: {
       preload: getPreloadPath(),
-      // devTools: false, // Uncomment to disable devtools
+      contextIsolation: true,
+      nodeIntegration: false,
+      webSecurity: true,
+      // Disable various features that might cause DevTools warnings
+      autoplayPolicy: 'no-user-gesture-required',
+      disableDialogs: true
     },
   });
 
   if (isDev()) {
-    mainWindow.loadURL("http://localhost:5173/login");
-    console.log("Loading URL: http://localhost:5173/login");
-    mainWindow.webContents.openDevTools();
+    const devPort = process.env["VITE_DEV_PORT"] || "5173";
+    const devUrl = `http://localhost:${devPort}/login`;
+    
+    // Wait for Vite dev server to be ready before loading
+    const waitForServer = async () => {
+      const maxAttempts = 30; // 30 seconds max wait
+      let attempts = 0;
+      
+      while (attempts < maxAttempts) {
+        try {
+          const response = await fetch(`http://localhost:${devPort}/`);
+          if (response.ok) {
+            electronLogger.info("Vite server is ready", LogCategory.SYSTEM, { component: "Main" });
+            mainWindow.loadURL(devUrl);
+            electronLogger.info("Loading development URL", LogCategory.SYSTEM, { component: "Main" }, { url: devUrl });
+            
+            // Only open DevTools if explicitly requested (set ENABLE_DEVTOOLS=true to enable)
+            if (process.env.ENABLE_DEVTOOLS === 'true') {
+              mainWindow.webContents.openDevTools();
+            }
+            return;
+          }
+        } catch (error) {
+          // Server not ready yet, continue waiting
+        }
+        
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      }
+      
+      // If we get here, the server didn't start in time
+      electronLogger.error("Vite server failed to start within 30 seconds", LogCategory.SYSTEM, { component: "Main" });
+      mainWindow.loadURL(`data:text/html,<html><body><h1>Waiting for dev server...</h1><p>Please start the React dev server with: npm run dev:react</p></body></html>`);
+    };
+    
+    waitForServer().catch(error => {
+      electronLogger.error("Error waiting for Vite server", LogCategory.SYSTEM, { component: "Main" }, error);
+    });
   } else {
     const indexPath = path.join(app.getAppPath(), "dist-react/index.html");
-    console.log(`Loading file: ${indexPath}`);
+    electronLogger.info("Loading production file", LogCategory.SYSTEM, { component: "Main" }, { path: indexPath });
     mainWindow.loadFile(indexPath);
 
     autoUpdater.checkForUpdatesAndNotify();
@@ -44,11 +106,48 @@ const createWindow = () => {
 
   ipcMain.handle("getStatisticData", () => getStatisticData());
 
-  ipcMain.on("nfc-write-tag", (_event, payload: { data?: string }) => {
-    nfcWriteOnTag(payload.data);
+  // Handle log entries from renderer process
+  ipcMain.on("log-entry", (_event, logEntry) => {
+    try {
+      electronLogger.info(
+        `[Renderer] ${logEntry.message}`,
+        logEntry.category || LogCategory.UI,
+        {
+          component: 'RendererProcess',
+          originalContext: logEntry.context
+        },
+        {
+          level: logEntry.level,
+          data: logEntry.data,
+          error: logEntry.error,
+          duration: logEntry.duration
+        }
+      );
+    } catch (error) {
+      electronLogger.error("Failed to process renderer log entry", LogCategory.SYSTEM, { component: "IPC" }, { logEntry }, error as Error);
+    }
+  });
+
+  ipcMain.on("nfc-write-tag", (_event, payload: unknown) => {
+    // Validate IPC payload
+    if (!payload || typeof payload !== 'object') {
+      electronLogger.error('Invalid nfc-write-tag payload: expected object', LogCategory.SECURITY, { component: "IPC" }, { payload });
+      return;
+    }
+
+    const typedPayload = payload as Record<string, unknown>;
+    
+    // Validate data field if present
+    if (typedPayload["data"] !== undefined && typeof typedPayload["data"] !== 'string') {
+      electronLogger.error('Invalid nfc-write-tag payload: data must be string or undefined', LogCategory.SECURITY, { component: "IPC" }, { payload: typedPayload });
+      return;
+    }
+
+    electronLogger.info("Processing NFC write request", LogCategory.NFC, { component: "IPC" }, { hasData: !!typedPayload["data"] });
+    nfcWriteOnTag(typedPayload["data"] as string | undefined);
   });
 };
-app.setAppUserModelId("com.ne-labs.Patunay");
+app.setAppUserModelId("com.patunay");
 
 app.whenReady().then(() => {
   createWindow();
@@ -64,11 +163,11 @@ app.whenReady().then(() => {
 // ===========================
 
 autoUpdater.on("checking-for-update", () => {
-  console.log("Checking for updates...");
+  electronLogger.info("Checking for updates", LogCategory.SYSTEM, { component: "AutoUpdater" });
 });
 
 autoUpdater.on("update-available", () => {
-  console.log("Update available. Downloading...");
+  electronLogger.info("Update available, downloading", LogCategory.SYSTEM, { component: "AutoUpdater" });
 
   dialog
     .showMessageBox(mainWindow, {
@@ -78,20 +177,20 @@ autoUpdater.on("update-available", () => {
       buttons: ["OK"],
     })
     .then(() => {
-      console.log("User acknowledged update download.");
+      electronLogger.info("User acknowledged update download", LogCategory.SYSTEM, { component: "AutoUpdater" });
     });
 });
 
 autoUpdater.on("update-not-available", () => {
-  console.log("No updates available.");
+  electronLogger.info("No updates available", LogCategory.SYSTEM, { component: "AutoUpdater" });
 });
 
 autoUpdater.on("download-progress", (progress) => {
-  console.log(`Download progress: ${progress.percent.toFixed(2)}%`);
+  electronLogger.debug("Update download progress", LogCategory.SYSTEM, { component: "AutoUpdater" }, { percent: progress.percent.toFixed(2) });
 });
 
 autoUpdater.on("update-downloaded", () => {
-  console.log("Update downloaded.");
+  electronLogger.info("Update downloaded", LogCategory.SYSTEM, { component: "AutoUpdater" });
 
   dialog
     .showMessageBox(mainWindow, {
@@ -102,14 +201,42 @@ autoUpdater.on("update-downloaded", () => {
     })
     .then((result) => {
       if (result.response === 0) {
-        console.log("User chose to restart and install.");
+        electronLogger.info("User chose to restart and install update", LogCategory.SYSTEM, { component: "AutoUpdater" });
         autoUpdater.quitAndInstall();
       } else {
-        console.log("User chose to install later.");
+        electronLogger.info("User chose to install update later", LogCategory.SYSTEM, { component: "AutoUpdater" });
       }
     });
 });
 
 autoUpdater.on("error", (error) => {
-  console.error("Error during update process:", error.message);
+  electronLogger.error("Error during update process", LogCategory.SYSTEM, { component: "AutoUpdater" }, { errorMessage: error.message }, error);
+});
+
+// Cleanup on app exit
+app.on("before-quit", async (event) => {
+  event.preventDefault(); // Prevent immediate quit
+  electronLogger.info("Application shutting down, cleaning up NFC service", LogCategory.SYSTEM, { component: "Main" });
+  
+  try {
+    await cleanupNfc();
+    electronLogger.info("NFC cleanup completed, quitting application", LogCategory.SYSTEM, { component: "Main" });
+  } catch (error) {
+    electronLogger.error("Error during NFC cleanup", LogCategory.SYSTEM, { component: "Main" }, error as Error);
+  } finally {
+    app.exit(0); // Force quit after cleanup
+  }
+});
+
+app.on("window-all-closed", async () => {
+  try {
+    await cleanupNfc();
+    electronLogger.info("NFC cleanup completed after window close", LogCategory.SYSTEM, { component: "Main" });
+  } catch (error) {
+    electronLogger.error("Error during NFC cleanup on window close", LogCategory.SYSTEM, { component: "Main" }, error as Error);
+  }
+  
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
 });

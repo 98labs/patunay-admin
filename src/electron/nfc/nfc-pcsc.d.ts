@@ -2,6 +2,8 @@ declare module "nfc-pcsc" {
   export class NFC {
     on(event: "reader", callback: (reader: Reader) => void): void;
     on(event: "error", callback: (error: Error) => void): void;
+    removeListener?(event: string, callback: Function): void;
+    removeAllListeners?(event?: string): void;
   }
 
   export class Reader {

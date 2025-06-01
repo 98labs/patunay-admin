@@ -1,6 +1,6 @@
 import { InputType } from "@typings";
 import { Button, RadioButton } from "@components";
-import { ChangeEvent } from "react";
+import { ChangeEvent, memo } from "react";
 import { LucideIcon, Plus } from "lucide-react";
 
 interface Props {
@@ -41,11 +41,11 @@ const FormField = ({
   onInputChange,
 }: Props) => {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       {isLabelVisible && (
-        <label className="fieldset-label gap-0.5 font-medium text-base text-neutral-black-01">
+        <label className="fieldset-label gap-0.5 font-medium text-base text-base-content dark:text-base-content">
           {label}
-          {required && <span className="text-tertiary-red-200">*</span>}
+          {required && <span className="text-error dark:text-error">*</span>}
         </label>
       )}
       {inputType === InputType.Radio ? (
@@ -60,7 +60,7 @@ const FormField = ({
           <input
             name={name}
             type={inputType}
-            className={`${isListItem && "flex-5/6"} input w-full transition-all focus:outline-none focus:input-primary `}
+            className={`${isListItem && "flex-5/6"} input input-bordered w-full transition-all focus:outline-none focus:border-primary dark:focus:border-primary focus:ring-2 focus:ring-primary/20 dark:focus:ring-primary/30 bg-base-100 dark:bg-base-200 text-base-content dark:text-base-content border-2 border-base-content/20 dark:border-base-content/30 hover:border-base-content/30 dark:hover:border-base-content/40 placeholder:text-base-content/50 dark:placeholder:text-base-content/60 disabled:opacity-50 disabled:cursor-not-allowed`}
             value={value}
             placeholder={isHintVisible ? hint : ""}
             onChange={onInputChange}
@@ -78,9 +78,9 @@ const FormField = ({
         </div>
       )}
 
-      {error && <span className="text-semantic-error text-sm">{error}</span>}
+      {error && <span className="text-error dark:text-error text-sm font-medium">{error}</span>}
     </div>
   );
 };
 
-export default FormField;
+export default memo(FormField);

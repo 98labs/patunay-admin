@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import moment from "moment";
+import { format } from "date-fns";
 import { Button, Loading, DetachNFCModal, DeleteArtworkModal } from "@components";
 import ArtworkImageModal from "./components/ArtworkImageModal";
 import { Appraisal, ArtworkType } from "./types";
@@ -65,6 +65,12 @@ const DetailArtwork = () => {
 
   useEffect(() => {
     if (!isScanning) return;
+
+    // Check if electron API is available
+    if (!window.electron?.subscribeNfcCardDetection) {
+      console.warn('Electron API not available - NFC functionality will be disabled');
+      return;
+    }
 
     window.electron.subscribeNfcCardDetection(
       (card: { uid: string; data: any }) => {
@@ -177,7 +183,7 @@ const DetailArtwork = () => {
               <p className="text-gray-500 text-xs">
                 {artwork.artist}{" "}
                 <span className="italic">
-                  ({moment(artwork.tag_issued_at).format("YYYY")})
+                  ({format(new Date(artwork.tag_issued_at), "yyyy")})
                 </span>
               </p>
             </ul>

@@ -8,8 +8,8 @@ const __dirname = path.dirname(__filename);
 
 export const getPreloadPath = () => {
   const preloadPath = isDev()
-    ? path.resolve(__dirname, "../dist-electron/preload.cjs") // Assuming dev output is one folder up from src
-    : path.join(app.getAppPath(), "dist-electron", "preload.cjs");
+    ? path.resolve(__dirname, "preload.js") // Fixed: __dirname is already in dist-electron
+    : path.join(app.getAppPath(), "dist-electron", "preload.js");
 
   console.log(`Preload script path: ${preloadPath}`);
   return preloadPath;

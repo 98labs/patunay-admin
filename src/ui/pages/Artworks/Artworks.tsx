@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import {
@@ -55,27 +55,27 @@ const Artworks = () => {
     }
   }, [status, title]);
 
-  const handleEdit = (art: ArtistType) => {
+  const handleEdit = useCallback((art: ArtistType) => {
     console.log("art", art);
-  };
+  }, []);
 
-  const handleDetach = async (art: ArtistType) => {
+  const handleDetach = useCallback(async (art: ArtistType) => {
     if (art.tag_id) {
       setTagId(art.tag_id);
       setShowDetachModal(true);
     }
-  };
+  }, []);
 
-  const handleDelete = async (art: ArtistType) => {
+  const handleDelete = useCallback(async (art: ArtistType) => {
     if (art.id) {
       setArtworkId(art.id);
       setShowDeleteModal(true);
     }
-  };
+  }, []);
 
   const columns = useArtworkColumns(handleEdit, handleDetach, handleDelete);
 
-  const table = useReactTable({
+  const tableConfig = useMemo(() => ({
     data: artList,
     columns,
     state: {
@@ -88,18 +88,22 @@ const Artworks = () => {
       pagination: { pageSize: 10 },
     },
     getFilteredRowModel: getFilteredRowModel(),
-  });
+  }), [artList, columns, globalFilter, setGlobalFilter]);
 
-  const handleFile = (file: any) => {
+  const table = useReactTable(tableConfig);
+
+  const handleFile = useCallback((file: any) => {
     console.log("Selected file:", file);
     // You can do something with the file here
-  };
+  }, []);
 
   return (
-    <section className="container text-base-content">
+    <section className="container text-base-content dark:text-base-content bg-base-100 dark:bg-base-100">
       <div className="flex flex-col @max-md:flex-row">
-        <div className="sm:flex sm:items-center sm:justify-between">
-          <h2 className="text-lg font-medium">ArtWork</h2>
+        <div className="sm:flex sm:items-center sm:justify-between mb-6">
+          <h2 className="text-2xl font-semibold text-base-content dark:text-base-content border-b border-base-300 dark:border-base-300 pb-3">
+            ArtWork
+          </h2>
 
           <div className="flex items-center mt-4 gap-x-3">
             <UploadButton onFileSelect={handleFile} />
@@ -116,7 +120,7 @@ const Artworks = () => {
                 nfcFilter={nfcFilter}
                 setNfcFilter={setNfcFilter}
               />
-              <div className="overflow-x-auto border border-base-content/5 bg-base-100 md:rounded-lg">
+              <div className="overflow-x-auto border border-base-300 dark:border-base-300 bg-base-100 dark:bg-base-100 md:rounded-lg shadow-sm">
                 {loading ? (
                   <Loading fullScreen={false} />
                 ) : (

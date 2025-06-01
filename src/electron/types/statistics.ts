@@ -1,6 +1,2 @@
-export interface Statistics {
-  // Define the structure of statistics object, e.g.,:
-  cpuUsage: number;
-  memoryUsage: number;
-  diskSpace: number;
-}
+// Re-export shared Statistics type for consistency
+export type { Statistics } from "../../shared/types/electron.js";

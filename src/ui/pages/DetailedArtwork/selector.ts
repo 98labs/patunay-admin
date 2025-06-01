@@ -1,6 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
 
-import { RootState } from '../../lib/store';
+import { RootState } from '../../store/store';
 import { initialState } from './slice';
 
 const selectDomain = (state: RootState) => {

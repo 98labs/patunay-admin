@@ -13,8 +13,9 @@ dist-ssr
 dist-electron
 dist-react
 
-*.local
+.env.*.local
 .env
+electron-builder.env
 package-lock.json
 
 # Editor directories and files
@@ -29,3 +30,4 @@ package-lock.json
 *.sw?
 
 out/
+release/
