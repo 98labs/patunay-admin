@@ -9,9 +9,7 @@ const DashboardLayout = () => {
   const { session } = useSession();
   const dispatch = useDispatch();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  if (!session) {
-    return <Navigate to="/login" />;
-  }
+  
   useEffect(() => {
     if (session?.user) {
       dispatch(setUser(session.user));
@@ -24,6 +22,10 @@ const DashboardLayout = () => {
       }));
     }
   }, [session, dispatch]);
+
+  if (!session) {
+    return <Navigate to="/login" />;
+  }
 
   return (
     <div className="flex min-h-screen overflow-hidden">
