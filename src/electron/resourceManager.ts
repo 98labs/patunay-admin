@@ -1,4 +1,3 @@
-import osUtils from 'os-utils';
 import fs from 'fs';
 import os from 'os';
 import { BrowserWindow } from 'electron';
@@ -22,7 +21,7 @@ export const getStatisticData = () => {
     const totalStorage = getStorageData().total;
     const cpuInfo = os.cpus()[0];
     const cpuModel = cpuInfo ? cpuInfo.model : 'Unknown CPU';
-    const totalMem = Math.floor(osUtils.totalmem() / 1024);
+    const totalMem = Math.floor(os.totalmem() / (1024 * 1024)); // Convert to MB
     return {
         totalStorage,
         cpuModel,
@@ -30,13 +29,24 @@ export const getStatisticData = () => {
     };
 }
 
-const getCpuUsage = () => {
-    return new Promise( resolver => {
-        osUtils.cpuUsage(resolver);
-    })
+const getCpuUsage = async () => {
+    // Use Node.js built-in process.cpuUsage() for CPU metrics
+    const startUsage = process.cpuUsage();
+    
+    // Wait a bit to get meaningful CPU usage
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const endUsage = process.cpuUsage(startUsage);
+    const totalUsage = endUsage.user + endUsage.system;
+    
+    // Convert to percentage (this is approximate)
+    return Math.min(totalUsage / 100000, 1); // Normalize to 0-1
 }
+
 const getRamUsage = () => {
-    return 1 - osUtils.freememPercentage();
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    return (totalMem - freeMem) / totalMem;
 }
  
 const getStorageData = () => {
