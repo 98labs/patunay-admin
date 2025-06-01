@@ -20,13 +20,14 @@ export function pollResources(mainWindow: BrowserWindow) {
 
 export const getStatisticData = () => {
     const totalStorage = getStorageData().total;
-    const cpuModel = os.cpus()[0].model;
-    const totalMem = Math.floor(osUtils.totalmem() / 1024)
+    const cpuInfo = os.cpus()[0];
+    const cpuModel = cpuInfo ? cpuInfo.model : 'Unknown CPU';
+    const totalMem = Math.floor(osUtils.totalmem() / 1024);
     return {
         totalStorage,
         cpuModel,
         totalMem
-    }
+    };
 }
 
 const getCpuUsage = () => {

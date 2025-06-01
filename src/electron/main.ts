@@ -4,7 +4,7 @@ import path from "path";
 import { createRequire } from "module";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
-import { getStatisticData, pollResources } from "./resourceManager.js";
+import { getStatisticData } from "./resourceManager.js";
 import { initializeNfc, nfcWriteOnTag, cleanupNfc } from "./nfc/nfcService.js";
 
 const require = createRequire(import.meta.url);
@@ -29,7 +29,7 @@ const createWindow = () => {
   });
 
   if (isDev()) {
-    const devPort = process.env.VITE_DEV_PORT || "5173";
+    const devPort = process.env["VITE_DEV_PORT"] || "5173";
     const devUrl = `http://localhost:${devPort}/login`;
     mainWindow.loadURL(devUrl);
     console.log(`Loading URL: ${devUrl}`);
@@ -56,12 +56,12 @@ const createWindow = () => {
     const typedPayload = payload as Record<string, unknown>;
     
     // Validate data field if present
-    if (typedPayload.data !== undefined && typeof typedPayload.data !== 'string') {
+    if (typedPayload["data"] !== undefined && typeof typedPayload["data"] !== 'string') {
       console.error('Invalid nfc-write-tag payload: data must be string or undefined');
       return;
     }
 
-    nfcWriteOnTag(typedPayload.data as string | undefined);
+    nfcWriteOnTag(typedPayload["data"] as string | undefined);
   });
 };
 app.setAppUserModelId("com.ne-labs.Patunay");

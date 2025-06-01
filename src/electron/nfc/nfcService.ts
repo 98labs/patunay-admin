@@ -21,10 +21,10 @@ enum NfcErrorType {
 
 interface NfcError extends Error {
   type: NfcErrorType;
-  originalError?: Error;
+  originalError?: Error | undefined;
 }
 
-const createNfcError = (type: NfcErrorType, message: string, originalError?: Error): NfcError => {
+const createNfcError = (type: NfcErrorType, message: string, originalError?: Error | undefined): NfcError => {
   const error = new Error(message) as NfcError;
   error.type = type;
   error.originalError = originalError;
