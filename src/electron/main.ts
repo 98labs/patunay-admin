@@ -29,8 +29,10 @@ const createWindow = () => {
   });
 
   if (isDev()) {
-    mainWindow.loadURL("http://localhost:5173/login");
-    console.log("Loading URL: http://localhost:5173/login");
+    const devPort = process.env.VITE_DEV_PORT || "5173";
+    const devUrl = `http://localhost:${devPort}/login`;
+    mainWindow.loadURL(devUrl);
+    console.log(`Loading URL: ${devUrl}`);
     mainWindow.webContents.openDevTools();
   } else {
     const indexPath = path.join(app.getAppPath(), "dist-react/index.html");
@@ -44,8 +46,22 @@ const createWindow = () => {
 
   ipcMain.handle("getStatisticData", () => getStatisticData());
 
-  ipcMain.on("nfc-write-tag", (_event, payload: { data?: string }) => {
-    nfcWriteOnTag(payload.data);
+  ipcMain.on("nfc-write-tag", (_event, payload: unknown) => {
+    // Validate IPC payload
+    if (!payload || typeof payload !== 'object') {
+      console.error('Invalid nfc-write-tag payload: expected object');
+      return;
+    }
+
+    const typedPayload = payload as Record<string, unknown>;
+    
+    // Validate data field if present
+    if (typedPayload.data !== undefined && typeof typedPayload.data !== 'string') {
+      console.error('Invalid nfc-write-tag payload: data must be string or undefined');
+      return;
+    }
+
+    nfcWriteOnTag(typedPayload.data as string | undefined);
   });
 };
 app.setAppUserModelId("com.ne-labs.Patunay");
