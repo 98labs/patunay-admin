@@ -64,7 +64,7 @@ const createWindow = () => {
     nfcWriteOnTag(typedPayload["data"] as string | undefined);
   });
 };
-app.setAppUserModelId("com.ne-labs.Patunay");
+app.setAppUserModelId("com.patunay");
 
 app.whenReady().then(() => {
   createWindow();

@@ -4,6 +4,7 @@
     "module": "ESNext",  // Prefer "ESNext" over "NodeNext" for cleaner behavior
     "moduleResolution": "node",
     "outDir": "../../dist-electron",
+    "rootDir": "..",
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -19,5 +20,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["./**/*.ts"]
+  "include": ["../electron/**/*.ts", "../shared/**/*.ts"]
 }

@@ -3,16 +3,8 @@
   "private": true,
   "version": "1.0.14",
   "type": "module",
-  "author": "Geoffrey and JohnHoneyman",
-  "main": "dist-electron/main.js",
-  "repository": "https://github.com/gundam0910/patunay-app",
-  "publish": [
-    {
-      "provider": "github",
-      "owner": "gundam0910",
-      "repo": "patunay-app"
-    }
-  ],
+  "author": "Patunay Team",
+  "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "npm-run-all --parallel dev:react dev:electron",
     "dev:react": "vite",
@@ -121,7 +113,6 @@
     "appId": "com.patunay.app",
     "productName": "Patunay",
     "files": [
-      "dist/",
       "dist-electron/",
       "dist-react/",
       "node_modules/",
