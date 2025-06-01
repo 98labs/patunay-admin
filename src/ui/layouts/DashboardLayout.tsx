@@ -3,7 +3,7 @@ import { Sidebar, NotificationMessage } from "@components";
 import { Navigate, Outlet } from "react-router-dom";
 import { useSession } from "../context/SessionContext";
 import { useDispatch } from "react-redux";
-import { setUser } from "../pages/Login/slice";
+import { setUser, setSession } from "../store/features/auth";
 
 const DashboardLayout = () => {
   const { session } = useSession();
@@ -13,8 +13,17 @@ const DashboardLayout = () => {
     return <Navigate to="/login" />;
   }
   useEffect(() => {
-    dispatch(setUser(session.user));
-  }, []);
+    if (session?.user) {
+      dispatch(setUser(session.user));
+    }
+    if (session) {
+      dispatch(setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        expires_at: session.expires_at
+      }));
+    }
+  }, [session, dispatch]);
 
   return (
     <div className="flex min-h-screen overflow-hidden">

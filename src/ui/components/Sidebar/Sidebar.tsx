@@ -1,6 +1,6 @@
 import { UserProfile } from "@components";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import supabase from "../../supabase";
+import { useLogoutMutation } from "../../store/api/userApi";
 import { Links, NavbarItemProps } from "./types";
 
 const NavbarItem = ({
@@ -52,6 +52,7 @@ const Sidebar = ({
 }) => {
   const pathName = useLocation();
   const navigate = useNavigate();
+  const [logout] = useLogoutMutation();
 
   const links: Links[] = [
     { name: "Dashboard", path: "/dashboard" },
@@ -75,8 +76,11 @@ const Sidebar = ({
   ];
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error === null) {
+    try {
+      await logout().unwrap();
+      navigate("/login");
+    } catch (error) {
+      console.error('Logout failed:', error);
       navigate("/login");
     }
   };

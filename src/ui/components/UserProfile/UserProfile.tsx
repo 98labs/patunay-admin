@@ -3,11 +3,11 @@ import { themeChange } from "theme-change";
 import { useSelector } from "react-redux";
 
 import logo from '../../../assets/logo/patunay-256x256.png'
-import { selectUser } from '../../pages/Login/selector';
+import { selectUser } from '../../store/features/auth';
 
 const UserProfile = () => {
   const [currentTheme, setCurrentTheme] = useState("light");
-  const {user} = useSelector(selectUser)
+  const user = useSelector(selectUser)
   useEffect(() => {
     themeChange(false);
     try {

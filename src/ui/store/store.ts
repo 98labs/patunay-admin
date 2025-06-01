@@ -1,14 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit";
 import notificationSlice from "../components/NotificationMessage/slice";
-import authSlice from "../pages/Login/slice";
 import artworkSlice from "../pages/DetailedArtwork/slice";
-import { nfcReducer, nfcMiddleware } from "../store/nfc";
+import { nfcReducer, nfcMiddleware } from "./nfc";
+import { authReducer } from "./features/auth";
+import { api } from "./api";
 
 const combinedReducer = {
-  auth: authSlice,
+  auth: authReducer,
   notification: notificationSlice,
   artwork: artworkSlice,
   nfc: nfcReducer,
+  [api.reducerPath]: api.reducer,
 };
 
 const store = configureStore({
@@ -17,13 +19,22 @@ const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore these action types for serialization checks
-        ignoredActions: ['nfc/cardDetected', 'nfc/readerConnected', 'nfc/readerDisconnected'],
+        ignoredActions: [
+          'nfc/cardDetected',
+          'nfc/readerConnected', 
+          'nfc/readerDisconnected',
+          'api/executeQuery/pending',
+          'api/executeQuery/fulfilled',
+          'api/executeQuery/rejected',
+        ],
         // Ignore these field paths in all actions
-        ignoredActionsPaths: ['payload.timestamp'],
+        ignoredActionsPaths: ['payload.timestamp', 'meta.arg', 'meta.baseQueryMeta'],
         // Ignore these paths in the state
-        ignoredPaths: ['nfc.operationHistory.timestamp'],
+        ignoredPaths: ['nfc.operationHistory.timestamp', 'api'],
       },
-    }).concat(nfcMiddleware),
+    })
+    .concat(api.middleware)
+    .concat(nfcMiddleware),
 });
 
 export default store;

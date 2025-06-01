@@ -4,23 +4,19 @@ import { useDispatch } from "react-redux";
 
 import { FormField, NotificationMessage } from "@components";
 import { useSession } from "../../context/SessionContext";
-import supabase from "../../supabase";
 import { InputType } from "@typings";
-import { setUser } from "./slice";
+import { useLoginMutation } from "../../store/api/userApi";
 import { showNotification } from "../../components/NotificationMessage/slice";
 
 import logo from "@/assets/logo/patunay-logo.png";
 
 const Login = () => {
   const dispatch = useDispatch();
-  // ==============================
-  // If user is already logged in, redirect to home
-  // This logic is being repeated in SignIn and SignUp..
   const { session } = useSession();
+  const [login, { isLoading }] = useLoginMutation();
 
   if (session) return <Navigate to="/dashboard" />;
 
-  const [status, setStatus] = useState("");
   const [formValues, setFormValues] = useState({
     email: "",
     password: "",
@@ -32,29 +28,23 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setStatus("Logging in...");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: formValues.email,
-      password: formValues.password,
-    });
-    if (data) {
-      const msg = {
+    try {
+      await login({
+        email: formValues.email,
+        password: formValues.password,
+      }).unwrap();
+      
+      dispatch(showNotification({
         message: "Successfully Login",
         status: "success",
-      };
-      dispatch(showNotification(msg));
-      dispatch(setUser(data.user));
-    }
-
-    if (error) {
-      const msg = {
-        message: error.message,
+      }));
+    } catch (error: any) {
+      dispatch(showNotification({
+        message: error.message || "Login failed",
         status: "error",
-      };
-      dispatch(showNotification(msg));
+      }));
     }
-    setStatus("");
   };
 
   return (
@@ -112,8 +102,8 @@ const Login = () => {
             </div>
 
             <div className="mt-2">
-              <button type="submit" className="btn btn-primary btn-block">
-                {status ? status : "Sign in"}
+              <button type="submit" className="btn btn-primary btn-block" disabled={isLoading}>
+                {isLoading ? "Logging in..." : "Sign in"}
               </button>
             </div>
           </form>
