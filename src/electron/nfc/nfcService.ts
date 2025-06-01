@@ -262,19 +262,40 @@ const handleCardWrite = async (reader: Reader, uid: string): Promise<void> => {
 };
 
 // Cleanup function for graceful shutdown
-export const cleanupNfc = (): void => {
-  try {
-    if (nfcInstance) {
+export const cleanupNfc = (): Promise<void> => {
+  return new Promise((resolve) => {
+    try {
       console.log('Cleaning up NFC service');
-      // Since removeAllListeners is not available in the API, we'll just set to null
-      // The NFC instance will be garbage collected
-      nfcInstance = null;
+      
+      if (nfcInstance) {
+        // Try to close NFC instance properly if it has a close method
+        if (typeof (nfcInstance as any).close === 'function') {
+          (nfcInstance as any).close();
+        }
+        
+        // Remove all listeners if possible
+        if (typeof (nfcInstance as any).removeAllListeners === 'function') {
+          (nfcInstance as any).removeAllListeners();
+        }
+        
+        nfcInstance = null;
+      }
+      
+      isNfcInitialized = false;
+      mode = NfcModeEntity.Read;
+      dataToWrite = null;
+      mainWindow = null;
+      
+      console.log('NFC service cleanup completed');
+      
+      // Add a small delay to ensure cleanup completes
+      setTimeout(() => {
+        resolve();
+      }, 500);
+      
+    } catch (error) {
+      console.error('Error during NFC cleanup:', error);
+      resolve(); // Still resolve to allow app to quit
     }
-    isNfcInitialized = false;
-    mode = NfcModeEntity.Read;
-    dataToWrite = null;
-    mainWindow = null;
-  } catch (error) {
-    console.error('Error during NFC cleanup:', error);
-  }
+  });
 };

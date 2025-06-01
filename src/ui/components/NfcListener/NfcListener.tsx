@@ -8,6 +8,12 @@ const NfcListener = () => {
   const [cardData, setCardData] = useState<any | null>(null);
 
   useEffect(() => {
+    // Check if electron API is available
+    if (!window.electron?.subscribeNfcCardDetection) {
+      console.warn('Electron API not available - NFC functionality will be disabled');
+      return;
+    }
+
     window.electron.subscribeNfcCardDetection(
       (data: { uid: string; card: CardData }) => {
         setCardData(data.uid);

@@ -24,6 +24,11 @@ export class LogDataSanitizer {
       replacement: '***API_KEY***'
     },
     {
+      field: 'key',
+      pattern: /.+/,
+      replacement: '***API_KEY***'
+    },
+    {
       field: 'access_token',
       pattern: /.+/,
       replacement: '***TOKEN***'
@@ -102,11 +107,14 @@ export class LogDataSanitizer {
     for (const [key, value] of Object.entries(obj)) {
       const lowerKey = key.toLowerCase();
       
-      // Check if the field name matches sensitive patterns
-      const sensitivePattern = this.sensitivePatterns.find(pattern => 
-        lowerKey.includes(pattern.field.toLowerCase()) ||
-        pattern.field.toLowerCase().includes(lowerKey)
-      );
+      // Check if the field name matches sensitive patterns (exact match or specific substring)
+      const sensitivePattern = this.sensitivePatterns.find(pattern => {
+        const patternField = pattern.field.toLowerCase();
+        // Exact match or field ends with pattern (but not substring matching for 'key' to avoid matching 'url')
+        return lowerKey === patternField || 
+               (patternField !== 'key' && lowerKey.includes(patternField)) ||
+               (patternField === 'key' && (lowerKey === 'key' || lowerKey.endsWith('_key') || lowerKey.endsWith('key')));
+      });
 
       if (sensitivePattern && typeof value === 'string') {
         sanitized[key] = sensitivePattern.replacement;

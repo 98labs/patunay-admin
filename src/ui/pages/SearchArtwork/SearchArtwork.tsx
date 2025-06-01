@@ -24,6 +24,12 @@ const SearchArtwork = () => {
   };
 
   useEffect(() => {
+    // Check if electron API is available
+    if (!window.electron?.subscribeNfcCardDetection) {
+      console.warn('Electron API not available - NFC functionality will be disabled');
+      return;
+    }
+
     window.electron.subscribeNfcCardDetection(
       (data: { uid: string; data: any }) => {
         handleGetArtwork((data.data as string).substring(0, 36));

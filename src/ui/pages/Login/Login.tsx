@@ -14,13 +14,12 @@ const Login = () => {
   const dispatch = useDispatch();
   const { session } = useSession();
   const [login, { isLoading }] = useLoginMutation();
-
-  if (session) return <Navigate to="/dashboard" />;
-
   const [formValues, setFormValues] = useState({
     email: "",
     password: "",
   });
+
+  if (session) return <Navigate to="/dashboard" />;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormValues({ ...formValues, [e.target.name]: e.target.value });

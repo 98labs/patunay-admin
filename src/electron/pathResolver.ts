@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 export const getPreloadPath = () => {
   const preloadPath = isDev()
-    ? path.resolve(__dirname, "../dist-electron/preload.js") // Updated to use .js extension
+    ? path.resolve(__dirname, "preload.js") // Fixed: __dirname is already in dist-electron
     : path.join(app.getAppPath(), "dist-electron", "preload.js");
 
   console.log(`Preload script path: ${preloadPath}`);

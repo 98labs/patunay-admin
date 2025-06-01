@@ -20,22 +20,80 @@ autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
 let mainWindow: any;
 
+// Set Chromium flags to reduce warnings
+app.commandLine.appendSwitch('--disable-features', 'VizDisplayCompositor');
+app.commandLine.appendSwitch('--disable-dev-tools-fonts');
+app.commandLine.appendSwitch('--disable-extensions');
+app.commandLine.appendSwitch('--disable-plugins');
+
+// Suppress DevTools autofill warnings at the process level
+if (isDev()) {
+  const originalConsoleError = console.error;
+  console.error = (...args: any[]) => {
+    const message = args.join(' ');
+    if (message.includes('Autofill.enable') || 
+        message.includes('Autofill.setAddresses') ||
+        message.includes('Request Autofill')) {
+      return; // Suppress these specific warnings
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
+
 const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 1080,
     height: 800,
     webPreferences: {
       preload: getPreloadPath(),
-      // devTools: false, // Uncomment to disable devtools
+      contextIsolation: true,
+      nodeIntegration: false,
+      webSecurity: true,
+      // Disable various features that might cause DevTools warnings
+      autoplayPolicy: 'no-user-gesture-required',
+      disableDialogs: true
     },
   });
 
   if (isDev()) {
     const devPort = process.env["VITE_DEV_PORT"] || "5173";
     const devUrl = `http://localhost:${devPort}/login`;
-    mainWindow.loadURL(devUrl);
-    electronLogger.info("Loading development URL", LogCategory.SYSTEM, { component: "Main" }, { url: devUrl });
-    mainWindow.webContents.openDevTools();
+    
+    // Wait for Vite dev server to be ready before loading
+    const waitForServer = async () => {
+      const maxAttempts = 30; // 30 seconds max wait
+      let attempts = 0;
+      
+      while (attempts < maxAttempts) {
+        try {
+          const response = await fetch(`http://localhost:${devPort}/`);
+          if (response.ok) {
+            electronLogger.info("Vite server is ready", LogCategory.SYSTEM, { component: "Main" });
+            mainWindow.loadURL(devUrl);
+            electronLogger.info("Loading development URL", LogCategory.SYSTEM, { component: "Main" }, { url: devUrl });
+            
+            // Only open DevTools if explicitly requested (set ENABLE_DEVTOOLS=true to enable)
+            if (process.env.ENABLE_DEVTOOLS === 'true') {
+              mainWindow.webContents.openDevTools();
+            }
+            return;
+          }
+        } catch (error) {
+          // Server not ready yet, continue waiting
+        }
+        
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      }
+      
+      // If we get here, the server didn't start in time
+      electronLogger.error("Vite server failed to start within 30 seconds", LogCategory.SYSTEM, { component: "Main" });
+      mainWindow.loadURL(`data:text/html,<html><body><h1>Waiting for dev server...</h1><p>Please start the React dev server with: npm run dev:react</p></body></html>`);
+    };
+    
+    waitForServer().catch(error => {
+      electronLogger.error("Error waiting for Vite server", LogCategory.SYSTEM, { component: "Main" }, error);
+    });
   } else {
     const indexPath = path.join(app.getAppPath(), "dist-react/index.html");
     electronLogger.info("Loading production file", LogCategory.SYSTEM, { component: "Main" }, { path: indexPath });
@@ -156,13 +214,28 @@ autoUpdater.on("error", (error) => {
 });
 
 // Cleanup on app exit
-app.on("before-quit", () => {
+app.on("before-quit", async (event) => {
+  event.preventDefault(); // Prevent immediate quit
   electronLogger.info("Application shutting down, cleaning up NFC service", LogCategory.SYSTEM, { component: "Main" });
-  cleanupNfc();
+  
+  try {
+    await cleanupNfc();
+    electronLogger.info("NFC cleanup completed, quitting application", LogCategory.SYSTEM, { component: "Main" });
+  } catch (error) {
+    electronLogger.error("Error during NFC cleanup", LogCategory.SYSTEM, { component: "Main" }, error as Error);
+  } finally {
+    app.exit(0); // Force quit after cleanup
+  }
 });
 
-app.on("window-all-closed", () => {
-  cleanupNfc();
+app.on("window-all-closed", async () => {
+  try {
+    await cleanupNfc();
+    electronLogger.info("NFC cleanup completed after window close", LogCategory.SYSTEM, { component: "Main" });
+  } catch (error) {
+    electronLogger.error("Error during NFC cleanup on window close", LogCategory.SYSTEM, { component: "Main" }, error as Error);
+  }
+  
   if (process.platform !== "darwin") {
     app.quit();
   }

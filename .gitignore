@@ -13,7 +13,7 @@ dist-ssr
 dist-electron
 dist-react
 
-*.local
+.env.*.local
 .env
 electron-builder.env
 package-lock.json
