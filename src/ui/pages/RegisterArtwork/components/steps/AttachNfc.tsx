@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { updateArtwork } from "../../../../supabase/rpc/updateArtwork";
 import { safeJsonParse } from "../../../Artworks/components/utils";
+import { useNotification } from "../../../../hooks/useNotification";
 
 interface Props {
   data: ArtworkEntity;
@@ -24,6 +25,7 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
   const [writeResult, setWriteResult] = useState<WriteResult | null>(null);
   const [isScanning, setisScanning] = useState<boolean>(false);
   const [isAttaching, setIsAttaching] = useState(false);
+  const { showError, showSuccess } = useNotification();
 
   const handleStartScanning = async () => {
     setisScanning(true);
@@ -40,7 +42,7 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
       const result = await updateArtwork({ ...data!, tag_id: options.tagId });
 
       if (!result) {
-        alert("Failed to attach artwork. Please try again.");
+        showError("Failed to attach artwork. Please try again.", "Attachment Error");
         return;
       }
 
@@ -80,7 +82,7 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
 
         window.electron.setMode(NfcModeEntity.Read);
       } else {
-        alert("Write failed: " + result.message);
+        showError(`Write failed: ${result.message}`, "NFC Write Error");
       }
 
       setisScanning(false);

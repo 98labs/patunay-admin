@@ -5,7 +5,7 @@ import { createRequire } from "module";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData, pollResources } from "./resourceManager.js";
-import { initializeNfc, nfcWriteOnTag } from "./nfc/nfcService.js";
+import { initializeNfc, nfcWriteOnTag, cleanupNfc } from "./nfc/nfcService.js";
 
 const require = createRequire(import.meta.url);
 const { autoUpdater } = pkg;
@@ -128,4 +128,17 @@ autoUpdater.on("update-downloaded", () => {
 
 autoUpdater.on("error", (error) => {
   console.error("Error during update process:", error.message);
+});
+
+// Cleanup on app exit
+app.on("before-quit", () => {
+  console.log("Application shutting down, cleaning up NFC service...");
+  cleanupNfc();
+});
+
+app.on("window-all-closed", () => {
+  cleanupNfc();
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
 });
