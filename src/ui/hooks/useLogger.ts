@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { rendererLogger } from '../logging/rendererLogger';
-import { LogLevel, LogCategory } from '../../shared/logging/types';
+import { LogCategory } from '../../shared/logging/types';
 import { selectUser } from '../store/features/auth';
 
 /**
