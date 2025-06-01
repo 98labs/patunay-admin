@@ -1,8 +1,8 @@
 import log from 'electron-log';
 import path from 'path';
 import { app } from 'electron';
-import { LogLevel, LogCategory, LogEntry, LogContext, LoggerConfig } from '../../shared/logging/types';
-import { LogDataSanitizer } from '../../shared/logging/sanitizer';
+import { LogLevel, LogCategory, LogEntry, LogContext, LoggerConfig } from '../../shared/logging/types.js';
+import { LogDataSanitizer } from '../../shared/logging/sanitizer.js';
 
 /**
  * Electron main process logger with structured logging, file rotation, and security
