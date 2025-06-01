@@ -63,7 +63,8 @@ export const initializeNfc = (window: BrowserWindow) => {
     // Clean up existing instance if it exists
     if (nfcInstance) {
       console.log('Cleaning up existing NFC instance');
-      nfcInstance.removeAllListeners();
+      // Remove specific event listeners since removeAllListeners is not available
+      nfcInstance.removeAllListeners?.() || console.log('removeAllListeners not available, skipping cleanup');
       nfcInstance = null;
     }
 
@@ -265,12 +266,14 @@ export const cleanupNfc = (): void => {
   try {
     if (nfcInstance) {
       console.log('Cleaning up NFC service');
-      nfcInstance.removeAllListeners();
+      // Since removeAllListeners is not available in the API, we'll just set to null
+      // The NFC instance will be garbage collected
       nfcInstance = null;
     }
     isNfcInitialized = false;
     mode = NfcModeEntity.Read;
     dataToWrite = null;
+    mainWindow = null;
   } catch (error) {
     console.error('Error during NFC cleanup:', error);
   }
