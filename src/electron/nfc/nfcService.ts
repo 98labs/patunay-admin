@@ -80,6 +80,38 @@ const notifyDeviceStatusChange = (available: boolean, readerName?: string): void
   mainWindow?.webContents.send("nfc-device-status", status);
 };
 
+// Set NFC mode function
+export const setNfcMode = (newMode: string, data?: string): void => {
+  console.log(`🔧 setNfcMode called: ${mode} -> ${newMode}`, { data });
+  
+  electronLogger.info("Setting NFC mode", LogCategory.NFC, { component: "NfcService" }, { 
+    previousMode: mode, 
+    newMode, 
+    hasData: !!data 
+  });
+  
+  // Validate mode
+  const validModes = Object.values(NfcModeEntity);
+  if (!validModes.includes(newMode as NfcModeEntity)) {
+    console.log(`❌ Invalid mode: ${newMode}, valid modes:`, validModes);
+    electronLogger.error("Invalid NFC mode provided", LogCategory.NFC, { component: "NfcService" }, { 
+      newMode, 
+      validModes 
+    });
+    return;
+  }
+  
+  mode = newMode as NfcModeEntity;
+  dataToWrite = data || null;
+  
+  console.log(`✅ NFC mode updated successfully: ${mode}`);
+  
+  electronLogger.info("NFC mode updated successfully", LogCategory.NFC, { component: "NfcService" }, { 
+    mode: mode,
+    dataToWrite: dataToWrite 
+  });
+};
+
 export const nfcWriteOnTag = (data?: string) => {
   try {
     if (!isNfcInitialized) {
@@ -178,6 +210,10 @@ export const initializeNfc = (window: BrowserWindow) => {
 
             case NfcModeEntity.Write:
               await handleCardWrite(reader, uid);
+              break;
+
+            case NfcModeEntity.Search:
+              await handleCardSearch(reader, uid);
               break;
 
             default:
@@ -351,6 +387,104 @@ const handleCardWrite = async (reader: Reader, uid: string): Promise<void> => {
     });
     
     throw nfcError;
+  }
+};
+
+// Helper function to extract UUID from NFC data
+const extractUuidFromNfcData = (rawData: Buffer): string => {
+  const dataString = rawData.toString();
+  
+  // UUID regex pattern (8-4-4-4-12 format)
+  const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+  
+  // Try to find UUID in the string
+  const match = dataString.match(uuidPattern);
+  
+  if (match) {
+    return match[0];
+  }
+  
+  // If no UUID found, try to clean up the string and look for UUID-like patterns
+  // Remove null bytes and control characters
+  const cleanedString = dataString.replace(/[\x00-\x1F\x7F]/g, '');
+  const cleanedMatch = cleanedString.match(uuidPattern);
+  
+  if (cleanedMatch) {
+    return cleanedMatch[0];
+  }
+  
+  // If still no UUID found, return empty string
+  return "";
+};
+
+// Helper function for card search/navigation
+const handleCardSearch = async (reader: Reader, uid: string): Promise<void> => {
+  try {
+    electronLogger.info(`NFC search: Card detected for navigation`, LogCategory.NFC, { component: "Search" }, { uid });
+    
+    // For search mode, we need to read the data to get the artwork ID
+    electronLogger.info(`NFC search: Reading NFC data to find artwork ID`, LogCategory.NFC, { component: "Search" }, { uid });
+    
+    let artworkId = "";
+    
+    try {
+      // Try to read data from the NFC tag
+      const data = await reader.read(4, 64);
+      const rawDataString = data.toString();
+      
+      electronLogger.info(`NFC search: Raw data read from tag`, LogCategory.NFC, { component: "Search" }, { 
+        uid, 
+        rawData: rawDataString,
+        dataLength: rawDataString.length 
+      });
+      
+      // Extract UUID from the raw data
+      artworkId = extractUuidFromNfcData(data);
+      
+      electronLogger.info(`NFC search: Extracted artwork ID from tag`, LogCategory.NFC, { component: "Search" }, { 
+        uid, 
+        artworkId,
+        extractedSuccessfully: !!artworkId
+      });
+    } catch (readError) {
+      // If reading fails, log the error but still send the event with empty data
+      electronLogger.warn(`NFC search: Failed to read data from tag, proceeding with UID only`, LogCategory.NFC, { component: "Search" }, { 
+        uid, 
+        error: readError instanceof Error ? readError.message : String(readError)
+      });
+    }
+    
+    // Send search event to renderer process for navigation
+    const searchEventData = {
+      uid,
+      data: artworkId, // Contains cleaned artwork ID from NFC tag data
+      timestamp: new Date().toISOString(),
+    };
+    
+    console.log(`📡 Sending nfc-card-search IPC event:`, searchEventData);
+    electronLogger.info(`Sending nfc-card-search IPC event to renderer`, LogCategory.NFC, { component: "Search" }, searchEventData);
+    
+    mainWindow?.webContents.send("nfc-card-search", searchEventData);
+    
+    console.log(`NFC Search - Card detected. UID: ${uid}, Artwork ID: ${artworkId || 'none'}`);
+  } catch (err) {
+    const searchError = createNfcError(
+      NfcErrorType.CARD_READ_FAILED,
+      `Failed to process NFC card for search: ${err instanceof Error ? err.message : String(err)}`,
+      err instanceof Error ? err : undefined
+    );
+    
+    electronLogger.error(`NFC search failed`, LogCategory.NFC, { component: "Search" }, { uid }, searchError);
+    
+    // Send search error to renderer
+    mainWindow?.webContents.send("nfc-search-error", {
+      uid,
+      error: searchError.type,
+      message: searchError.message,
+      timestamp: new Date().toISOString(),
+    });
+    
+    throw searchError;
   }
 };
 
