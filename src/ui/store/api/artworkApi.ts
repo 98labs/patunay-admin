@@ -242,6 +242,73 @@ export const artworkApi = api.injectEndpoints({
       }),
       providesTags: [{ type: 'Artwork', id: 'SEARCH' }],
     }),
+
+    // Search artwork by NFC tag UID using get_artwork RPC
+    searchArtworkByNfc: builder.query<ArtworkEntity | null, { uid?: string; data?: string }>({
+      query: ({ uid, data }) => ({
+        supabaseOperation: async () => {
+          // Try multiple approaches to find artwork by NFC UID
+          if (uid) {
+            console.log('🔍 API: Searching artwork with NFC UID:', uid);
+            
+            // Approach 1: Try direct UID lookup (might work if database stores raw UIDs)
+            try {
+              console.log('🔍 API: Trying direct UID lookup with get_artwork RPC');
+              const directResult = await supabase.rpc("get_artwork", {
+                p_artwork_id: uid,
+              });
+              
+              if (directResult.data && directResult.data.length > 0) {
+                console.log('🔍 API: Found artwork with direct UID lookup:', directResult.data[0]);
+                return directResult.data[0];
+              }
+            } catch (error) {
+              console.log('🔍 API: Direct UID lookup failed (expected if UID format mismatch):', error);
+            }
+            
+            // Approach 2: Search in artworks table by nfc_uid field or similar
+            try {
+              console.log('🔍 API: Trying to search artworks by nfc_uid field');
+              const nfcSearchResult = await supabase
+                .from('artworks')
+                .select('*')
+                .eq('nfc_uid', uid)
+                .single();
+              
+              if (nfcSearchResult.data) {
+                console.log('🔍 API: Found artwork by nfc_uid field:', nfcSearchResult.data);
+                return nfcSearchResult.data;
+              }
+            } catch (error) {
+              console.log('🔍 API: NFC UID field search failed:', error);
+            }
+            
+            // Approach 3: Search by any text field that might contain the UID
+            try {
+              console.log('🔍 API: Trying to search artworks by text fields containing UID');
+              const textSearchResult = await supabase
+                .from('artworks')
+                .select('*')
+                .or(`id.eq.${uid},nfc_tag_id.eq.${uid},tag_id.eq.${uid}`)
+                .single();
+              
+              if (textSearchResult.data) {
+                console.log('🔍 API: Found artwork by text field search:', textSearchResult.data);
+                return textSearchResult.data;
+              }
+            } catch (error) {
+              console.log('🔍 API: Text field search failed:', error);
+            }
+          }
+          
+          console.log('🔍 API: No artwork found for NFC UID:', uid);
+          return null;
+        }
+      }),
+      providesTags: (result, error, { uid, data }) => [
+        { type: 'Artwork', id: `NFC_${uid || data}` }
+      ],
+    }),
   }),
 });
 
@@ -255,6 +322,8 @@ export const {
   useUpsertAppraisalMutation,
   useGetArtworkStatsQuery,
   useSearchArtworksQuery,
+  useSearchArtworkByNfcQuery,
   useLazyGetArtworksQuery,
   useLazySearchArtworksQuery,
+  useLazySearchArtworkByNfcQuery,
 } = artworkApi;

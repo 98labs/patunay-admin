@@ -1,4 +1,4 @@
-import { UserProfile } from "@components";
+import { UserProfile, NfcStatusIndicator } from "@components";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../../store/api/userApi";
 import { Links, NavbarItemProps } from "./types";
@@ -120,6 +120,9 @@ const Sidebar = ({
         </ul>
 
         <div className="mt-auto">
+          <div className="px-4 py-3 border-t border-base-300 dark:border-base-300">
+            <NfcStatusIndicator compact={false} showRefreshButton={true} />
+          </div>
           <button
             onClick={handleLogout}
             className="w-full hover:bg-primary/20 dark:hover:bg-primary/30 hover:text-primary dark:hover:text-primary text-base-content dark:text-base-content px-3 py-2 rounded mt-4 transition-colors duration-200"

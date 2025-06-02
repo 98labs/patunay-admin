@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Sidebar, NotificationMessage } from "@components";
+import { Sidebar, NotificationMessage, NfcWarningBanner } from "@components";
 import { Navigate, Outlet } from "react-router-dom";
 import { useSession } from "../context/SessionContext";
 import { useDispatch } from "react-redux";
@@ -44,6 +44,7 @@ const DashboardLayout = () => {
         </header>
         <div className="grow">
           <div className="px-4 sm:px-6 lg:px-8 py-4 w-full max-w-9xl mx-auto">
+            <NfcWarningBanner className="mb-4" />
             <NotificationMessage />
             <Outlet />
           </div>

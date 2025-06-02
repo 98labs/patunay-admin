@@ -58,7 +58,7 @@ export const api = createApi({
 });
 
 // Export hooks for usage in functional components
-export const {} = api;
+// export const {} = api;
 
 // Export types
 export type ApiState = ReturnType<typeof api.reducer>;

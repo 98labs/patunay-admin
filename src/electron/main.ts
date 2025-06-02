@@ -5,7 +5,7 @@ import { createRequire } from "module";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData } from "./resourceManager.js";
-import { initializeNfc, nfcWriteOnTag, cleanupNfc } from "./nfc/nfcService.js";
+import { initializeNfc, nfcWriteOnTag, cleanupNfc, getNfcDeviceStatus, refreshNfcDeviceStatus, setNfcMode } from "./nfc/nfcService.js";
 import { electronLogger } from "./logging/electronLogger.js";
 import { LogCategory } from "../shared/logging/types.js";
 
@@ -56,7 +56,7 @@ const createWindow = () => {
   });
 
   if (isDev()) {
-    const devPort = process.env["VITE_DEV_PORT"] || "5173";
+    const devPort = process.env["VITE_DEV_PORT"] || "5173"; // Default to 5173, which is Vite's default port
     const devUrl = `http://localhost:${devPort}/login`;
     
     // Wait for Vite dev server to be ready before loading
@@ -73,8 +73,16 @@ const createWindow = () => {
             electronLogger.info("Loading development URL", LogCategory.SYSTEM, { component: "Main" }, { url: devUrl });
             
             // Only open DevTools if explicitly requested (set ENABLE_DEVTOOLS=true to enable)
+            electronLogger.info("Checking DevTools environment variable", LogCategory.SYSTEM, { component: "Main" }, { 
+              ENABLE_DEVTOOLS: process.env.ENABLE_DEVTOOLS,
+              NODE_ENV: process.env.NODE_ENV 
+            });
+            
             if (process.env.ENABLE_DEVTOOLS === 'true') {
+              electronLogger.info("Opening DevTools as requested", LogCategory.SYSTEM, { component: "Main" });
               mainWindow.webContents.openDevTools();
+            } else {
+              electronLogger.info("DevTools not requested, skipping", LogCategory.SYSTEM, { component: "Main" });
             }
             return;
           }
@@ -103,8 +111,58 @@ const createWindow = () => {
   }
 
   initializeNfc(mainWindow);
+};
+app.setAppUserModelId("com.patunay");
 
+app.whenReady().then(() => {
+  createWindow();
+
+  // Clean up any existing IPC handlers before registering new ones
+  ipcMain.removeAllListeners("getStatisticData");
+  ipcMain.removeAllListeners("nfc-get-device-status");
+  ipcMain.removeAllListeners("nfc-refresh-device-status");
+  ipcMain.removeAllListeners("nfc-set-mode");
+  ipcMain.removeAllListeners("log-entry");
+  ipcMain.removeAllListeners("nfc-write-tag");
+
+  // Register IPC handlers once when app is ready
   ipcMain.handle("getStatisticData", () => getStatisticData());
+
+  // NFC device status handlers
+  ipcMain.handle("nfc-get-device-status", () => {
+    const status = getNfcDeviceStatus();
+    electronLogger.info("IPC: Getting NFC device status", LogCategory.NFC, { component: "IPC" }, status);
+    return status;
+  });
+
+  ipcMain.on("nfc-refresh-device-status", () => {
+    electronLogger.info("IPC: Manual NFC device status refresh requested", LogCategory.NFC, { component: "IPC" });
+    refreshNfcDeviceStatus();
+  });
+
+  ipcMain.on("nfc-set-mode", (_event, payload: unknown) => {
+    console.log(`📡 IPC nfc-set-mode received:`, payload);
+    
+    // Validate IPC payload
+    if (!payload || typeof payload !== 'object') {
+      console.log(`❌ Invalid payload - not object:`, typeof payload, payload);
+      electronLogger.error('Invalid nfc-set-mode payload: expected object', LogCategory.SECURITY, { component: "IPC" }, { payload });
+      return;
+    }
+
+    const typedPayload = payload as Record<string, unknown>;
+    
+    // Validate mode field
+    if (typeof typedPayload["mode"] !== 'string') {
+      console.log(`❌ Invalid mode field:`, typeof typedPayload["mode"], typedPayload["mode"]);
+      electronLogger.error('Invalid nfc-set-mode payload: mode must be string', LogCategory.SECURITY, { component: "IPC" }, { payload: typedPayload });
+      return;
+    }
+
+    console.log(`✅ Valid IPC call - calling setNfcMode("${typedPayload["mode"]}", "${typedPayload["data"]}")`);
+    electronLogger.info("IPC: Setting NFC mode", LogCategory.NFC, { component: "IPC" }, { mode: typedPayload["mode"] });
+    setNfcMode(typedPayload["mode"] as string, typedPayload["data"] as string);
+  });
 
   // Handle log entries from renderer process
   ipcMain.on("log-entry", (_event, logEntry) => {
@@ -146,11 +204,6 @@ const createWindow = () => {
     electronLogger.info("Processing NFC write request", LogCategory.NFC, { component: "IPC" }, { hasData: !!typedPayload["data"] });
     nfcWriteOnTag(typedPayload["data"] as string | undefined);
   });
-};
-app.setAppUserModelId("com.patunay");
-
-app.whenReady().then(() => {
-  createWindow();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
