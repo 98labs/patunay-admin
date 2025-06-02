@@ -10,6 +10,7 @@ export { default as NfcManager } from "./NfcManager";
 export { default as NfcStatusDashboard } from "./NfcStatusDashboard";
 export { default as NfcStatusIndicator } from "./NfcStatusIndicator";
 export { default as NfcWarningBanner } from "./NfcWarningBanner";
+export { default as NfcSearchProvider } from "./NfcSearchProvider";
 export { default as PageHeader } from "./PageHeader";
 export { default as RadioButton } from "./RadioButton";
 export { default as Sidebar } from "./Sidebar";

@@ -67,6 +67,21 @@ export interface NfcDeviceStatus {
   initialized: boolean;
 }
 
+// NFC card search data for navigation
+export interface NfcCardSearchData {
+  uid: string;
+  data: string;
+  timestamp: string;
+}
+
+// NFC search error
+export interface NfcSearchError {
+  uid: string;
+  error: string;
+  message: string;
+  timestamp: string;
+}
+
 // Complete Electron API interface
 export interface ElectronAPI {
   // System information
@@ -94,6 +109,10 @@ export interface ElectronAPI {
   getNfcDeviceStatus?: () => Promise<NfcDeviceStatus>;
   refreshNfcDeviceStatus?: () => void;
   subscribeNfcDeviceStatus?: (callback: (status: NfcDeviceStatus) => void) => void;
+  
+  // NFC search and navigation
+  subscribeNfcCardSearch?: (callback: (data: NfcCardSearchData) => void) => void;
+  subscribeNfcSearchError?: (callback: (error: NfcSearchError) => void) => void;
 }
 
 export {};

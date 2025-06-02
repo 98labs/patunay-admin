@@ -2,8 +2,9 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 // Define NfcModeEntity locally since we can't import it in CommonJS easily
 const NfcModeEntity = {
-  Read: 'Read',
-  Write: 'Write'
+  Read: 'read',
+  Write: 'write',
+  Search: 'search'
 };
 
 // Implement the complete ElectronAPI
@@ -24,7 +25,10 @@ const electronAPI = {
 
   // NFC operations
   setMode: (mode, data) => {
-    ipcRenderer.send("nfc-set-mode", { mode, data });
+    console.log('🚀 Preload setMode called:', { mode, data });
+    const payload = { mode, data };
+    console.log('🚀 Sending payload to IPC:', payload);
+    ipcRenderer.send("nfc-set-mode", payload);
   },
 
   writeOnTag: (data) => {
@@ -82,10 +86,51 @@ const electronAPI = {
   },
 
   subscribeNfcDeviceStatus: (callback) => {
-    console.log('Setting up nfc-device-status listener in preload'); // Debug log
+    console.log('🔧 Setting up nfc-device-status listener in preload'); // Debug log
+    console.log('🔧 Callback function provided:', typeof callback);
     ipcRenderer.on("nfc-device-status", (_, status) => {
-      console.log('Received nfc-device-status event in preload:', status); // Debug log
-      callback(status);
+      console.log('🔧 ========= DEVICE STATUS EVENT RECEIVED =========');
+      console.log('🔧 Received nfc-device-status event in preload:', status);
+      console.log('🔧 Status available:', status?.available);
+      console.log('🔧 Status readers:', status?.readers);
+      console.log('🔧 Status initialized:', status?.initialized);
+      console.log('🔧 Calling React callback...');
+      try {
+        callback(status);
+        console.log('🔧 React callback called successfully');
+      } catch (error) {
+        console.error('🔧 Error calling React callback:', error);
+      }
+      console.log('🔧 ===============================================');
+    });
+  },
+
+  // NFC search and navigation
+  subscribeNfcCardSearch: (callback) => {
+    console.log('🚀 Setting up nfc-card-search listener in preload');
+    console.log('🚀 Callback function provided:', typeof callback);
+    ipcRenderer.on("nfc-card-search", (_, data) => {
+      console.log('🚀 ========= NFC CARD SEARCH EVENT RECEIVED =========');
+      console.log('🚀 Received nfc-card-search event in preload:', data);
+      console.log('🚀 UID:', data?.uid);
+      console.log('🚀 Data:', data?.data);
+      console.log('🚀 Timestamp:', data?.timestamp);
+      console.log('🚀 Calling React callback with data...');
+      try {
+        callback(data);
+        console.log('🚀 React callback called successfully');
+      } catch (error) {
+        console.error('🚀 Error calling React callback:', error);
+      }
+      console.log('🚀 ===============================================');
+    });
+  },
+
+  subscribeNfcSearchError: (callback) => {
+    console.log('Setting up nfc-search-error listener in preload');
+    ipcRenderer.on("nfc-search-error", (_, error) => {
+      console.log('Received nfc-search-error event in preload:', error);
+      callback(error);
     });
   },
 };
