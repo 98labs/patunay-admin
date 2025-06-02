@@ -1,8 +1,10 @@
+import { ArtworkEntity } from "../../../typings";
+
 type DropdownActionProps = {
-  artwork: any;
-  onAttach: (artwork: any) => void;
-  onDetach: (artwork: any) => void;
-  onDelete: (artwork: any) => void;
+  artwork: ArtworkEntity;
+  onAttach: (artwork: ArtworkEntity) => void;
+  onDetach: (artwork: ArtworkEntity) => void;
+  onDelete: (artwork: ArtworkEntity) => void;
 };
 
 const DropdownAction = ({ artwork, onAttach, onDetach, onDelete }: DropdownActionProps) => {

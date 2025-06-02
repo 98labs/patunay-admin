@@ -67,10 +67,10 @@ export const artworkApi = api.injectEndpoints({
     getArtworks: builder.query<ArtworkListResponse, ArtworkListRequest>({
       query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc' }) => ({
         supabaseOperation: async () => {
-          // Build the query
+          // Build the query with assets joined
           let query = supabase
             .from('artworks')
-            .select('*', { count: 'exact' })
+            .select('*, assets(*)', { count: 'exact' })
             .range((page - 1) * pageSize, page * pageSize - 1)
             .order(sortBy, { ascending: sortOrder === 'asc' });
 
