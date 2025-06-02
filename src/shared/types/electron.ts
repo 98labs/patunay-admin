@@ -60,6 +60,13 @@ export interface NfcServiceError {
   message: string;
 }
 
+// NFC device status
+export interface NfcDeviceStatus {
+  available: boolean;
+  readers: string[];
+  initialized: boolean;
+}
+
 // Complete Electron API interface
 export interface ElectronAPI {
   // System information
@@ -82,6 +89,11 @@ export interface ElectronAPI {
   subscribeNfcReaderConnected?: (callback: (status: NfcReaderStatus) => void) => void;
   subscribeNfcReaderDisconnected?: (callback: (status: NfcReaderStatus) => void) => void;
   subscribeNfcServiceError?: (callback: (error: NfcServiceError) => void) => void;
+  
+  // NFC device status management
+  getNfcDeviceStatus?: () => Promise<NfcDeviceStatus>;
+  refreshNfcDeviceStatus?: () => void;
+  subscribeNfcDeviceStatus?: (callback: (status: NfcDeviceStatus) => void) => void;
 }
 
 export {};

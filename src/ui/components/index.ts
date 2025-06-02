@@ -8,6 +8,8 @@ export { Modal, DetachNFCModal, DeleteArtworkModal } from "./Modal";
 export { default as NfcListener } from "./NfcListener";
 export { default as NfcManager } from "./NfcManager";
 export { default as NfcStatusDashboard } from "./NfcStatusDashboard";
+export { default as NfcStatusIndicator } from "./NfcStatusIndicator";
+export { default as NfcWarningBanner } from "./NfcWarningBanner";
 export { default as PageHeader } from "./PageHeader";
 export { default as RadioButton } from "./RadioButton";
 export { default as Sidebar } from "./Sidebar";

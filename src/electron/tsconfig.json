@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "ESNext",  // Prefer "ESNext" over "NodeNext" for cleaner behavior
+    "module": "ESNext",  // Use ES modules
     "moduleResolution": "node",
     "outDir": "../../dist-electron",
     "rootDir": "..",

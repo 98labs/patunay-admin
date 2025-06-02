@@ -1,10 +1,14 @@
 import { NFC, Reader, Card } from "nfc-pcsc";
 import { BrowserWindow } from "electron";
 import { NfcModeEntity } from "../types/nfc.js";
+import { electronLogger } from "../logging/electronLogger.js";
+import { LogCategory } from "../../shared/logging/types.js";
 
 let mainWindow: BrowserWindow | null = null;
 let nfcInstance: NFC | null = null;
 let isNfcInitialized = false;
+let isNfcDeviceAvailable = false;
+const connectedReaders: Map<string, Reader> = new Map();
 
 let mode: NfcModeEntity = NfcModeEntity.Read;
 let dataToWrite: string | null = null;
@@ -29,6 +33,51 @@ const createNfcError = (type: NfcErrorType, message: string, originalError?: Err
   error.type = type;
   error.originalError = originalError;
   return error;
+};
+
+// Device status management
+export const getNfcDeviceStatus = (): { available: boolean; readers: string[]; initialized: boolean } => {
+  const readerNames = Array.from(connectedReaders.keys());
+  electronLogger.debug("Getting NFC device status", LogCategory.NFC, { component: "DeviceStatus" }, {
+    available: isNfcDeviceAvailable,
+    readersCount: readerNames.length,
+    readers: readerNames,
+    initialized: isNfcInitialized
+  });
+  
+  return {
+    available: isNfcDeviceAvailable,
+    readers: readerNames,
+    initialized: isNfcInitialized
+  };
+};
+
+export const refreshNfcDeviceStatus = (): void => {
+  electronLogger.info("Manual NFC device status refresh requested", LogCategory.NFC, { component: "DeviceStatus" });
+  
+  // Send current status immediately
+  const status = getNfcDeviceStatus();
+  mainWindow?.webContents.send("nfc-device-status", status);
+  
+  // Re-initialize if no devices are available but service isn't initialized
+  if (!status.available && !status.initialized && mainWindow) {
+    electronLogger.info("Re-initializing NFC service due to manual refresh", LogCategory.NFC, { component: "DeviceStatus" });
+    initializeNfc(mainWindow);
+  }
+};
+
+const notifyDeviceStatusChange = (available: boolean, readerName?: string): void => {
+  isNfcDeviceAvailable = available;
+  const status = getNfcDeviceStatus();
+  
+  electronLogger.info("NFC device status changed", LogCategory.NFC, { component: "DeviceStatus" }, {
+    available,
+    readerName,
+    totalReaders: status.readers.length,
+    readers: status.readers
+  });
+  
+  mainWindow?.webContents.send("nfc-device-status", status);
 };
 
 export const nfcWriteOnTag = (data?: string) => {
@@ -60,25 +109,60 @@ export const initializeNfc = (window: BrowserWindow) => {
   mainWindow = window;
 
   try {
+    electronLogger.info("Initializing NFC service", LogCategory.NFC, { component: "NfcService" });
+    
     // Clean up existing instance if it exists
     if (nfcInstance) {
-      console.log('Cleaning up existing NFC instance');
-      // Remove specific event listeners since removeAllListeners is not available
-      nfcInstance.removeAllListeners?.() || console.log('removeAllListeners not available, skipping cleanup');
+      electronLogger.debug('Cleaning up existing NFC instance', LogCategory.NFC, { component: "NfcService" });
+      if (nfcInstance.removeAllListeners) {
+        nfcInstance.removeAllListeners();
+      } else {
+        electronLogger.debug('removeAllListeners not available, skipping cleanup', LogCategory.NFC, { component: "NfcService" });
+      }
       nfcInstance = null;
     }
 
+    // Clear previous state
+    isNfcInitialized = false;
+    isNfcDeviceAvailable = false;
+    connectedReaders.clear();
+
     nfcInstance = new NFC();
+    electronLogger.debug("NFC instance created", LogCategory.NFC, { component: "NfcService" });
 
     nfcInstance.on("reader", (reader: Reader) => {
-      console.log(`${reader.reader.name} device attached`);
+      const readerName = reader.reader.name;
+      electronLogger.info(`NFC device attached: ${readerName}`, LogCategory.NFC, { component: "NfcService" }, { readerName });
+      
       isNfcInitialized = true;
+      connectedReaders.set(readerName, reader);
+      
+      // Check if this is an RFID/NFC reader (e.g., ACS ACR122U)
+      const isCompatibleReader = readerName.toLowerCase().includes('acr122') || 
+                                readerName.toLowerCase().includes('nfc') || 
+                                readerName.toLowerCase().includes('rfid') ||
+                                readerName.toLowerCase().includes('picc');
+      
+      electronLogger.info(`Reader compatibility check`, LogCategory.NFC, { component: "NfcService" }, { 
+        readerName, 
+        isCompatible: isCompatibleReader 
+      });
+      
+      // Notify about device availability
+      notifyDeviceStatusChange(true, readerName);
 
       // Notify renderer process about reader connection
       mainWindow?.webContents.send("nfc-reader-connected", {
-        readerName: reader.reader.name,
+        readerName: readerName,
         status: 'connected'
       });
+
+      // Also send updated device status immediately
+      setTimeout(() => {
+        const currentStatus = getNfcDeviceStatus();
+        electronLogger.info("Sending updated device status after reader connection", LogCategory.NFC, { component: "NfcService" }, currentStatus);
+        mainWindow?.webContents.send("nfc-device-status", currentStatus);
+      }, 100);
 
       reader.on("card", async (card: Card) => {
         console.log(`Card detected: ${JSON.stringify(card)}`);
@@ -131,11 +215,20 @@ export const initializeNfc = (window: BrowserWindow) => {
       });
 
       reader.on("end", () => {
-        console.log(`${reader.reader.name} device removed`);
-        isNfcInitialized = false;
+        const readerName = reader.reader.name;
+        electronLogger.info(`NFC device removed: ${readerName}`, LogCategory.NFC, { component: "NfcService" }, { readerName });
+        
+        connectedReaders.delete(readerName);
+        
+        // Update device availability status
+        const hasOtherReaders = connectedReaders.size > 0;
+        if (!hasOtherReaders) {
+          isNfcInitialized = false;
+          notifyDeviceStatusChange(false, readerName);
+        }
         
         mainWindow?.webContents.send("nfc-reader-disconnected", {
-          readerName: reader.reader.name,
+          readerName: readerName,
           status: 'disconnected'
         });
       });
