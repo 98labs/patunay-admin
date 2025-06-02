@@ -7,6 +7,7 @@ import { updateArtwork } from "../../../../supabase/rpc/updateArtwork";
 import { safeJsonParse } from "../../../Artworks/components/utils";
 import { useNotification } from "../../../../hooks/useNotification";
 import { useNfc } from "../../../../hooks/useNfc";
+import { useNfcStatus } from "../../../../context/NfcStatusContext";
 
 interface Props {
   data: ArtworkEntity;
@@ -25,6 +26,7 @@ interface WriteResult {
 const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
   const [isAttaching, setIsAttaching] = useState(false);
   const { showError, showSuccess } = useNotification();
+  const { isNfcAvailable, nfcFeaturesEnabled, deviceStatus } = useNfcStatus();
   const {
     isReaderConnected,
     isOperationActive,
@@ -42,6 +44,10 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
   } = useNfc();
 
   const handleStartScanning = async () => {
+    if (!nfcFeaturesEnabled) {
+      showError("NFC features are not available. Please ensure your NFC reader is connected.", "NFC Not Available");
+      return;
+    }
     clearError();
     startReadOperation();
   };
@@ -68,9 +74,11 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
         collectors: safeJsonParse(result[0].collectors),
       });
 
-      // Use the new NFC state management for writing
-      const writeData = options.attachLater ? "No data" : (data.id ?? "No Data");
-      startWriteOperation(writeData);
+      // Only attempt to write to NFC if features are enabled
+      if (nfcFeaturesEnabled && !options.attachLater) {
+        const writeData = data.id ?? "No Data";
+        startWriteOperation(writeData);
+      }
 
       await onNext();
     } catch (err) {
@@ -117,29 +125,38 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
         <div className="flex flex-col justify-center align-middle gap-2">
           <Nfc className="w-40 h-50 m-auto text-neutral-black-02" />
           <p className="font-semibold">
-            {currentOperation?.status === 'success'
-              ? "Success!"
-              : isScanning || isWriting
-                ? getOperationStatusText()
-                : isReaderConnected
-                  ? "Ready to scan NFC tag"
-                  : "Please connect the NFC reader device to your computer"}
+            {!isNfcAvailable
+              ? "NFC device not available"
+              : !nfcFeaturesEnabled
+                ? "NFC device initializing..."
+                : currentOperation?.status === 'success'
+                  ? "Success!"
+                  : isScanning || isWriting
+                    ? getOperationStatusText()
+                    : isReaderConnected
+                      ? "Ready to scan NFC tag"
+                      : "Please connect the NFC reader device to your computer"}
           </p>
           
-          {/* Reader connection indicator */}
-          <div className={`text-sm ${isReaderConnected ? 'text-green-600' : 'text-red-600'}`}>
-            {isReaderConnected ? '✓ Reader Connected' : '✗ Reader Disconnected'}
+          {/* NFC device status indicator */}
+          <div className={`text-sm ${nfcFeaturesEnabled ? 'text-green-600' : 'text-red-600'}`}>
+            {nfcFeaturesEnabled 
+              ? `✓ NFC Ready (${deviceStatus.readers.join(', ')})` 
+              : isNfcAvailable 
+                ? '⚠ NFC Initializing...' 
+                : '✗ NFC Device Not Found'}
           </div>
 
           <Button
             onClick={handleStartScanning}
             buttonLabel={
+              !nfcFeaturesEnabled ? "NFC Not Available" :
               isScanning ? "Scanning..." : 
               isWriting ? "Writing..." : 
               "Start scanning"
             }
             className={`transition-all ease-out duration-200 w-full font-light`}
-            disabled={isOperationActive || !isReaderConnected}
+            disabled={isOperationActive || !nfcFeaturesEnabled}
           />
         </div>
       </div>

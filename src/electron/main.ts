@@ -5,7 +5,7 @@ import { createRequire } from "module";
 import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { getStatisticData } from "./resourceManager.js";
-import { initializeNfc, nfcWriteOnTag, cleanupNfc } from "./nfc/nfcService.js";
+import { initializeNfc, nfcWriteOnTag, cleanupNfc, getNfcDeviceStatus, refreshNfcDeviceStatus } from "./nfc/nfcService.js";
 import { electronLogger } from "./logging/electronLogger.js";
 import { LogCategory } from "../shared/logging/types.js";
 
@@ -105,6 +105,18 @@ const createWindow = () => {
   initializeNfc(mainWindow);
 
   ipcMain.handle("getStatisticData", () => getStatisticData());
+
+  // NFC device status handlers
+  ipcMain.handle("nfc-get-device-status", () => {
+    const status = getNfcDeviceStatus();
+    electronLogger.info("IPC: Getting NFC device status", LogCategory.NFC, { component: "IPC" }, status);
+    return status;
+  });
+
+  ipcMain.on("nfc-refresh-device-status", () => {
+    electronLogger.info("IPC: Manual NFC device status refresh requested", LogCategory.NFC, { component: "IPC" });
+    refreshNfcDeviceStatus();
+  });
 
   // Handle log entries from renderer process
   ipcMain.on("log-entry", (_event, logEntry) => {

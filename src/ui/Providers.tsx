@@ -1,10 +1,13 @@
 import { Outlet } from "react-router-dom";
 import { SessionProvider } from "./context/SessionContext";
+import { NfcStatusProvider } from "./context/NfcStatusContext";
 
 const Providers = () => {
   return (
     <SessionProvider>
-      <Outlet />
+      <NfcStatusProvider>
+        <Outlet />
+      </NfcStatusProvider>
     </SessionProvider>
   );
 };
