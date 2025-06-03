@@ -1,6 +1,6 @@
-import { Button, Modal } from "@components";
+import { Button } from "@components";
 import { ArtworkEntity, AssetEntity } from "@typings";
-
+import { useNavigate } from "react-router-dom";
 import { handleAddArtwork } from "../../hooks/handleAddArtwork";
 import { useState } from "react";
 import ImageSlider from "../ImageSlider";
@@ -9,8 +9,6 @@ interface Props {
   artwork: ArtworkEntity;
   onAddArtwork: (result: ArtworkEntity) => void;
   onPrev: () => Promise<void>;
-  onNext: () => Promise<void>;
-  onSkipNfc: () => Promise<void>;
 }
 
 interface Detail {
@@ -22,8 +20,6 @@ const ReviewArtwork = ({
   artwork,
   onAddArtwork,
   onPrev,
-  onNext,
-  onSkipNfc,
 }: Props) => {
   const {
     artist,
@@ -41,8 +37,8 @@ const ReviewArtwork = ({
     width,
     year,
   } = artwork;
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const details: Detail[] = [
     {
@@ -81,37 +77,18 @@ const ReviewArtwork = ({
 
       onAddArtwork({ ...res, assets: assets });
 
-      openModal();
+      // Redirect to artworks page after successful submission
+      navigate("/dashboard/artworks");
     } catch (error) {
       console.error("Error in submitting artwork:", error);
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
-  };
-
-  const openModal = async () => {
-    setIsModalOpen(true);
-  };
-
-  const closeModal = async () => {
-    setIsModalOpen(false);
-  };
-
-  const handleOnSkip = async () => {
-    if (isSubmitting) return;
-
-    onSkipNfc();
   };
 
   const handleOnPrev = async () => {
     if (isSubmitting) return;
 
     onPrev();
-  };
-
-  const handleOnNext = async () => {
-    if (isSubmitting) return;
-
-    onNext();
   };
 
   return (
@@ -162,30 +139,6 @@ const ReviewArtwork = ({
           />
         </div>
       </div>
-
-      <Modal isOpen={isModalOpen} onClose={closeModal}>
-        <div className="flex flex-col gap-4">
-          <h1 className="font-bold">Successfully submitted to artwork!</h1>
-          <p className="text-sm">
-            Do you want to attach the artwork to an NFC tag?
-          </p>
-          <div className="flex justify-end gap-2">
-            <Button
-              buttonLabel="Attach Later"
-              buttonType="secondary"
-              className="btn-sm"
-              disabled={isSubmitting}
-              onClick={handleOnSkip}
-            />
-            <Button
-              buttonLabel="Attach to NFC Tag"
-              className="btn-sm"
-              disabled={isSubmitting}
-              onClick={handleOnNext}
-            />
-          </div>
-        </div>
-      </Modal>
     </>
   );
 };

@@ -525,7 +525,7 @@ $$;
 ALTER FUNCTION "base32"."zero_fill"("a" integer, "b" integer) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."add_artwork"("p_idnumber" "text", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text" DEFAULT NULL::"text", "p_expiration_date" "date" DEFAULT NULL::"date", "p_read_write_count" bigint DEFAULT 0, "p_assets" "jsonb" DEFAULT NULL::"jsonb", "p_provenance" "text" DEFAULT NULL::"text", "p_bibliography" "jsonb" DEFAULT NULL::"jsonb", "p_collectors" "jsonb" DEFAULT NULL::"jsonb") RETURNS TABLE("id" "uuid", "idnumber" "text", "title" "text", "description" "text", "height" double precision, "width" double precision, "size_unit" "text", "artist" "text", "year" "text", "medium" "text", "created_by" "text", "tag_id" "text", "tag_issued_by" "text", "tag_issued_at" timestamp without time zone, "created_at" timestamp without time zone, "assets" "jsonb", "provenance" "text", "bibliography" "jsonb", "collector" "text", "collectors" "jsonb")
+CREATE OR REPLACE FUNCTION "public"."add_artwork"("p_idnumber" "text", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text" DEFAULT NULL::"text", "p_expiration_date" "date" DEFAULT NULL::"date", "p_read_write_count" bigint DEFAULT 0, "p_assets" "jsonb" DEFAULT NULL::"jsonb", "p_provenance" "text" DEFAULT NULL::"text", "p_bibliography" "jsonb" DEFAULT NULL::"jsonb", "p_collectors" "jsonb" DEFAULT NULL::"jsonb") RETURNS TABLE("id" "uuid", "idnumber" "text", "title" "text", "description" "text", "height" double precision, "width" double precision, "size_unit" "text", "artist" "text", "year" "text", "medium" "text", "created_by" "text", "tag_id" "text", "tag_issued_by" "text", "tag_issued_at" timestamp without time zone, "created_at" timestamp without time zone, "assets" "jsonb", "provenance" "text", "bibliography" "jsonb", "collectors" "jsonb")
     LANGUAGE "plpgsql"
     AS $$
 DECLARE
@@ -567,7 +567,7 @@ BEGIN
 
     -- Insert artwork without tag if v_tag_id is NULL
     INSERT INTO artworks (
-        idnumber, title, description, height, width, size_unit, artist, year, medium, tag_id, tag_issued_at, created_at, provenance, bibliography, collectors
+        id_number, title, description, height, width, size_unit, artist, year, medium, tag_id, tag_issued_at, created_at, provenance, bibliography, collectors
     ) VALUES (
         p_idnumber, p_title, p_description, p_height, p_width, p_size_unit, p_artist, p_year, p_medium, v_tag_id, 
         CASE WHEN v_tag_id IS NOT NULL THEN NOW() ELSE NULL END, 
@@ -588,10 +588,12 @@ BEGIN
     END IF;
 
     -- Return the newly created artwork along with its assets
+    -- FIXED: Removed the collector field from RETURNS TABLE since it's not being selected
+    -- FIXED: Return id_number as idnumber to match the expected return type
     RETURN QUERY
     SELECT 
         a.id,
-        a.idnumber,
+        a.id_number as idnumber,  -- Map id_number to idnumber
         a.title,
         a.description,
         a.height,
@@ -600,14 +602,14 @@ BEGIN
         a.artist,
         a.year,
         a.medium,
-        (
-            SELECT p.first_name || ' ' || p.last_name AS name
-            FROM profiles p WHERE p.id = a.created_by
+        COALESCE(
+            (SELECT p.first_name || ' ' || p.last_name FROM profiles p WHERE p.id = a.created_by),
+            'Unknown User'
         ) AS created_by,
         a.tag_id,
-        (
-            SELECT p.first_name || ' ' || p.last_name AS name
-            FROM profiles p WHERE p.id = a.tag_issued_by
+        COALESCE(
+            (SELECT p.first_name || ' ' || p.last_name FROM profiles p WHERE p.id = a.tag_issued_by),
+            'Unknown User'
         ) AS tag_issued_by,
         a.tag_issued_at,
         a.created_at,
@@ -624,7 +626,6 @@ BEGIN
         ) AS assets,
         a.provenance,
         a.bibliography,
-        a.collector,
         a.collectors
     FROM artworks a
     WHERE a.id = v_artwork_id;
@@ -671,7 +672,7 @@ CREATE OR REPLACE FUNCTION "public"."bulk_add_artwork"("artworks" "jsonb") RETUR
     AS $$
 BEGIN
   INSERT INTO artworks (
-    idnumber,
+    id_number,  -- Fixed: changed from idnumber to id_number
     title,
     description,
     height,
@@ -686,14 +687,14 @@ BEGIN
     collectors
   )
   SELECT
-    artwork->>'idnumber',
+    artwork->>'idnumber',  -- Keep this as idnumber since it's from the JSON input
     artwork->>'title',
     artwork->>'description',
     (artwork->>'height')::numeric,
     (artwork->>'width')::numeric,
     artwork->>'size_unit',
     artwork->>'artist',
-    (artwork->>'year')::int,
+    artwork->>'year',  -- Fixed: removed ::int cast since year is text
     artwork->>'medium',
     artwork->>'tag_id',
     artwork->>'provenance',

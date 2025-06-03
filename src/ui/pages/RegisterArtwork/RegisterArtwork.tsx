@@ -2,14 +2,12 @@ import { FormStepTitle, PageHeader } from "@components";
 import { useEffect, useState } from "react";
 import { ArtworkEntity, FormStepsEntity } from "../../typings";
 
-import AttachNfc from "./components/steps/AttachNfc";
 import Bibliography from "./components/steps/Bibliography";
 import Collector from "./components/steps/Collector";
 import Info from "./components/steps/Info";
 import Size from "./components/steps/Size";
 import ReviewArtwork from "./components/steps/ReviewArtwork";
 import UploadImage from "./components/steps/UploadImage";
-import Summary from "./components/steps/Summary";
 
 const RegisterArtwork = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -42,16 +40,6 @@ const RegisterArtwork = () => {
     {
       stepNumber: 6,
       stepName: "Review and Save Artwork",
-      complete: false,
-    },
-    {
-      stepNumber: 7,
-      stepName: "Issue NFC Tag",
-      complete: false,
-    },
-    {
-      stepNumber: 8,
-      stepName: "Complete Registration",
       complete: false,
     },
   ]);
@@ -189,22 +177,7 @@ const RegisterArtwork = () => {
             artwork={addedArtwork ?? artwork}
             onAddArtwork={handleAddArtworkResult}
             onPrev={handleOnPrev}
-            onNext={handleOnNext}
-            onSkipNfc={handleOnSkip}
           />
-        )}
-        {currentStep === 7 && (
-          <AttachNfc
-            data={addedArtwork ?? artwork}
-            onUpdateArtwork={handleAddArtworkResult}
-            onPrev={handleOnPrev}
-            onNext={async () => {
-              handleOnSkip(0);
-            }}
-          />
-        )}
-        {currentStep === 8 && (
-          <Summary artwork={addedArtwork ?? artwork} onPrev={handleOnPrev} />
         )}
       </div>
     </div>

@@ -22,6 +22,7 @@ const Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
     medium: "",
     id_number: "",
     provenance: "",
+    year: "",
   });
 
   type Step2Keys = keyof typeof formData;
@@ -66,6 +67,12 @@ const Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
       hint: "Enter the artwork's provenance",
       required: true,
     },
+    {
+      artworkId: "year",
+      artworkLabel: "Year",
+      hint: "Enter the year the artwork was created",
+      required: true,
+    },
   ];
 
   const validateForm = () => {
@@ -99,6 +106,7 @@ const Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
         medium: artwork.medium || "",
         id_number: artwork.id_number || "",
         provenance: artwork.provenance || "",
+        year: artwork.year || "",
       });
     }
   }, [artwork]);
