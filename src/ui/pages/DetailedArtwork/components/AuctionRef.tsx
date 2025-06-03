@@ -11,7 +11,7 @@ import {
 import { AuctionProps, } from "./types";
 import { useAppraisalColumns } from "../hooks/useAppraisalColumns";
 
-export default function AuctionRef({auctions, addRow, selectedAppraisal }: AuctionProps) {
+export default function AuctionRef({auctions, addRow, selectedAppraisal, canManageAppraisals = false }: AuctionProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([])
   
@@ -39,11 +39,13 @@ export default function AuctionRef({auctions, addRow, selectedAppraisal }: Aucti
     <div className="flex flex-col mt-6">
           <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-              <div className="flex justify-end mb-4">
-                <button className="btn btn-primary" onClick={addRow}>
-                  Add Appraisal
-                </button>
-              </div>
+              {canManageAppraisals && (
+                <div className="flex justify-end mb-4">
+                  <button className="btn btn-primary" onClick={addRow}>
+                    Add Appraisal
+                  </button>
+                </div>
+              )}
               <div className="overflow-x-auto border border-base-content/5 bg-base-100 md:rounded-lg">
                   <table className="table table-sm table-pin-rows table-pin-cols md:table-fixed table-zebra">
                     <thead>

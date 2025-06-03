@@ -7,6 +7,7 @@ import { useSession } from "../../context/SessionContext";
 import { InputType } from "@typings";
 import { useLoginMutation } from "../../store/api/userApi";
 import { showNotification } from "../../components/NotificationMessage/slice";
+import { useSupabaseDiagnostic } from "../../hooks/useSupabaseDiagnostic";
 
 import logo from "@/assets/logo/patunay-logo.png";
 
@@ -14,6 +15,7 @@ const Login = () => {
   const dispatch = useDispatch();
   const { session } = useSession();
   const [login, { isLoading }] = useLoginMutation();
+  const { runDiagnostic, isRunning: isDiagnosticRunning } = useSupabaseDiagnostic();
   const [formValues, setFormValues] = useState({
     email: "",
     password: "",
@@ -41,6 +43,28 @@ const Login = () => {
     } catch (error: any) {
       dispatch(showNotification({
         message: error.message || "Login failed",
+        status: "error",
+      }));
+    }
+  };
+
+  const handleRunDiagnostic = async () => {
+    try {
+      const report = await runDiagnostic();
+      if (report.summary.failed > 0) {
+        dispatch(showNotification({
+          message: `Diagnostic found ${report.summary.failed} errors. Check console for details.`,
+          status: "error",
+        }));
+      } else {
+        dispatch(showNotification({
+          message: "Supabase connection is healthy",
+          status: "success",
+        }));
+      }
+    } catch (error) {
+      dispatch(showNotification({
+        message: "Failed to run diagnostic",
         status: "error",
       }));
     }
@@ -115,6 +139,24 @@ const Login = () => {
               </button>
             </div>
           </form>
+
+          <div className="divider text-base-content/40">Having trouble?</div>
+          
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm w-full"
+            onClick={handleRunDiagnostic}
+            disabled={isDiagnosticRunning}
+          >
+            {isDiagnosticRunning ? (
+              <>
+                <span className="loading loading-spinner loading-xs"></span>
+                Running diagnostic...
+              </>
+            ) : (
+              "Run Connection Diagnostic"
+            )}
+          </button>
         </div>
       </div>
     </div>

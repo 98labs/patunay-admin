@@ -1,6 +1,6 @@
 export interface ArtworkType {
     id: string;
-    idnumber: string;
+    id_number: string;
     title: string;
     artist: string;
     size_unit: string;

@@ -26,9 +26,12 @@ const store = configureStore({
           'api/executeQuery/pending',
           'api/executeQuery/fulfilled',
           'api/executeQuery/rejected',
+          'api/executeMutation/pending',
+          'api/executeMutation/fulfilled',
+          'api/executeMutation/rejected',
         ],
         // Ignore these field paths in all actions
-        ignoredActionsPaths: ['payload.timestamp', 'meta.arg', 'meta.baseQueryMeta'],
+        ignoredActionsPaths: ['payload.timestamp', 'meta.arg', 'meta.baseQueryMeta', 'payload.error', 'error'],
         // Ignore these paths in the state
         ignoredPaths: ['nfc.operationHistory.timestamp', 'api'],
       },

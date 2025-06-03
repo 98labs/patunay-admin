@@ -2,7 +2,7 @@ import { Table } from "@tanstack/react-table";
 import { Dispatch, SetStateAction } from 'react';
 
 interface CSVItem {
-    idnumber: string;
+    id_number: string;
     title: string;
     description: string;
     height: string;

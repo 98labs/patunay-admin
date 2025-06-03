@@ -214,7 +214,7 @@ const Artworks = () => {
               className="select select-bordered w-full"
             >
               <option value="all">All NFCs</option>
-              <option value="with">With NFC</option>
+              <option value="with">Attached</option>
               <option value="none">No NFC</option>
             </select>
           </div>

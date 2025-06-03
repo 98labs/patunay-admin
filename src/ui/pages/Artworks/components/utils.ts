@@ -2,7 +2,7 @@ import supabase from '../../../supabase';
 
 export function cleanAndValidateData(rawData: any[]) {
   const cleanedData: any[] = [];
-  const skippedRows: { rowIndex: number; reason: string; idnumber?: string }[] = [];
+  const skippedRows: { rowIndex: number; reason: string; id_number?: string }[] = [];
 
   rawData.forEach((item, index) => {
     const cleaned: Record<string, any> = {};
@@ -15,7 +15,7 @@ export function cleanAndValidateData(rawData: any[]) {
       }
     }
 
-    const idnumber = cleaned.idnumber?.trim() ?? '';
+    const id_number = cleaned.id_number?.trim() ?? '';
     const title = cleaned.title?.trim() ?? '';
     const description = cleaned.description?.trim() ?? '';
     const height = parseFloat(cleaned.height ?? '0');
@@ -44,7 +44,7 @@ export function cleanAndValidateData(rawData: any[]) {
 
     const errors = [];
 
-    if (!idnumber) errors.push('Missing ID Number');
+    if (!id_number) errors.push('Missing ID Number');
     if (!title) errors.push('Missing Title');
     if (!description) errors.push('Missing Description');
     if (!artist) errors.push('Missing Artist');
@@ -60,13 +60,13 @@ export function cleanAndValidateData(rawData: any[]) {
       skippedRows.push({
         rowIndex: index + 1,
         reason: errors.join(', '),
-        idnumber: idnumber
+        id_number: id_number
       });
       return;
     }
 
     cleanedData.push({
-      idnumber,
+      id_number,
       title,
       description,
       height,
@@ -91,8 +91,11 @@ export function cleanAndValidateData(rawData: any[]) {
   return cleanedData;
 }
 
-export function safeJsonParse(text: string, fallback: any[] = []) {
+export function safeJsonParse(text: string | any[], fallback: any[] = []) {
   if (!text) return fallback;
+  
+  // If it's already an array, return it
+  if (Array.isArray(text)) return text;
 
   try {
     const parsed = JSON.parse(text);

@@ -8,7 +8,7 @@ interface Props {
 
 export const handleAddArtwork = async ({ data, tagId }: Props) => {
   const artwork: ArtworkEntity = {
-    idNumber: data.idNumber,
+    id_number: data.id_number,
     title: data.title,
     description: data.description,
     height: data.height,
@@ -32,7 +32,7 @@ export const handleAddArtwork = async ({ data, tagId }: Props) => {
   const parsedRes: ArtworkEntity = {
     ...result,
     id: result.id,
-    idNumber: result.idnumber,
+    id_number: result.id_number,
     sizeUnit: result.size_unit,
     tag_id: result.tag_id,
     bibliography: result.bibliography ? JSON.parse(result.collectors) : [],

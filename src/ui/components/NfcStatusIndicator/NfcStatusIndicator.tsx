@@ -21,8 +21,10 @@ export const NfcStatusIndicator: React.FC<NfcStatusIndicatorProps> = ({
     refreshDeviceStatus();
   };
 
-  // Log current status for debugging
-  console.log('NfcStatusIndicator status:', { isNfcAvailable, nfcFeaturesEnabled, deviceStatus, isLoading });
+  // Log current status for debugging only in development
+  if (import.meta.env.MODE === 'development' && import.meta.env.VITE_DEBUG_NFC === 'true') {
+    console.log('NfcStatusIndicator status:', { isNfcAvailable, nfcFeaturesEnabled, deviceStatus, isLoading });
+  }
 
   const getStatusColor = () => {
     if (isLoading) return 'bg-gray-400';

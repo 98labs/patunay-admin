@@ -32,15 +32,36 @@ const electronAPI = {
   },
 
   subscribeNfcWriteResult: (callback) => {
-    ipcRenderer.on("nfc-write-result", (_, result) => {
+    const handler = (_, result) => {
+      console.log('🔵 NFC write result in preload:', result);
       callback(result);
-    });
+    };
+    ipcRenderer.on("nfc-write-result", handler);
+    
+    // Return unsubscribe function
+    return () => {
+      console.log('🔵 Unsubscribing from nfc-write-result');
+      ipcRenderer.removeListener("nfc-write-result", handler);
+    };
+  },
+  
+  unsubscribeNfcWriteResult: (callback) => {
+    // Legacy support - no longer needed with return function above
+    console.log('🔵 Legacy unsubscribeNfcWriteResult called');
   },
 
   subscribeNfcCardDetection: (callback) => {
-    ipcRenderer.on("nfc-card-detected", (_, data) => {
+    const handler = (_, data) => {
+      console.log('🔵 NFC card detected in preload:', data);
       callback(data);
-    });
+    };
+    ipcRenderer.on("nfc-card-detected", handler);
+    
+    // Return unsubscribe function
+    return () => {
+      console.log('🔵 Unsubscribing from nfc-card-detected');
+      ipcRenderer.removeListener("nfc-card-detected", handler);
+    };
   },
 
   // Enhanced NFC event listeners for better error handling

@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { themeChange } from "theme-change";
 import { useSelector } from "react-redux";
 
-import logo from '../../../assets/logo/patunay-256x256.png'
 import { selectUser } from '../../store/features/auth';
+import { UserAvatar } from '@components';
+import { useGetCurrentUserQuery } from '../../store/api/userManagementApi';
 
 const UserProfile = () => {
   const [currentTheme, setCurrentTheme] = useState("light");
-  const user = useSelector(selectUser)
+  const user = useSelector(selectUser);
+  const { data: currentUserResponse } = useGetCurrentUserQuery();
+  const currentUser = currentUserResponse?.data;
   useEffect(() => {
     themeChange(false);
     try {
@@ -60,20 +63,24 @@ const UserProfile = () => {
   return (
     <div className="px-8 py-8 bg-base-200 dark:bg-base-200 border-b border-base-300 dark:border-base-300">
       <div className="flex items-center gap-4">
-        <div className="avatar">
-          <div className="w-12 h-12 rounded-full ring ring-primary ring-offset-2 ring-offset-base-200 dark:ring-offset-base-200">
-            <img
-              src={logo}
-              alt="Profile Pic"
-              className="rounded-full object-cover object-top"
-            />
-          </div>
-        </div>
+        <UserAvatar
+          avatarUrl={currentUser?.avatar_url}
+          firstName={currentUser?.first_name}
+          lastName={currentUser?.last_name}
+          email={user?.email}
+          size="lg"
+          className="ring ring-primary ring-offset-2 ring-offset-base-200 dark:ring-offset-base-200"
+        />
         <div className="flex-1">
           <div className="text-base font-semibold text-base-content dark:text-base-content">
-            {user ? username : "Super Admin"}
+            {currentUser?.first_name && currentUser?.last_name 
+              ? `${currentUser.first_name} ${currentUser.last_name}`
+              : user ? username : "User"
+            }
           </div>
-          <div className="text-sm text-base-content/70 dark:text-base-content/70">Admin</div>
+          <div className="text-sm text-base-content/70 dark:text-base-content/70">
+            {currentUser?.role === 'admin' ? 'Administrator' : 'Staff'}
+          </div>
         </div>
         <div className="flex items-center">
           <label className="swap swap-rotate cursor-pointer p-2 rounded-lg hover:bg-base-300 dark:hover:bg-base-300 transition-colors">

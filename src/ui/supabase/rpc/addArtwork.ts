@@ -3,7 +3,7 @@ import supabase from "../index";
 
 export const addArtwork = async (artwork: ArtworkEntity) => {
   const { data, error } = await supabase.rpc("add_artwork", {
-    p_idnumber: artwork.idNumber,
+    p_id_number: artwork.id_number,
     p_title: artwork.title,
     p_description: artwork.description ?? null,
     p_height: artwork.height,

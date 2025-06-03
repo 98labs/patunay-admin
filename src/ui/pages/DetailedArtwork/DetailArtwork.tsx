@@ -1,41 +1,107 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { format } from "date-fns";
-import { Button, Loading, DetachNFCModal, DeleteArtworkModal } from "@components";
+import { Button, Loading, DeleteArtworkModal } from "@components";
 import ArtworkImageModal from "./components/ArtworkImageModal";
+import EditArtworkModal from "./components/EditArtworkModal";
+import DetachNFCModal from "./components/DetachNFCModal";
+import { AttachNFCModal } from "./components/AttachNFCModal";
 import { Appraisal, ArtworkType } from "./types";
 import { selectNotif } from "../../components/NotificationMessage/selector";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import AppraisalInfo from "./components/AppraisalInfo";
+import { showNotification } from "../../components/NotificationMessage/slice";
 
-import supabase from "../../supabase";
-import { updateArtwork } from "../../supabase/rpc/updateArtwork";
+import { updateArtworkDirect } from "../../supabase/rpc/updateArtworkDirect";
+import { detachNfcTag } from "../../supabase/rpc/detachNfcTag";
+import { getArtworkDirectCached } from "../../supabase/rpc/getArtworkDirectCached";
+import { getAppraisals } from "../../supabase/rpc/getAppraisals";
 
 import { safeJsonParse } from "../Artworks/components/utils";
 
 const DetailArtwork = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [artwork, setArtwork] = useState<ArtworkType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isScanning, setIsScanning] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const modalId = useId();
 
   const [appraisals, setAppraisals] =  useState<Appraisal[]>([]);
   const [showDetachModal, setShowDetachModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAttachModal, setShowAttachModal] = useState(false);
   const [tagId, setTagId] = useState("");
   const { status } = useSelector(selectNotif);
 
-  const handleStartScanning = async () => {
-    setIsScanning(true);
+  const handleStartAttaching = useCallback(() => {
+    setShowAttachModal(true);
+  }, []);
+  
+  const handleAttachSuccess = useCallback(async (tagId: string) => {
+    console.log('✅ NFC tag attached successfully:', tagId);
+    
+    // Refresh the artwork data to show the attached tag
+    try {
+      const freshData = await getArtworkDirectCached(artwork!.id);
+      if (freshData && freshData.length > 0) {
+        setArtwork({
+          ...freshData[0],
+          bibliography: safeJsonParse(freshData[0].bibliography),
+          collectors: safeJsonParse(freshData[0].collectors),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to refresh artwork data:', error);
+    }
+    
+    setShowAttachModal(false);
+  }, [artwork]);
+
+  const handleDetach = () => {
+    if (artwork?.tag_id) {
+      setTagId(artwork?.tag_id);
+      setShowDetachModal(true);
+    }
   };
 
-  const handleDetach = async () => {
-    if (artwork?.tag_id) {
-        setTagId(artwork?.tag_id);
-      setShowDetachModal(true);
+  const handleDetachConfirm = async () => {
+    if (!artwork?.id) return;
+
+    try {
+      console.log('🏷️ Detaching NFC tag from artwork:', artwork.id);
+      
+      const result = await detachNfcTag(artwork.id);
+      
+      if (result && result.length > 0) {
+        console.log('🏷️ Successfully detached NFC tag');
+        
+        // Update local state
+        setArtwork({
+          ...artwork,
+          tag_id: null,
+          tag_issued_at: null,
+        });
+        
+        dispatch(showNotification({
+          title: 'Success',
+          message: 'NFC tag detached successfully',
+          status: 'success'
+        }));
+        
+        setShowDetachModal(false);
+      } else {
+        throw new Error('No result returned from detach operation');
+      }
+    } catch (error) {
+      console.error('Failed to detach NFC tag:', error);
+      dispatch(showNotification({
+        message: `Failed to detach NFC tag: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        status: 'error'
+      }));
     }
   };
   
@@ -44,68 +110,118 @@ const DetailArtwork = () => {
       setShowDeleteModal(true);
     }
   };
-  
-  const handleAttachArtwork = async (tagId: string) => {
-    try {
-      const result = await updateArtwork({ ...artwork!, tag_id: tagId });
 
-      if (result) {
-        setArtwork({
-          ...result[0],
-          tag_id: tagId,
-          bibliography: safeJsonParse(result[0].bibliography),
-          collectors: safeJsonParse(result[0].collectors),
-        });
-        setIsScanning(false);
+  const handleEdit = () => {
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async (updatedData: Partial<ArtworkType>) => {
+    if (!artwork?.id || isUpdating) return;
+
+    setIsUpdating(true);
+    
+    try {
+      console.log('📝 Updating artwork:', updatedData);
+      console.log('📝 Bibliography:', updatedData.bibliography);
+      console.log('📝 Collectors:', updatedData.collectors);
+      
+      // Merge with existing artwork data to ensure all fields are present
+      // Only include fields that were actually updated and essential fields
+      const fullArtworkData = {
+        id: artwork.id,
+        title: updatedData.title ?? artwork.title,
+        artist: updatedData.artist ?? artwork.artist,
+        description: updatedData.description ?? artwork.description,
+        medium: updatedData.medium ?? artwork.medium,
+        id_number: updatedData.id_number ?? artwork.id_number,
+        provenance: updatedData.provenance ?? artwork.provenance,
+        height: updatedData.height ?? artwork.height,
+        width: updatedData.width ?? artwork.width,
+        year: updatedData.year ?? artwork.year,
+        bibliography: updatedData.bibliography ?? artwork.bibliography,
+        collectors: updatedData.collectors ?? artwork.collectors,
+        size_unit: artwork.size_unit,  // Keep existing size_unit
+        tag_id: artwork.tag_id,         // Keep existing tag_id
+      };
+      
+      console.log('📝 Full artwork data to update:', fullArtworkData);
+      console.log('📝 Full data bibliography:', fullArtworkData.bibliography);
+      console.log('📝 Full data collectors:', fullArtworkData.collectors);
+      
+      // Use the direct update function for better control over JSONB fields
+      const result = await updateArtworkDirect(fullArtworkData);
+      
+      if (result && result.length > 0) {
+        console.log('📝 Successfully updated artwork:', result[0]);
+        
+        // Fetch fresh data from the database to ensure all fields are up to date
+        const freshData = await getArtworkDirectCached(artwork.id);
+        
+        if (freshData && freshData.length > 0) {
+          setArtwork({
+            ...freshData[0],
+            bibliography: safeJsonParse(freshData[0].bibliography),
+            collectors: safeJsonParse(freshData[0].collectors),
+          });
+        } else {
+          // Fallback to using the result from update
+          setArtwork({
+            ...result[0],
+            bibliography: safeJsonParse(result[0].bibliography),
+            collectors: safeJsonParse(result[0].collectors),
+          });
+        }
+        
+        dispatch(showNotification({
+          title: 'Success',
+          message: 'Artwork updated successfully',
+          status: 'success'
+        }));
+        
+        setShowEditModal(false);
+      } else {
+        throw new Error('No result returned from update');
       }
     } catch (error) {
-      console.error("Failed to detach NFC tag from artwork:", error);
+      console.error('Failed to update artwork:', error);
+      dispatch(showNotification({
+        message: `Failed to update artwork: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        status: 'error'
+      }));
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   useEffect(() => {
-    if (!isScanning) return;
-
-    // Check if electron API is available
-    if (!window.electron?.subscribeNfcCardDetection) {
-      console.warn('Electron API not available - NFC functionality will be disabled');
-      return;
-    }
-
-    window.electron.subscribeNfcCardDetection(
-      (card: { uid: string; data: any }) => {
-        handleAttachArtwork(card.uid);
-      }
-    );
-  }, [isScanning, handleAttachArtwork]);
-
-  useEffect(() => {
     const fetchArtwork = async () => {
-      const { data, error } = await supabase.rpc("get_artwork", {
-        p_artwork_id: id,
-      });
-
-      if (error) {
-        console.error("Error fetching artwork:", error.message);
-        navigate("/dashboard/artworks");
-      } else {
+      try {
+        const data = await getArtworkDirectCached(id);
+        
+        if (!data || data.length === 0) {
+          console.error("Artwork not found");
+          navigate("/dashboard/artworks");
+          return;
+        }
+        
         setArtwork({
           ...data[0],
           bibliography: safeJsonParse(data[0].bibliography),
           collectors: safeJsonParse(data[0].collectors),
         });
+
+        // Fetch appraisals separately
+        const appraisalData = await getAppraisals(id!);
+        setAppraisals(appraisalData);
+      } catch (error) {
+        console.error("Error fetching artwork:", error);
+        navigate("/dashboard/artworks");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchArtwork();
   }, [id, navigate, status]);
-
-  useEffect(() => {
-    if (artwork?.artwork_appraisals) {
-      setAppraisals(artwork?.artwork_appraisals);
-    }
-    
-  }, [artwork])
 
   if (loading) return <Loading fullScreen={false} />;
   if (!artwork) return <div className="p-6">Artwork not found.</div>;
@@ -125,6 +241,12 @@ const DetailArtwork = () => {
         </div>
         <div className="flex justify-between items-start">
           <div className="flex gap-2">
+            <Button
+              buttonType="primary"
+              buttonLabel="Edit Artwork"
+              className="btn-sm rounded-lg"
+              onClick={handleEdit}
+            />
             {artwork.tag_id ? (
               <Button
                 buttonType="secondary"
@@ -135,9 +257,9 @@ const DetailArtwork = () => {
             ) : (
               <Button
                 buttonType="secondary"
-                buttonLabel={isScanning ? "Attaching..." : "Attach NFC Tag"}
+                buttonLabel="Attach NFC Tag"
                 className="btn-sm rounded-lg"
-                onClick={handleStartScanning}
+                onClick={handleStartAttaching}
               />
             )}
             <Button
@@ -183,44 +305,56 @@ const DetailArtwork = () => {
               <p className="text-gray-500 text-xs">
                 {artwork.artist}{" "}
                 <span className="italic">
-                  ({format(new Date(artwork.tag_issued_at), "yyyy")})
+                  ({format(new Date(artwork.tag_issued_at || artwork.created_at), "yyyy")})
                 </span>
               </p>
             </ul>
             <div className="grid grid-cols-2 gap-4 mt-4">
-                <div><strong>Size:</strong> {artwork.height}cm by {artwork.width}cm</div>
-                <div><strong>Medium:</strong> {artwork.medium}</div>
+                <div><strong>Height:</strong> {artwork.height || 'none'}</div>
+                <div><strong>Width:</strong> {artwork.width || 'none'}</div>
+                <div><strong>Unit of Measure:</strong> {artwork.size_unit || 'none'}</div>
+                <div><strong>Medium:</strong> {artwork.medium || 'none'}</div>
                 <div className="col-span-2">
                   <strong>Description:</strong>
-                  <p>{artwork.description}</p>
+                  <p>{artwork.description || 'none'}</p>
                 </div>
-                <div><strong>Identifier:</strong> {artwork.idnumber}</div>
-                <div><strong>Provenance:</strong> {artwork.provenance}</div>
-                <div><strong>Bibliography:</strong>
-                  {typeof artwork.bibliography === 'string' ? <p>No bibliography available</p> : 
-                    <ul>
-                      {artwork.bibliography.map((item, i) => <li key={i}>{item}</li>)}
+                <div><strong>ID Number:</strong> {artwork.id_number || 'none'}</div>
+                <div><strong>Provenance:</strong> {artwork.provenance || 'none'}</div>
+                <div className="col-span-2">
+                  <strong>Bibliography:</strong>
+                  {!artwork.bibliography || artwork.bibliography.length === 0 ? (
+                    <p className="text-gray-500">No bibliography available</p>
+                  ) : (
+                    <ul className="list-disc list-inside mt-1 ml-4">
+                      {artwork.bibliography.map((item, i) => (
+                        <li key={i} className="text-gray-700">{item}</li>
+                      ))}
                     </ul>
-                  }
+                  )}
                 </div>
-                <div><strong>Collector:</strong>
-                  {typeof artwork.collectors === 'string' ? <p>No collectors available</p> :
-                    <ul>
-                      {artwork.collectors.map((item, i) => <li key={i}>{item}</li>)}
+                <div className="col-span-2">
+                  <strong>Collectors:</strong>
+                  {!artwork.collectors || artwork.collectors.length === 0 ? (
+                    <p className="text-gray-500">No collectors available</p>
+                  ) : (
+                    <ul className="list-disc list-inside mt-1 ml-4">
+                      {artwork.collectors.map((item, i) => (
+                        <li key={i} className="text-gray-700">{item}</li>
+                      ))}
                     </ul>
-                  }
+                  )}
                 </div>
-                <div><strong>Artwork ID:</strong> {artwork.tag_id}</div>
-                <div><strong>NFC Tag ID:</strong> 00:00:00:00:00:00</div> 
+                <div><strong>NFC Tag:</strong> {artwork.tag_id || 'No NFC tag attached'}</div> 
               </div>
           </div>
         </div>
-          {showDetachModal && (
+          {showDetachModal && artwork && (
               <DetachNFCModal
+                isOpen={showDetachModal}
+                onClose={() => setShowDetachModal(false)}
+                artworkId={artwork.id}
                 tagId={tagId}
-                onClose={() => {
-                  setShowDetachModal(false);
-                }}
+                onDetachSuccess={handleDetachConfirm}
               />
             )}
           {showDeleteModal && (
@@ -232,12 +366,10 @@ const DetailArtwork = () => {
               />
             )}
         </section>
-        {artwork.artwork_appraisals && (
-          <>
-            <div className="divider"></div>
-            <AppraisalInfo appraisals={appraisals} artwork_id={artwork.id} />
-          </>
-        )}
+        <>
+          <div className="divider"></div>
+          <AppraisalInfo appraisals={appraisals} artwork_id={artwork.id} />
+        </>
         {showImageModal && (
           <ArtworkImageModal
             images={artwork.assets?.map((asset) => asset.url) || []}
@@ -245,6 +377,36 @@ const DetailArtwork = () => {
             modalId={modalId}
             onClose={() => setShowImageModal(false)}
           />
+        )}
+        
+        {/* Edit Artwork Modal */}
+        {showEditModal && artwork && (
+          <EditArtworkModal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            artwork={artwork}
+            onSave={handleSaveEdit}
+          />
+        )}
+
+        {/* Attach NFC Modal */}
+        {showAttachModal && artwork && (
+          <AttachNFCModal
+            isOpen={showAttachModal}
+            onClose={() => setShowAttachModal(false)}
+            artworkId={artwork.id}
+            onSuccess={handleAttachSuccess}
+          />
+        )}
+        
+        {/* Update Loading Overlay */}
+        {isUpdating && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-base-100 rounded-lg p-6 flex flex-col items-center gap-4">
+              <div className="loading loading-spinner loading-lg text-primary"></div>
+              <p className="text-sm font-medium">Updating artwork...</p>
+            </div>
+          </div>
         )}
     </div>
   );

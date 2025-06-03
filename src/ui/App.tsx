@@ -12,7 +12,6 @@ const Login = lazy(() => import('./pages/Login'));
 const NfcTags = lazy(() => import('./pages/NfcTags'));
 const RegisterArtwork = lazy(() => import('./pages/RegisterArtwork'));
 const SearchArtwork = lazy(() => import('./pages/SearchArtwork'));
-const Team = lazy(() => import('./pages/Team'));
 
 function App() {
   return (
@@ -59,11 +58,6 @@ function App() {
             <Route path="admin/nfc-tags" element={
               <ErrorBoundary>
                 <NfcTags />
-              </ErrorBoundary>
-            } />
-            <Route path="admin/team" element={
-              <ErrorBoundary>
-                <Team />
               </ErrorBoundary>
             } />
             <Route path="admin/devices" element={
