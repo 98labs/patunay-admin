@@ -126,18 +126,14 @@ export function useArtworkColumns(
       accessorKey: "tag_id",
       enableSorting: false,
       cell: ({ row }) => {
-        const hasTag = !!row.original.tag_id;
-        const isActive = !!row.original.active;
+        const tagId = row.original.tag_id;
         
         let status: string;
         let badgeClass: string;
         
-        if (hasTag && isActive) {
+        if (tagId && tagId.trim() !== '') {
           status = "Attached";
           badgeClass = "badge-success";
-        } else if (hasTag && !isActive) {
-          status = "Detached";
-          badgeClass = "badge-warning";
         } else {
           status = "No NFC";
           badgeClass = "badge-error";
@@ -150,14 +146,12 @@ export function useArtworkColumns(
         );
       },
       filterFn: (row: Row<ArtworkEntity>, columnId, filterValue: string) => {
-        const hasNfc = !!row.original.tag_id;
-        const isActive = !!row.original.active;
+        const tagId = row.original.tag_id;
+        const hasNfc = tagId && tagId.trim() !== '';
         
         switch (filterValue) {
           case "with":
-            return hasNfc && isActive;
-          case "detach":
-            return hasNfc && !isActive;
+            return hasNfc;
           case "none":
             return !hasNfc;
           default:
