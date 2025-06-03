@@ -4,7 +4,6 @@ import { useDispatch } from 'react-redux';
 import { useNfcSearch } from '../../hooks/useNfcSearch';
 import { useNfcStatus } from '../../context/NfcStatusContext';
 import { useLogger } from '../../hooks/useLogger';
-import { NfcModeEntity } from '../../typings/enums/nfcEnum';
 import { showNotification } from '../NotificationMessage/slice';
 import type { NfcCardSearchData } from '../../../shared/types/electron';
 
@@ -90,7 +89,7 @@ export const NfcSearchProvider: React.FC<NfcSearchProviderProps> = ({
       setIsSearchMode(false);
       logger.debug('NFC search mode disabled - not on search page');
     }
-  }, [enabled, nfcFeaturesEnabled, location.pathname]);
+  }, [enabled, nfcFeaturesEnabled, location.pathname, logger]);
 
   // Log current state for debugging
   useEffect(() => {
@@ -102,7 +101,7 @@ export const NfcSearchProvider: React.FC<NfcSearchProviderProps> = ({
       isSearching,
       pathname: location.pathname,
     });
-  }, [enabled, nfcFeaturesEnabled, isSearchMode, isEnabled, isSearching, location.pathname]);
+  }, [enabled, nfcFeaturesEnabled, isSearchMode, isEnabled, isSearching, location.pathname, logger]);
 
   return <>{children}</>;
 };

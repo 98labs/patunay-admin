@@ -23,7 +23,7 @@ const Summary = ({ artwork, onPrev }: Props) => {
     collectors,
     description,
     height,
-    idNumber,
+    id_number,
     medium,
     provenance,
     sizeUnit,
@@ -48,7 +48,7 @@ const Summary = ({ artwork, onPrev }: Props) => {
       value: `${height}${sizeUnit} × ${width}${sizeUnit}`,
     },
     { label: "Year", value: year },
-    { label: "ID Number", value: idNumber },
+    { label: "ID Number", value: id_number },
     { label: "Tag ID", value: tag_id },
     { label: "Provenance", value: provenance },
 

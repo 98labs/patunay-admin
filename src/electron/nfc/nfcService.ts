@@ -124,7 +124,14 @@ export const nfcWriteOnTag = (data?: string) => {
     mode = NfcModeEntity.Write;
     dataToWrite = data ? data : null;
     
-    console.log(`NFC write mode set. Data to write: ${dataToWrite}`);
+    console.log(`🏷️ NFC write mode activated`);
+    console.log(`🏷️ Data to write: ${dataToWrite}`);
+    console.log(`🏷️ Data length: ${dataToWrite ? dataToWrite.length : 0} bytes`);
+    
+    electronLogger.info('NFC write mode set', LogCategory.NFC, { component: "Write" }, { 
+      dataLength: dataToWrite ? dataToWrite.length : 0,
+      hasData: !!dataToWrite 
+    });
   } catch (error) {
     const nfcError = error as NfcError;
     console.error(`NFC write setup failed: ${nfcError.message}`);
@@ -197,22 +204,26 @@ export const initializeNfc = (window: BrowserWindow) => {
       }, 100);
 
       reader.on("card", async (card: Card) => {
-        console.log(`Card detected: ${JSON.stringify(card)}`);
-        console.log(`mode: ${mode}`);
+        console.log(`🏷️ Card detected: ${JSON.stringify(card)}`);
+        console.log(`🏷️ Current mode: ${mode}`);
+        console.log(`🏷️ Data to write: ${dataToWrite}`);
 
         const uid = card.uid;
 
         try {
           switch (mode) {
             case NfcModeEntity.Read:
+              console.log('🏷️ Card detected in Read mode - sending to renderer');
               await handleCardRead(reader, uid);
               break;
 
             case NfcModeEntity.Write:
+              console.log('🏷️ Card detected in Write mode');
               await handleCardWrite(reader, uid);
               break;
 
             case NfcModeEntity.Search:
+              console.log('🏷️ Card detected in Search mode');
               await handleCardSearch(reader, uid);
               break;
 
@@ -326,8 +337,12 @@ const handleCardRead = async (reader: Reader, uid: string): Promise<void> => {
 // Helper function for card writing
 const handleCardWrite = async (reader: Reader, uid: string): Promise<void> => {
   try {
+    console.log('🏷️ handleCardWrite called');
+    console.log('🏷️ Current mode:', mode);
+    console.log('🏷️ Data to write:', dataToWrite);
+    
     const text = dataToWrite ?? "No data";
-    console.log(`Writing to card. UID: ${uid}, Text: ${text}`);
+    console.log(`🏷️ Writing to card. UID: ${uid}, Text: ${text}`);
 
     // Validate data before writing
     if (text.length === 0) {
@@ -406,6 +421,7 @@ const extractUuidFromNfcData = (rawData: Buffer): string => {
   
   // If no UUID found, try to clean up the string and look for UUID-like patterns
   // Remove null bytes and control characters
+  // eslint-disable-next-line no-control-regex
   const cleanedString = dataString.replace(/[\x00-\x1F\x7F]/g, '');
   const cleanedMatch = cleanedString.match(uuidPattern);
   

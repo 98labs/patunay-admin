@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNfcStatus } from "../../context/NfcStatusContext";
 import { useNotification } from "../../hooks/useNotification";
-import { getArtwork } from "../../supabase/rpc/getArtwork";
+import { getArtworkDirectCached } from "../../supabase/rpc/getArtworkDirectCached";
 
 const SearchArtwork = () => {
   const navigate = useNavigate();
   const { nfcFeaturesEnabled, isNfcAvailable, deviceStatus } = useNfcStatus();
   const { showSuccess, showError } = useNotification();
   const [isSearching, setIsSearching] = useState(false);
+  const [lastProcessedTimestamp, setLastProcessedTimestamp] = useState<string | null>(null);
 
   useEffect(() => {
     // Only set up NFC listeners if features are enabled and API is available
@@ -20,6 +21,9 @@ const SearchArtwork = () => {
 
     console.log('🔍 SearchArtwork: Setting up NFC listeners');
     
+    // Create a flag to track if component is mounted
+    let isMounted = true;
+    
     // Set NFC to search mode when on this page
     if (window.electron.setMode) {
       window.electron.setMode('search', '');
@@ -28,12 +32,23 @@ const SearchArtwork = () => {
 
     // Handle NFC card search events (for search mode)
     const handleNfcCardSearch = async (data: { uid: string; data: string; timestamp: string }) => {
+      if (!isMounted) return;
+      
       console.log('🔍 SearchArtwork: NFC search event received:', data);
+      
+      // Check if this is a duplicate event by comparing timestamps
+      if (lastProcessedTimestamp === data.timestamp) {
+        console.log('🔍 SearchArtwork: Duplicate event (same timestamp), ignoring');
+        return;
+      }
       
       if (isSearching) {
         console.log('🔍 SearchArtwork: Already searching, ignoring duplicate event');
         return;
       }
+      
+      // Store the timestamp to prevent processing duplicates
+      setLastProcessedTimestamp(data.timestamp);
 
       const artworkId = data.data?.trim();
       
@@ -49,7 +64,7 @@ const SearchArtwork = () => {
         setIsSearching(true);
         console.log('🔍 SearchArtwork: Calling get_artwork RPC with ID:', artworkId);
         
-        const artworkData = await getArtwork(artworkId);
+        const artworkData = await getArtworkDirectCached(artworkId);
         
         if (artworkData && artworkData.length > 0) {
           const artwork = artworkData[0];
@@ -65,7 +80,18 @@ const SearchArtwork = () => {
         }
       } catch (error) {
         console.error('🔍 SearchArtwork: Error fetching artwork:', error);
-        showError('Failed to fetch artwork data', 'Search Error');
+        
+        // Handle specific error cases
+        if (error && typeof error === 'object' && 'message' in error) {
+          const errorMessage = (error as any).message;
+          if (errorMessage.includes('infinite recursion')) {
+            showError('Database configuration issue. Please contact support.', 'Database Error');
+          } else {
+            showError('Failed to fetch artwork data', 'Search Error');
+          }
+        } else {
+          showError('Failed to fetch artwork data', 'Search Error');
+        }
       } finally {
         setIsSearching(false);
       }
@@ -108,9 +134,10 @@ const SearchArtwork = () => {
 
     return () => {
       console.log('🔍 SearchArtwork: Cleaning up NFC listeners');
-      // Note: Current implementation doesn't provide unsubscribe methods
+      isMounted = false;
+      // TODO: Add proper unsubscribe methods when available in electron API
     };
-  }, [nfcFeaturesEnabled, isSearching, navigate, showSuccess, showError]);
+  }, [nfcFeaturesEnabled, isSearching, navigate, showSuccess, showError, lastProcessedTimestamp]);
 
   return (
     <div className="bg-base-100 dark:bg-base-100 text-base-content dark:text-base-content">

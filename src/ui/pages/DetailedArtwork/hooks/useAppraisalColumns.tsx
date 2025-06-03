@@ -1,36 +1,36 @@
 import { useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { AuctionRefProps } from "../components/types";
+import { Appraisal } from "../types";
 
 
-export function useAppraisalColumns(): ColumnDef<AuctionRefProps>[] {
-  return useMemo<ColumnDef<AuctionRefProps>[]>(() => [
+export function useAppraisalColumns(): ColumnDef<Appraisal>[] {
+  return useMemo<ColumnDef<Appraisal>[]>(() => [
     {
     accessorKey: "condition",
     header: "Condition",
   },
   {
-    accessorKey: "acquisition_cost",
+    accessorKey: "acquisitionCost",
     header: "Acquisition Cost",
     cell: info => {
       const value = info.getValue();
-      return typeof value === 'number' ? `${value.toLocaleString()}` : "—";
+      return typeof value === 'number' ? `$${value.toLocaleString()}` : "—";
     }
   },
   {
-    accessorKey: "appraised_value",
+    accessorKey: "appraisedValue",
     header: "Appraised Value",
     cell: info => {
       const value = info.getValue();
-      return typeof value === 'number' ? `${value.toLocaleString()}` : "—";
+      return typeof value === 'number' ? `$${value.toLocaleString()}` : "—";
     }
   },
   {
-    accessorKey: "artist_info",
+    accessorKey: "artistInfo",
     header: "Artist Info",
   },
   {
-    accessorKey: "recent_auction_references",
+    accessorKey: "recentAuctionReferences",
     header: "Recent Auction References",
     cell: ({ getValue }) => {
       const items = getValue<string[]>() ?? []
@@ -50,15 +50,19 @@ export function useAppraisalColumns(): ColumnDef<AuctionRefProps>[] {
     header: "Recommendation",
   },
   {
-    accessorKey: "appraisal_date",
+    accessorKey: "appraisalDate",
     header: "Appraisal Date",
     cell: ({ getValue }) => {
-      const date = new Date(getValue<string>())
-      return date.toLocaleDateString()
-    }
+      const dateValue = getValue<string>();
+      if (!dateValue) return "—";
+      const date = new Date(dateValue);
+      return date.toLocaleDateString();
+    },
+    sortingFn: "datetime",
+    sortDescFirst: true,
   },
   {
-    accessorKey: "appraisers",
+    accessorKey: "appraisedBy",
     header: "Appraised By",
     cell: ({ getValue }) => {
       const appraisers = getValue<{ name: string }[]>() ?? []

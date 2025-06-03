@@ -69,9 +69,9 @@ const Sidebar = ({
       name: "Admin",
       path: "/dashboard/admin",
       children: [
+        { name: "User Management", path: "/dashboard/admin/users" },
         { name: "NFC Tags", path: "/dashboard/admin/nfc-tags" },
-        { name: "Team", path: "/dashboard/admin/team" },
-        { name: "Devices", path: "/dashboard/admin/devices" },
+        { name: "Devices", path: "/dashboard/admin/device" },
       ],
     },
   ], []);

@@ -96,8 +96,9 @@ export interface ElectronAPI {
   // NFC operations
   setMode: (mode: NfcModeEntity, data?: string) => void;
   writeOnTag: (data?: string) => void;
+  writeNfcTag?: (data: string) => Promise<void>;
   subscribeNfcWriteResult: (callback: (result: WriteResult) => void) => void;
-  subscribeNfcCardDetection: (callback: (data: CardData) => void) => void;
+  subscribeNfcCardDetection: (callback: (data: CardData) => void) => () => void;
   
   // NFC event listeners (for improved error handling)
   subscribeNfcOperationError?: (callback: (error: NfcOperationError) => void) => void;

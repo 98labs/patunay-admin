@@ -5,10 +5,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Development Mode
-- `npm run dev` - Start both React dev server and Electron in parallel
+- `npm run dev` - Start both React dev server and Electron in parallel (DevTools enabled by default)
+- `npm run dev:devtools` - Explicitly enable DevTools (same as dev but clearer intent)
 - `npm run dev:react` - Start only the React dev server (Vite on port 5173)
 - `npm run dev:electron` - Start only Electron (requires transpiled code)
 - `npm run devmac:electron` - macOS-specific Electron dev command
+
+**DevTools Control:**
+- DevTools open automatically in development mode
+- To disable: `DISABLE_DEVTOOLS=true npm run dev`
+- To force enable: `ENABLE_DEVTOOLS=true npm run dev` (or use `npm run dev:devtools`)
 
 ### Building
 - `npm run build` - Full production build (clean + transpile + build React + Electron builder)

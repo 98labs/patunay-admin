@@ -20,7 +20,7 @@ const Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
     artist: "",
     description: "",
     medium: "",
-    idNumber: "",
+    id_number: "",
     provenance: "",
   });
 
@@ -55,9 +55,9 @@ const Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
       required: true,
     },
     {
-      artworkId: "idNumber",
-      artworkLabel: "Identifier",
-      hint: "Enter its identifier",
+      artworkId: "id_number",
+      artworkLabel: "ID Number",
+      hint: "Enter its ID number",
       required: true,
     },
     {
@@ -97,7 +97,7 @@ const Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
         artist: artwork.artist || "",
         description: artwork.description || "",
         medium: artwork.medium || "",
-        idNumber: artwork.idNumber || "",
+        id_number: artwork.id_number || "",
         provenance: artwork.provenance || "",
       });
     }

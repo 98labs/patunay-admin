@@ -1,5 +1,5 @@
 export interface AssetEntity {
-  fileName?: string;
+  filename?: string;
   url?: string;
   sortOrder?: number;
 }

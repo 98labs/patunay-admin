@@ -7,8 +7,10 @@
   "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "npm-run-all --parallel dev:react dev:electron",
+    "dev:devtools": "npm-run-all --parallel dev:react dev:electron:devtools",
     "dev:react": "vite --mode development",
     "dev:electron": "npm run build:electron && cross-env NODE_ENV=development electron .",
+    "dev:electron:devtools": "npm run build:electron && cross-env NODE_ENV=development ENABLE_DEVTOOLS=true electron .",
     "build": "npm run build:all",
     "build:validate": "npm run validate && npm run build:all",
     "build:all": "npm run clean && npm-run-all --parallel build:react build:electron && npm run package:electron",
@@ -55,6 +57,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",
+    "react-hook-form": "^7.57.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.1",
     "theme-change": "^2.5.0"
@@ -95,7 +98,14 @@
     "vitest": "^3.1.4"
   },
   "description": "Patunay Admin - NFC artwork authentication and management application",
-  "keywords": ["electron", "react", "nfc", "artwork", "authentication", "patunay"],
+  "keywords": [
+    "electron",
+    "react",
+    "nfc",
+    "artwork",
+    "authentication",
+    "patunay"
+  ],
   "license": "ISC",
   "build": {
     "appId": "com.patunay.app",
