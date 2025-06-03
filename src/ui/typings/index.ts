@@ -3,6 +3,7 @@ export * from "./asset";
 export * from "./formErrors";
 export * from "./formTypes";
 export * from "./nfcEvent";
+export * from "./user";
 export * from "./enums/inputType";
 export * from "./enums/sizeUnit";
 export * from "./enums/nfcEnum";

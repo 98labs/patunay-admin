@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, globalShortcut } from "electron";
 import pkg from "electron-updater";
 import path from "path";
 import { createRequire } from "module";
@@ -42,8 +42,10 @@ if (isDev()) {
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 1080,
-    height: 800,
+    width: 1400,
+    height: 1000,
+    minWidth: 1200,
+    minHeight: 800,
     webPreferences: {
       preload: getPreloadPath(),
       contextIsolation: true,
@@ -72,17 +74,35 @@ const createWindow = () => {
             mainWindow.loadURL(devUrl);
             electronLogger.info("Loading development URL", LogCategory.SYSTEM, { component: "Main" }, { url: devUrl });
             
-            // Only open DevTools if explicitly requested (set ENABLE_DEVTOOLS=true to enable)
+            // Open DevTools in development mode (can be disabled by setting DISABLE_DEVTOOLS=true)
             electronLogger.info("Checking DevTools environment variable", LogCategory.SYSTEM, { component: "Main" }, { 
               ENABLE_DEVTOOLS: process.env.ENABLE_DEVTOOLS,
-              NODE_ENV: process.env.NODE_ENV 
+              DISABLE_DEVTOOLS: process.env.DISABLE_DEVTOOLS,
+              NODE_ENV: process.env.NODE_ENV,
+              isDev: isDev()
             });
             
-            if (process.env.ENABLE_DEVTOOLS === 'true') {
-              electronLogger.info("Opening DevTools as requested", LogCategory.SYSTEM, { component: "Main" });
-              mainWindow.webContents.openDevTools();
+            const shouldOpenDevTools = process.env.ENABLE_DEVTOOLS === 'true' || 
+                                     (isDev() && process.env.DISABLE_DEVTOOLS !== 'true');
+            
+            if (shouldOpenDevTools) {
+              electronLogger.info("Opening DevTools", LogCategory.SYSTEM, { component: "Main" });
+              
+              // Use setImmediate to ensure window is fully ready
+              setImmediate(() => {
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                  mainWindow.webContents.openDevTools();
+                  
+                  // Force focus on main window after opening DevTools
+                  setTimeout(() => {
+                    if (mainWindow && !mainWindow.isDestroyed()) {
+                      mainWindow.focus();
+                    }
+                  }, 100);
+                }
+              });
             } else {
-              electronLogger.info("DevTools not requested, skipping", LogCategory.SYSTEM, { component: "Main" });
+              electronLogger.info("DevTools disabled", LogCategory.SYSTEM, { component: "Main" });
             }
             return;
           }
@@ -116,6 +136,17 @@ app.setAppUserModelId("com.patunay");
 
 app.whenReady().then(() => {
   createWindow();
+
+  // Add keyboard shortcut to toggle DevTools
+  globalShortcut.register('CommandOrControl+Shift+I', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.webContents.isDevToolsOpened()) {
+        mainWindow.webContents.closeDevTools();
+      } else {
+        mainWindow.webContents.openDevTools();
+      }
+    }
+  });
 
   // Clean up any existing IPC handlers before registering new ones
   ipcMain.removeAllListeners("getStatisticData");
@@ -288,6 +319,9 @@ app.on("window-all-closed", async () => {
   } catch (error) {
     electronLogger.error("Error during NFC cleanup on window close", LogCategory.SYSTEM, { component: "Main" }, error as Error);
   }
+  
+  // Unregister all global shortcuts
+  globalShortcut.unregisterAll();
   
   if (process.platform !== "darwin") {
     app.quit();

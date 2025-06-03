@@ -13,15 +13,15 @@ export function useArtworkColumns(
 ): ColumnDef<ArtworkEntity>[] {
   return useMemo<ColumnDef<ArtworkEntity>[]>(() => [
     {
-      header: "ID",
-      accessorKey: "idnumber",
+      header: "ID Number",
+      accessorKey: "id_number",
       enableSorting: false,
       cell: ({ row }) => (
         <Link 
           to={`/dashboard/artworks/${row.original.id}`} 
           className="link link-primary hover:link-secondary transition-colors"
         >
-          #{row.original.idnumber || 'N/A'}
+          #{row.original.id_number || 'N/A'}
         </Link>
       ),
       meta: { className: "hidden lg:table-cell w-20" },

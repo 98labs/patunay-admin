@@ -140,7 +140,7 @@ export const userApi = api.injectEndpoints({
       query: ({ page = 1, pageSize = 10, role, isActive, search }) => ({
         supabaseOperation: async () => {
           let query = supabase
-            .from('users')
+            .from('profiles')
             .select('*', { count: 'exact' })
             .range((page - 1) * pageSize, page * pageSize - 1)
             .order('created_at', { ascending: false });
@@ -176,7 +176,7 @@ export const userApi = api.injectEndpoints({
       query: (id) => ({
         supabaseOperation: async () => {
           const { data, error } = await supabase
-            .from('users')
+            .from('profiles')
             .select('*')
             .eq('id', id)
             .single();
@@ -192,7 +192,7 @@ export const userApi = api.injectEndpoints({
       query: ({ id, updates }) => ({
         supabaseOperation: async () => {
           const { data, error } = await supabase
-            .from('users')
+            .from('profiles')
             .update(updates)
             .eq('id', id)
             .select()
@@ -253,7 +253,7 @@ export const userApi = api.injectEndpoints({
       query: () => ({
         supabaseOperation: async () => {
           const { data: users, error } = await supabase
-            .from('users')
+            .from('profiles')
             .select('role, is_active, created_at');
 
           if (error) throw error;

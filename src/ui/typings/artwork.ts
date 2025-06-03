@@ -9,7 +9,7 @@ export interface TagEntity {
 
 export interface ArtworkEntity {
   id?: string;
-  idnumber?: string;
+  id_number?: string;
   title?: string;
   description?: string;
   height?: number;

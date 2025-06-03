@@ -77,6 +77,15 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
 
 
+CREATE TYPE "public"."user_role" AS ENUM (
+    'admin',
+    'staff'
+);
+
+
+ALTER TYPE "public"."user_role" OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "base32"."base32_alphabet"("input" integer) RETURNS character
     LANGUAGE "plpgsql" IMMUTABLE
     AS $$
@@ -698,6 +707,108 @@ $$;
 ALTER FUNCTION "public"."bulk_add_artwork"("artworks" "jsonb") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."check_profile_update_permissions"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    current_user_role text;
+BEGIN
+    -- Get the current user's role
+    SELECT role INTO current_user_role 
+    FROM public.profiles 
+    WHERE id = auth.uid();
+
+    -- If the user is not an admin, prevent them from changing certain fields
+    IF current_user_role != 'admin' OR current_user_role IS NULL THEN
+        -- Check if user is trying to change their own sensitive fields
+        IF NEW.id = auth.uid() THEN
+            -- Prevent changing own role
+            IF NEW.role IS DISTINCT FROM OLD.role THEN
+                RAISE EXCEPTION 'You cannot change your own role';
+            END IF;
+            
+            -- Prevent changing own active status
+            IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
+                RAISE EXCEPTION 'You cannot change your own active status';
+            END IF;
+        ELSE
+            -- Non-admins cannot update other users at all
+            -- This should be caught by RLS, but adding as extra security
+            RAISE EXCEPTION 'You do not have permission to update other users';
+        END IF;
+    END IF;
+
+    -- Allow the update to proceed
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."check_profile_update_permissions"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."check_profile_update_permissions"() IS 'Prevents non-admin users from changing sensitive fields in their profile';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."create_user_manually"("user_email" "text", "user_password" "text", "first_name" "text" DEFAULT NULL::"text", "last_name" "text" DEFAULT NULL::"text", "user_role" "text" DEFAULT 'staff'::"text", "user_phone" "text" DEFAULT NULL::"text") RETURNS "json"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    new_user_id UUID;
+    result JSON;
+BEGIN
+    -- Note: This function creates a user in the profiles table only
+    -- The actual auth user must be created through Supabase Auth
+    
+    -- Generate a UUID for the new user
+    new_user_id := gen_random_uuid();
+    
+    -- Insert into profiles
+    INSERT INTO public.profiles (
+        id,
+        first_name,
+        last_name,
+        role,
+        phone,
+        is_active,
+        created_at,
+        updated_at
+    ) VALUES (
+        new_user_id,
+        first_name,
+        last_name,
+        user_role,
+        user_phone,
+        true,
+        NOW(),
+        NOW()
+    );
+    
+    -- Return the created user info
+    result := json_build_object(
+        'id', new_user_id,
+        'email', user_email,
+        'first_name', first_name,
+        'last_name', last_name,
+        'role', user_role,
+        'message', 'Profile created. Use Supabase dashboard to create auth user with this ID: ' || new_user_id::text
+    );
+    
+    RETURN result;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'error', true,
+            'message', SQLERRM
+        );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."create_user_manually"("user_email" "text", "user_password" "text", "first_name" "text", "last_name" "text", "user_role" "text", "user_phone" "text") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."create_user_profiles"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$BEGIN
@@ -740,8 +851,97 @@ $$;
 ALTER FUNCTION "public"."delete_artwork"("input_artwork_id" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."get_artwork"("p_artwork_id" "uuid") RETURNS TABLE("id" "uuid", "idnumber" "text", "title" "text", "description" "text", "height" double precision, "width" double precision, "size_unit" "text", "artist" "text", "year" "text", "medium" "text", "created_by" "text", "tag_id" "text", "tag_issued_by" "text", "tag_issued_at" timestamp without time zone, "active" boolean, "created_at" timestamp without time zone, "assets" "jsonb", "provenance" "text", "bibliography" "jsonb", "collector" "text", "collectors" "jsonb", "condition" character varying, "cost" numeric, "bibliographies" "jsonb", "artwork_collectors" "jsonb", "artwork_appraisals" "jsonb")
-    LANGUAGE "plpgsql"
+CREATE OR REPLACE FUNCTION "public"."delete_old_avatar"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $_$
+BEGIN
+  -- Delete old avatar file when avatar_url is updated in profiles table
+  IF OLD.avatar_url IS NOT NULL AND NEW.avatar_url IS DISTINCT FROM OLD.avatar_url THEN
+    -- Extract the file path from the old URL
+    DECLARE
+      old_file_path TEXT;
+    BEGIN
+      -- Extract path from URL like: https://[project].supabase.co/storage/v1/object/public/artifacts/[path]
+      old_file_path := SUBSTRING(OLD.avatar_url FROM '/artifacts/(.*)$');
+      
+      IF old_file_path IS NOT NULL THEN
+        -- Delete the old file from storage
+        DELETE FROM storage.objects 
+        WHERE bucket_id = 'artifacts' 
+        AND name = old_file_path;
+      END IF;
+    END;
+  END IF;
+  
+  RETURN NEW;
+END;
+$_$;
+
+
+ALTER FUNCTION "public"."delete_old_avatar"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."delete_user_cascade"("user_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $_$
+BEGIN
+    -- Delete from any custom tables that reference the user
+    -- (Add more DELETE statements here for other tables as needed)
+    
+    -- Delete user permissions if table exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_permissions') THEN
+        DELETE FROM public.user_permissions WHERE user_id = $1;
+    END IF;
+    
+    -- Delete user sessions if table exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_sessions') THEN
+        DELETE FROM public.user_sessions WHERE user_id = $1;
+    END IF;
+    
+    -- The profile will be deleted automatically due to CASCADE
+    -- The auth.users entry will be deleted by Supabase
+END;
+$_$;
+
+
+ALTER FUNCTION "public"."delete_user_cascade"("user_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_all_users_with_roles"() RETURNS TABLE("id" "uuid", "email" "text", "first_name" "text", "last_name" "text", "role" "public"."user_role", "is_active" boolean, "phone" "text", "avatar_url" "text", "created_at" timestamp with time zone, "updated_at" timestamp with time zone, "last_login_at" timestamp with time zone, "email_confirmed_at" timestamp with time zone)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        au.id,
+        au.email,
+        p.first_name,
+        p.last_name,
+        COALESCE(p.role, 'staff'::user_role) as role,
+        COALESCE(p.is_active, true) as is_active,
+        p.phone,
+        p.avatar_url,
+        p.created_at,
+        p.updated_at,
+        p.last_login_at,
+        au.email_confirmed_at
+    FROM auth.users au
+    LEFT JOIN profiles p ON p.id = au.id
+    WHERE au.deleted_at IS NULL
+    ORDER BY p.created_at DESC;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_all_users_with_roles"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_all_users_with_roles"() IS 'Get all users with their roles for admin management';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."get_artwork"("p_artwork_id" "uuid") RETURNS TABLE("id" "uuid", "idnumber" "text", "title" "text", "description" "text", "height" double precision, "width" double precision, "size_unit" "text", "artist" "text", "year" "text", "medium" "text", "created_by" "uuid", "tag_id" "text", "tag_issued_by" "uuid", "tag_issued_at" timestamp without time zone, "active" boolean, "created_at" timestamp without time zone, "assets" "jsonb", "provenance" "text", "bibliography" "jsonb", "collector" "text", "collectors" "jsonb", "condition" character varying, "cost" numeric, "bibliographies" "jsonb", "artwork_collectors" "jsonb", "artwork_appraisals" "jsonb")
+    LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
 BEGIN
     RETURN QUERY
@@ -756,19 +956,11 @@ BEGIN
         a.artist,
         a.year,
         a.medium,
-        (
-            SELECT p.first_name || ' ' || p.last_name AS name
-            FROM profiles p
-            WHERE p.id = a.created_by
-        ) AS created_by,
+        a.created_by,  -- Just return the UUID
         a.tag_id,
-        (
-            SELECT p.first_name || ' ' || p.last_name AS name
-            FROM profiles p
-            WHERE p.id = a.tag_issued_by
-        ) AS tag_issued_by,
+        a.tag_issued_by,  -- Just return the UUID
         a.tag_issued_at,
-        t.active,  -- Retrieved from the `tags` table
+        t.active,
         a.created_at,
         (
             SELECT jsonb_agg(
@@ -787,40 +979,41 @@ BEGIN
         a.collectors,
         a.condition,
         a.cost,
-        COALESCE(jsonb_agg(DISTINCT b.*) FILTER (WHERE b.id IS NOT NULL), '[]'::jsonb) as bibliographies,
-        COALESCE(jsonb_agg(DISTINCT c.*) FILTER (WHERE c.id IS NOT NULL), '[]'::jsonb) as artwork_collectors,
         COALESCE(
-    jsonb_agg(DISTINCT jsonb_build_object(
-        'id', aa.id,
-        'condition', aa.condition,
-        'acquisition_cost', aa.acquisition_cost,
-        'appraised_value', aa.appraised_value,
-        'artist_info', aa.artist_info,
-        'recent_auction_references', aa.recent_auction_references,
-        'notes', aa.notes,
-        'recommendation', aa.recommendation,
-        'appraisal_date', aa.appraisal_date,
-        'appraisers', (
-            SELECT jsonb_agg(jsonb_build_object('id', ap.id, 'name', ap.name))
-            FROM appraisal_appraisers apa
-            JOIN artwork_appraisers ap ON ap.id = apa.appraiser_id
-            WHERE apa.appraisal_id = aa.id
-        )
-    )) FILTER (WHERE aa.id IS NOT NULL), '[]'::jsonb
-) AS art_appraisals
+            (SELECT jsonb_agg(DISTINCT b.*) 
+             FROM bibliographies b 
+             WHERE b.artwork_id = a.id), 
+            '[]'::jsonb
+        ) as bibliographies,
+        COALESCE(
+            (SELECT jsonb_agg(DISTINCT c.*) 
+             FROM artwork_collectors c 
+             WHERE c.artwork_id = a.id), 
+            '[]'::jsonb
+        ) as artwork_collectors,
+        COALESCE(
+            (SELECT jsonb_agg(DISTINCT 
+                jsonb_build_object(
+                    'id', ap.id,
+                    'valuation', ap.valuation,
+                    'status', ap.status,
+                    'created_at', ap.created_at,
+                    'updated_at', ap.updated_at,
+                    'collector_id', ap.collector_id,
+                    'appraiser_id', ap.appraiser_id,
+                    'collection_id', ap.collection_id,
+                    'currency', ap.currency,
+                    'remarks', ap.remarks,
+                    'appraisal_references', ap.appraisal_references
+                )
+             ) 
+             FROM appraisals ap 
+             WHERE ap.artwork_id = a.id), 
+            '[]'::jsonb
+        ) as artwork_appraisals
     FROM artworks a
-    LEFT JOIN tags t ON t.id = a.tag_id
-    LEFT JOIN artwork_bibliography ab on ab.artwork_id = a.id
-    LEFT JOIN bibliography b on b.id = ab.bibliography_id
-    LEFT JOIN artwork_collectors ac on ac.artwork_id = a.id
-    LEFT JOIN collectors c on c.id = ac.collector_id
-    LEFT JOIN artwork_appraisals aa ON aa.artwork_id = a.id
-    WHERE a.id = p_artwork_id
-    GROUP BY
-        a.id, a.idnumber, a.title, a.description, a.height, a.width,
-        a.size_unit, a.artist, a.year, a.medium, a.tag_id, a.tag_issued_at,
-        t.active, a.created_at, a.provenance, a.bibliography, a.collector,
-        a.collectors, a.condition, a.cost;
+    LEFT JOIN tags t ON a.tag_id = t.id
+    WHERE a.id = p_artwork_id;
 END;
 $$;
 
@@ -894,19 +1087,108 @@ END;$$;
 ALTER FUNCTION "public"."get_server_datetime"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."get_user_with_role"("user_id" "uuid") RETURNS TABLE("id" "uuid", "email" "text", "first_name" "text", "last_name" "text", "role" "public"."user_role", "is_active" boolean, "phone" "text", "avatar_url" "text", "created_at" timestamp with time zone, "updated_at" timestamp with time zone, "last_login_at" timestamp with time zone, "permissions" "text"[])
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        au.id,
+        au.email,
+        p.first_name,
+        p.last_name,
+        p.role,
+        p.is_active,
+        p.phone,
+        p.avatar_url,
+        p.created_at,
+        p.updated_at,
+        p.last_login_at,
+        ARRAY(
+            SELECT up.permission 
+            FROM user_permissions up 
+            WHERE up.user_id = au.id
+        ) as permissions
+    FROM auth.users au
+    LEFT JOIN profiles p ON p.id = au.id
+    WHERE au.id = user_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_user_with_role"("user_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_user_with_role"("user_id" "uuid") IS 'Get user details with role and permissions';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."grant_user_permission"("target_user_id" "uuid", "permission_name" "text", "granted_by_user_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    granter_role user_role;
+BEGIN
+    -- Check if the granter is an admin
+    SELECT p.role INTO granter_role
+    FROM profiles p
+    WHERE p.id = granted_by_user_id;
+    
+    IF granter_role != 'admin' THEN
+        RAISE EXCEPTION 'Only admins can grant permissions';
+    END IF;
+    
+    -- Insert or update permission
+    INSERT INTO user_permissions (user_id, permission, granted_by, created_at, updated_at)
+    VALUES (target_user_id, permission_name, granted_by_user_id, now(), now())
+    ON CONFLICT (user_id, permission) 
+    DO UPDATE SET 
+        granted_by = granted_by_user_id,
+        updated_at = now();
+    
+    RETURN true;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."grant_user_permission"("target_user_id" "uuid", "permission_name" "text", "granted_by_user_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
-begin
-  insert into public.profiles (id, first_name, last_name)
-  values (new.id, new.raw_user_meta_data ->> 'first_name', new.raw_user_meta_data ->> 'last_name');
-  return new;
-end;
+BEGIN
+  INSERT INTO profiles (id, first_name, last_name, role, is_active, created_at)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
+    COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
+    COALESCE(NEW.raw_user_meta_data->>'role', 'staff'),
+    true,
+    NOW()
+  );
+  RETURN NEW;
+END;
 $$;
 
 
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."handle_user_delete"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+    -- Log the deletion attempt (optional)
+    RAISE NOTICE 'User % is being deleted', OLD.id;
+    
+    -- Return OLD to allow deletion to proceed
+    RETURN OLD;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."handle_user_delete"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."log_artwork_update"() RETURNS "trigger"
@@ -954,6 +1236,61 @@ $$;
 ALTER FUNCTION "public"."log_status_history"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."revoke_user_permission"("target_user_id" "uuid", "permission_name" "text", "revoked_by_user_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    revoker_role user_role;
+BEGIN
+    -- Check if the revoker is an admin
+    SELECT p.role INTO revoker_role
+    FROM profiles p
+    WHERE p.id = revoked_by_user_id;
+    
+    IF revoker_role != 'admin' THEN
+        RAISE EXCEPTION 'Only admins can revoke permissions';
+    END IF;
+    
+    -- Delete permission
+    DELETE FROM user_permissions 
+    WHERE user_id = target_user_id AND permission = permission_name;
+    
+    RETURN FOUND;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."revoke_user_permission"("target_user_id" "uuid", "permission_name" "text", "revoked_by_user_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."safe_delete_user"("user_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  user_exists BOOLEAN;
+BEGIN
+  -- Check if user exists
+  SELECT EXISTS(SELECT 1 FROM auth.users WHERE id = user_id) INTO user_exists;
+  
+  IF NOT user_exists THEN
+    RAISE EXCEPTION 'User not found';
+  END IF;
+
+  -- Delete related data in order
+  DELETE FROM user_permissions WHERE user_id = safe_delete_user.user_id;
+  DELETE FROM user_sessions WHERE user_id = safe_delete_user.user_id;
+  
+  -- Delete profile (this should cascade from auth.users deletion)
+  DELETE FROM profiles WHERE id = safe_delete_user.user_id;
+  
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."safe_delete_user"("user_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."set_deleted_fields"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -980,144 +1317,164 @@ $$;
 
 ALTER FUNCTION "public"."set_updated_by"() OWNER TO "postgres";
 
+SET default_tablespace = '';
 
-CREATE OR REPLACE FUNCTION "public"."update_artwork"("p_artwork_id" "uuid", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text" DEFAULT NULL::"text", "p_expiration_date" "date" DEFAULT NULL::"date", "p_read_write_count" bigint DEFAULT 0, "p_assets" "jsonb" DEFAULT NULL::"jsonb", "p_provenance" "text" DEFAULT NULL::"text", "p_bibliography" "jsonb" DEFAULT NULL::"jsonb", "p_collectors" "jsonb" DEFAULT NULL::"jsonb") RETURNS TABLE("id" "uuid", "idnumber" "text", "title" "text", "description" "text", "height" double precision, "width" double precision, "size_unit" "text", "artist" "text", "year" "text", "medium" "text", "created_by" "text", "tag_id" "text", "tag_issued_by" "text", "tag_issued_at" timestamp without time zone, "created_at" timestamp without time zone, "assets" "jsonb", "provenance" "text", "bibliography" "jsonb", "collector" "text", "collectors" "jsonb")
-    LANGUAGE "plpgsql"
+SET default_table_access_method = "heap";
+
+
+CREATE TABLE IF NOT EXISTS "public"."artworks" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "title" "text" NOT NULL,
+    "description" "text" NOT NULL,
+    "height" double precision,
+    "width" double precision,
+    "size_unit" "text",
+    "artist" "text" NOT NULL,
+    "year" "text" NOT NULL,
+    "medium" "text",
+    "created_by" "uuid" DEFAULT "auth"."uid"(),
+    "tag_id" "text",
+    "tag_issued_by" "uuid" DEFAULT "auth"."uid"(),
+    "tag_issued_at" timestamp without time zone,
+    "created_at" timestamp without time zone DEFAULT ("now"() AT TIME ZONE 'utc'::"text"),
+    "updated_at" timestamp without time zone,
+    "id_number" "text",
+    "provenance" "text",
+    "bibliography" "jsonb" DEFAULT '[]'::"jsonb",
+    "collectors" "jsonb" DEFAULT '[]'::"jsonb",
+    "updated_by" "uuid",
+    "deleted_at" timestamp with time zone,
+    "deleted_by" "uuid"
+);
+
+
+ALTER TABLE "public"."artworks" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."artworks" IS 'list of artworks';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."update_artwork"("p_artwork_id" "uuid", "p_title" "text" DEFAULT NULL::"text", "p_description" "text" DEFAULT NULL::"text", "p_height" double precision DEFAULT NULL::double precision, "p_width" double precision DEFAULT NULL::double precision, "p_size_unit" "text" DEFAULT NULL::"text", "p_artist" "text" DEFAULT NULL::"text", "p_year" "text" DEFAULT NULL::"text", "p_medium" "text" DEFAULT NULL::"text", "p_tag_id" "text" DEFAULT NULL::"text", "p_expiration_date" "date" DEFAULT NULL::"date", "p_read_write_count" integer DEFAULT NULL::integer, "p_assets" "jsonb" DEFAULT NULL::"jsonb", "p_provenance" "text" DEFAULT NULL::"text", "p_bibliography" "jsonb" DEFAULT NULL::"jsonb", "p_collectors" "jsonb" DEFAULT NULL::"jsonb", "p_id_number" "text" DEFAULT NULL::"text") RETURNS SETOF "public"."artworks"
+    LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
-DECLARE
-    v_existing_artwork_id UUID;
-    v_tag_id TEXT := NULL;
-    v_rows_updated INT;
 BEGIN
-    -- Validate dimensions
-    IF p_height IS NULL OR p_width IS NULL OR p_height <= 0 OR p_width <= 0 THEN
-        RAISE EXCEPTION 'Height and width must be positive numbers.';
-    END IF;
-
-    -- Process tag logic
-    IF p_tag_id IS NOT NULL THEN
-        -- Check if tag exists
-        SELECT t.id INTO v_tag_id 
-        FROM tags t 
-        WHERE t.id = p_tag_id;
-
-        -- Add tag if it doesn't exist
-        IF v_tag_id IS NULL THEN
-            v_tag_id := add_tag(
-                p_id := p_tag_id,
-                p_expiration_date := p_expiration_date,
-                p_read_write_count := p_read_write_count
-            );
-        END IF;
-
-        -- Validate unique tag_id
-        IF v_tag_id IS NOT NULL THEN
-            SELECT a.id INTO v_existing_artwork_id
-            FROM artworks a
-            WHERE a.tag_id = v_tag_id AND a.id <> p_artwork_id;
-
-            IF v_existing_artwork_id IS NOT NULL THEN
-                RAISE EXCEPTION 'Tag ID % is already associated with another artwork.', v_tag_id;
-            END IF;
-        END IF;
-    ELSE
-        -- Explicitly set v_tag_id to NULL if p_tag_id is NULL
-        v_tag_id := NULL;
-    END IF;
-
-    -- Debug: Show the incoming values before updating
-    RAISE NOTICE 'Updating artwork: % -> title=%, tag_id=%', p_artwork_id, p_title, v_tag_id;
-
-    -- Update artwork
-    UPDATE artworks a
+    UPDATE artworks
     SET 
-        title = p_title,
-        description = p_description,
-        height = p_height,
-        width = p_width,
-        size_unit = p_size_unit,
-        artist = p_artist,
-        year = p_year,
-        medium = p_medium,
-        tag_id = v_tag_id,  -- Will be NULL if p_tag_id is NULL
+        title = COALESCE(p_title, title),
+        description = COALESCE(p_description, description),
+        height = COALESCE(p_height, height),
+        width = COALESCE(p_width, width),
+        size_unit = COALESCE(p_size_unit, size_unit),
+        artist = COALESCE(p_artist, artist),
+        year = COALESCE(p_year, year),
+        medium = COALESCE(p_medium, medium),
+        tag_id = COALESCE(p_tag_id, tag_id),
+        provenance = COALESCE(p_provenance, provenance),
+        bibliography = COALESCE(p_bibliography, bibliography),  -- Direct JSONB assignment
+        collectors = COALESCE(p_collectors, collectors),       -- Direct JSONB assignment
+        id_number = COALESCE(p_id_number, id_number),
         updated_at = NOW(),
-        provenance = p_provenance,
-        bibliography = p_bibliography,
-        collectors = p_collectors
-    WHERE a.id = p_artwork_id;
+        updated_by = auth.uid()
+    WHERE id = p_artwork_id;
 
-    -- Capture affected rows
-    GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
-    IF v_rows_updated = 0 THEN
-        RAISE EXCEPTION 'Artwork update failed. No rows updated for ID %.', p_artwork_id;
-    END IF;
-
-    -- Update assets only if new assets are provided
-    IF p_assets IS NOT NULL THEN
-        DELETE FROM assets WHERE artwork_id = p_artwork_id;
-
-        INSERT INTO assets (artwork_id, filename, url, created_at, sort_order)
-        SELECT 
-            p_artwork_id,
-            asset->>'filename',
-            asset->>'url',
-            NOW(),
-            idx
-        FROM jsonb_array_elements(p_assets) WITH ORDINALITY AS asset(asset, idx);
-    END IF;
-
-    -- Return updated artwork with assets
     RETURN QUERY
-    SELECT 
-        a.id,
-        a.idnumber,
-        a.title,
-        a.description,
-        a.height,
-        a.width,
-        a.size_unit,
-        a.artist,
-        a.year,
-        a.medium,
-        (
-            SELECT p.first_name || ' ' || p.last_name 
-            FROM profiles p 
-            WHERE p.id = a.created_by
-        ) AS created_by,
-        a.tag_id,  -- Explicitly qualified as a.tag_id
-        (
-            SELECT p.first_name || ' ' || p.last_name 
-            FROM profiles p 
-            WHERE p.id = a.tag_issued_by
-        ) AS tag_issued_by,
-        a.tag_issued_at,
-        a.created_at,
-        (
-            SELECT jsonb_agg(
-                jsonb_build_object(
-                    'filename', ass.filename,
-                    'url', ass.url,
-                    'sort_order', ass.sort_order
-                ) ORDER BY ass.sort_order
-            )
-            FROM assets ass 
-            WHERE ass.artwork_id = a.id
-        ) AS assets,
-        a.provenance,
-        a.bibliography,
-        a.collector,
-        a.collectors
-    FROM artworks a
-    WHERE a.id = p_artwork_id;
-
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE EXCEPTION 'An error occurred while updating artwork: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
+    SELECT * FROM artworks WHERE id = p_artwork_id;
 END;
 $$;
 
 
-ALTER FUNCTION "public"."update_artwork"("p_artwork_id" "uuid", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text", "p_expiration_date" "date", "p_read_write_count" bigint, "p_assets" "jsonb", "p_provenance" "text", "p_bibliography" "jsonb", "p_collectors" "jsonb") OWNER TO "postgres";
+ALTER FUNCTION "public"."update_artwork"("p_artwork_id" "uuid", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text", "p_expiration_date" "date", "p_read_write_count" integer, "p_assets" "jsonb", "p_provenance" "text", "p_bibliography" "jsonb", "p_collectors" "jsonb", "p_id_number" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_last_login"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+    UPDATE profiles 
+    SET last_login_at = now() 
+    WHERE id = NEW.user_id;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_last_login"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_updated_at"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_user_role"("target_user_id" "uuid", "new_role" "public"."user_role", "updated_by_user_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    updater_role user_role;
+BEGIN
+    -- Check if the updater is an admin
+    SELECT p.role INTO updater_role
+    FROM profiles p
+    WHERE p.id = updated_by_user_id;
+    
+    IF updater_role != 'admin' THEN
+        RAISE EXCEPTION 'Only admins can update user roles';
+    END IF;
+    
+    -- Update the user role
+    UPDATE profiles 
+    SET 
+        role = new_role,
+        updated_at = now(),
+        updated_by = updated_by_user_id
+    WHERE id = target_user_id;
+    
+    RETURN FOUND;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_user_role"("target_user_id" "uuid", "new_role" "public"."user_role", "updated_by_user_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_user_status"("target_user_id" "uuid", "new_status" boolean, "updated_by_user_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    updater_role user_role;
+BEGIN
+    -- Check if the updater is an admin
+    SELECT p.role INTO updater_role
+    FROM profiles p
+    WHERE p.id = updated_by_user_id;
+    
+    IF updater_role != 'admin' THEN
+        RAISE EXCEPTION 'Only admins can update user status';
+    END IF;
+    
+    -- Update the user status
+    UPDATE profiles 
+    SET 
+        is_active = new_status,
+        updated_at = now(),
+        updated_by = updated_by_user_id
+    WHERE id = target_user_id;
+    
+    RETURN FOUND;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_user_status"("target_user_id" "uuid", "new_status" boolean, "updated_by_user_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."validate_otp"("artwork_id" "uuid", "otp_provided" integer) RETURNS boolean
@@ -1337,10 +1694,6 @@ $$;
 
 ALTER FUNCTION "totp"."verify"("secret" "text", "check_totp" "text", "period" integer, "digits" integer, "time_from" timestamp with time zone, "hash" "text", "encoding" "text", "clock_offset" integer) OWNER TO "postgres";
 
-SET default_tablespace = '';
-
-SET default_table_access_method = "heap";
-
 
 CREATE TABLE IF NOT EXISTS "public"."appraisal_appraisers" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
@@ -1435,49 +1788,16 @@ ALTER TABLE "public"."artwork_collectors" OWNER TO "postgres";
 CREATE TABLE IF NOT EXISTS "public"."artwork_update_log" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "artwork_id" "uuid" NOT NULL,
-    "old_data" "jsonb" NOT NULL,
     "updated_by" "uuid",
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "old_data" "jsonb",
+    "new_data" "jsonb",
+    "changes" "jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"()
 );
 
 
 ALTER TABLE "public"."artwork_update_log" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."artworks" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "title" "text" NOT NULL,
-    "description" "text" NOT NULL,
-    "height" double precision,
-    "width" double precision,
-    "size_unit" "text",
-    "artist" "text" NOT NULL,
-    "year" "text" NOT NULL,
-    "medium" "text",
-    "created_by" "uuid" DEFAULT "auth"."uid"(),
-    "tag_id" "text",
-    "tag_issued_by" "uuid" DEFAULT "auth"."uid"(),
-    "tag_issued_at" timestamp without time zone,
-    "created_at" timestamp without time zone DEFAULT ("now"() AT TIME ZONE 'utc'::"text"),
-    "updated_at" timestamp without time zone,
-    "idnumber" "text",
-    "provenance" "text",
-    "bibliography" "jsonb" DEFAULT '[]'::"jsonb",
-    "collector" "text",
-    "collectors" "jsonb" DEFAULT '[]'::"jsonb",
-    "condition" character varying,
-    "cost" numeric,
-    "updated_by" "uuid",
-    "deleted_at" timestamp with time zone,
-    "deleted_by" "uuid"
-);
-
-
-ALTER TABLE "public"."artworks" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."artworks" IS 'list of artworks';
-
 
 
 CREATE TABLE IF NOT EXISTS "public"."assets" (
@@ -1528,41 +1848,29 @@ CREATE TABLE IF NOT EXISTS "public"."collectors" (
 ALTER TABLE "public"."collectors" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."enterprises" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "name" "text" NOT NULL,
-    "workspace_id" "uuid" NOT NULL,
-    "created_at" timestamp without time zone,
-    "updated_at" timestamp without time zone,
-    "deleted_at" timestamp without time zone
-);
-
-
-ALTER TABLE "public"."enterprises" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."plans" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "title" "text" NOT NULL,
-    "description" "text" NOT NULL
-);
-
-
-ALTER TABLE "public"."plans" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."plans" IS 'list of plans';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "id" "uuid" NOT NULL,
     "first_name" "text",
-    "last_name" "text"
+    "last_name" "text",
+    "role" "public"."user_role" DEFAULT 'staff'::"public"."user_role",
+    "is_active" boolean DEFAULT true,
+    "phone" "text",
+    "avatar_url" "text",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "created_by" "uuid",
+    "updated_by" "uuid",
+    "last_login_at" timestamp with time zone,
+    "deleted_at" timestamp with time zone,
+    "deleted_by" "uuid"
 );
 
 
 ALTER TABLE "public"."profiles" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."profiles" IS 'User profiles with RLS policies for user management. Admins can manage all users, users can view/update their own profile.';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."status_history" (
@@ -1604,18 +1912,41 @@ COMMENT ON TABLE "public"."tags" IS 'list of nfc tags';
 
 
 
-CREATE TABLE IF NOT EXISTS "public"."workspaces" (
+CREATE TABLE IF NOT EXISTS "public"."user_permissions" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "name" "text" NOT NULL,
-    "plan_id" "uuid" NOT NULL,
-    "owner_id" "uuid" DEFAULT "auth"."uid"(),
-    "created_at" timestamp without time zone,
-    "updated_at" timestamp without time zone,
-    "deleted_at" timestamp without time zone
+    "user_id" "uuid",
+    "permission" "text" NOT NULL,
+    "granted_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
 );
 
 
-ALTER TABLE "public"."workspaces" OWNER TO "postgres";
+ALTER TABLE "public"."user_permissions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."user_permissions" IS 'User-specific permissions for fine-grained access control';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_sessions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid",
+    "session_token" "text",
+    "ip_address" "inet",
+    "user_agent" "text",
+    "is_active" boolean DEFAULT true,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "expires_at" timestamp with time zone,
+    "last_activity_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."user_sessions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."user_sessions" IS 'User session tracking for security and analytics';
+
 
 
 ALTER TABLE ONLY "public"."appraisal_appraisers"
@@ -1678,16 +2009,6 @@ ALTER TABLE ONLY "public"."collectors"
 
 
 
-ALTER TABLE ONLY "public"."enterprises"
-    ADD CONSTRAINT "enterprises_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."plans"
-    ADD CONSTRAINT "plans_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("id");
 
@@ -1703,8 +2024,50 @@ ALTER TABLE ONLY "public"."tags"
 
 
 
-ALTER TABLE ONLY "public"."workspaces"
-    ADD CONSTRAINT "workspaces_pkey" PRIMARY KEY ("id");
+ALTER TABLE ONLY "public"."user_permissions"
+    ADD CONSTRAINT "user_permissions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."user_permissions"
+    ADD CONSTRAINT "user_permissions_user_id_permission_key" UNIQUE ("user_id", "permission");
+
+
+
+ALTER TABLE ONLY "public"."user_sessions"
+    ADD CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("id");
+
+
+
+CREATE INDEX "idx_profiles_created_at" ON "public"."profiles" USING "btree" ("created_at");
+
+
+
+CREATE INDEX "idx_profiles_deleted_at" ON "public"."profiles" USING "btree" ("deleted_at");
+
+
+
+CREATE INDEX "idx_profiles_is_active" ON "public"."profiles" USING "btree" ("is_active");
+
+
+
+CREATE INDEX "idx_profiles_role" ON "public"."profiles" USING "btree" ("role");
+
+
+
+CREATE INDEX "idx_user_permissions_user_id" ON "public"."user_permissions" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_user_sessions_user_id" ON "public"."user_sessions" USING "btree" ("user_id");
+
+
+
+CREATE OR REPLACE TRIGGER "cleanup_old_avatar_trigger" AFTER UPDATE OF "avatar_url" ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."delete_old_avatar"();
+
+
+
+CREATE OR REPLACE TRIGGER "prevent_unauthorized_profile_changes" BEFORE UPDATE ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."check_profile_update_permissions"();
 
 
 
@@ -1721,6 +2084,10 @@ CREATE OR REPLACE TRIGGER "trigger_set_deleted_fields" BEFORE UPDATE ON "public"
 
 
 CREATE OR REPLACE TRIGGER "trigger_set_updated_by" BEFORE UPDATE ON "public"."artworks" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_by"();
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_update_profiles_updated_at" BEFORE UPDATE ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at"();
 
 
 
@@ -1834,6 +2201,21 @@ ALTER TABLE ONLY "public"."artwork_collectors"
 
 
 
+ALTER TABLE ONLY "public"."artwork_update_log"
+    ADD CONSTRAINT "artwork_update_log_artwork_id_fkey" FOREIGN KEY ("artwork_id") REFERENCES "public"."artworks"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."artwork_update_log"
+    ADD CONSTRAINT "artwork_update_log_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "public"."profiles"("id");
+
+
+
+ALTER TABLE ONLY "public"."artworks"
+    ADD CONSTRAINT "artworks_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
 ALTER TABLE ONLY "public"."artworks"
     ADD CONSTRAINT "artworks_owner_id_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE RESTRICT;
 
@@ -1845,7 +2227,7 @@ ALTER TABLE ONLY "public"."artworks"
 
 
 ALTER TABLE ONLY "public"."artworks"
-    ADD CONSTRAINT "artworks_tag_issued_by_fkey" FOREIGN KEY ("tag_issued_by") REFERENCES "auth"."users"("id");
+    ADD CONSTRAINT "artworks_tag_issued_by_fkey" FOREIGN KEY ("tag_issued_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
 
 
@@ -1894,13 +2276,23 @@ ALTER TABLE ONLY "public"."collectors"
 
 
 
-ALTER TABLE ONLY "public"."enterprises"
-    ADD CONSTRAINT "enterprises_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_deleted_by_fkey" FOREIGN KEY ("deleted_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
 
 
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
 
 
@@ -1930,7 +2322,17 @@ ALTER TABLE ONLY "public"."tags"
 
 
 ALTER TABLE ONLY "public"."tags"
+    ADD CONSTRAINT "tags_deleted_by_fkey1" FOREIGN KEY ("deleted_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."tags"
     ADD CONSTRAINT "tags_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "public"."profiles"("id");
+
+
+
+ALTER TABLE ONLY "public"."tags"
+    ADD CONSTRAINT "tags_updated_by_fkey1" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id");
 
 
 
@@ -1939,8 +2341,66 @@ ALTER TABLE ONLY "public"."tags"
 
 
 
-ALTER TABLE ONLY "public"."workspaces"
-    ADD CONSTRAINT "workspaces_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "public"."plans"("id") ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY "public"."user_permissions"
+    ADD CONSTRAINT "user_permissions_granted_by_fkey" FOREIGN KEY ("granted_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."user_permissions"
+    ADD CONSTRAINT "user_permissions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_sessions"
+    ADD CONSTRAINT "user_sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+CREATE POLICY "Admins can delete profiles" ON "public"."profiles" FOR DELETE USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles" "p"
+  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"public"."user_role") AND ("p"."is_active" = true)))));
+
+
+
+CREATE POLICY "Admins can insert profiles" ON "public"."profiles" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."profiles" "p"
+  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"public"."user_role") AND ("p"."is_active" = true)))));
+
+
+
+CREATE POLICY "Admins can manage all permissions" ON "public"."user_permissions" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."role" = 'admin'::"public"."user_role")))));
+
+
+
+CREATE POLICY "Admins can manage all profiles" ON "public"."profiles" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles" "p"
+  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"public"."user_role")))));
+
+
+
+CREATE POLICY "Admins can manage all sessions" ON "public"."user_sessions" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."role" = 'admin'::"public"."user_role")))));
+
+
+
+CREATE POLICY "Admins can manage user permissions" ON "public"."user_permissions" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles" "p"
+  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"public"."user_role")))));
+
+
+
+CREATE POLICY "Admins can update all profiles" ON "public"."profiles" FOR UPDATE USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles" "p"
+  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"public"."user_role") AND ("p"."is_active" = true)))));
+
+
+
+CREATE POLICY "Admins can view all profiles" ON "public"."profiles" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles" "p"
+  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"public"."user_role") AND ("p"."is_active" = true)))));
 
 
 
@@ -1948,19 +2408,7 @@ CREATE POLICY "All - all" ON "public"."assets" USING (true) WITH CHECK (true);
 
 
 
-CREATE POLICY "All - all" ON "public"."enterprises" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "All - all" ON "public"."plans" USING (true) WITH CHECK (true);
-
-
-
 CREATE POLICY "All - all" ON "public"."profiles" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "All - all" ON "public"."workspaces" USING (true) WITH CHECK (true);
 
 
 
@@ -1985,6 +2433,10 @@ CREATE POLICY "Allow read on non-deleted rows" ON "public"."artworks" FOR SELECT
 
 
 CREATE POLICY "Enable delete for all users" ON "public"."artworks" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for authenticated users" ON "public"."appraisal_appraisers" FOR DELETE TO "authenticated" USING (true);
 
 
 
@@ -2052,6 +2504,34 @@ CREATE POLICY "Enable update for users based on email" ON "public"."artwork_appr
 
 
 
+CREATE POLICY "Service role full access" ON "public"."profiles" USING (("current_setting"('role'::"text") = 'service_role'::"text"));
+
+
+
+CREATE POLICY "Service role full access on user_permissions" ON "public"."user_permissions" USING (("current_setting"('role'::"text") = 'service_role'::"text"));
+
+
+
+CREATE POLICY "Service role full access on user_sessions" ON "public"."user_sessions" USING (("current_setting"('role'::"text") = 'service_role'::"text"));
+
+
+
+CREATE POLICY "Users can update own profile" ON "public"."profiles" FOR UPDATE USING (("auth"."uid"() = "id")) WITH CHECK (("auth"."uid"() = "id"));
+
+
+
+CREATE POLICY "Users can view own profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
+
+
+
+CREATE POLICY "Users can view their own permissions" ON "public"."user_permissions" FOR SELECT TO "authenticated" USING (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Users can view their own sessions" ON "public"."user_sessions" FOR SELECT TO "authenticated" USING (("user_id" = "auth"."uid"()));
+
+
+
 ALTER TABLE "public"."appraisal_appraisers" ENABLE ROW LEVEL SECURITY;
 
 
@@ -2079,22 +2559,16 @@ ALTER TABLE "public"."bibliography" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."collectors" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."enterprises" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."plans" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."status_history" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."tags" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."workspaces" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."user_permissions" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."user_sessions" ENABLE ROW LEVEL SECURITY;
 
 
 
@@ -2314,6 +2788,18 @@ GRANT ALL ON FUNCTION "public"."bulk_add_artwork"("artworks" "jsonb") TO "servic
 
 
 
+GRANT ALL ON FUNCTION "public"."check_profile_update_permissions"() TO "anon";
+GRANT ALL ON FUNCTION "public"."check_profile_update_permissions"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."check_profile_update_permissions"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."create_user_manually"("user_email" "text", "user_password" "text", "first_name" "text", "last_name" "text", "user_role" "text", "user_phone" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."create_user_manually"("user_email" "text", "user_password" "text", "first_name" "text", "last_name" "text", "user_role" "text", "user_phone" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."create_user_manually"("user_email" "text", "user_password" "text", "first_name" "text", "last_name" "text", "user_role" "text", "user_phone" "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."create_user_profiles"() TO "anon";
 GRANT ALL ON FUNCTION "public"."create_user_profiles"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."create_user_profiles"() TO "service_role";
@@ -2323,6 +2809,24 @@ GRANT ALL ON FUNCTION "public"."create_user_profiles"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."delete_artwork"("input_artwork_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."delete_artwork"("input_artwork_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."delete_artwork"("input_artwork_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."delete_old_avatar"() TO "anon";
+GRANT ALL ON FUNCTION "public"."delete_old_avatar"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."delete_old_avatar"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."delete_user_cascade"("user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."delete_user_cascade"("user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."delete_user_cascade"("user_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_all_users_with_roles"() TO "anon";
+GRANT ALL ON FUNCTION "public"."get_all_users_with_roles"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_all_users_with_roles"() TO "service_role";
 
 
 
@@ -2344,9 +2848,27 @@ GRANT ALL ON FUNCTION "public"."get_server_datetime"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."get_user_with_role"("user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_user_with_role"("user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_user_with_role"("user_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."grant_user_permission"("target_user_id" "uuid", "permission_name" "text", "granted_by_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."grant_user_permission"("target_user_id" "uuid", "permission_name" "text", "granted_by_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."grant_user_permission"("target_user_id" "uuid", "permission_name" "text", "granted_by_user_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."handle_user_delete"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_user_delete"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_user_delete"() TO "service_role";
 
 
 
@@ -2362,6 +2884,18 @@ GRANT ALL ON FUNCTION "public"."log_status_history"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."revoke_user_permission"("target_user_id" "uuid", "permission_name" "text", "revoked_by_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."revoke_user_permission"("target_user_id" "uuid", "permission_name" "text", "revoked_by_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."revoke_user_permission"("target_user_id" "uuid", "permission_name" "text", "revoked_by_user_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."safe_delete_user"("user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."safe_delete_user"("user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."safe_delete_user"("user_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."set_deleted_fields"() TO "anon";
 GRANT ALL ON FUNCTION "public"."set_deleted_fields"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."set_deleted_fields"() TO "service_role";
@@ -2374,9 +2908,39 @@ GRANT ALL ON FUNCTION "public"."set_updated_by"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."update_artwork"("p_artwork_id" "uuid", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text", "p_expiration_date" "date", "p_read_write_count" bigint, "p_assets" "jsonb", "p_provenance" "text", "p_bibliography" "jsonb", "p_collectors" "jsonb") TO "anon";
-GRANT ALL ON FUNCTION "public"."update_artwork"("p_artwork_id" "uuid", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text", "p_expiration_date" "date", "p_read_write_count" bigint, "p_assets" "jsonb", "p_provenance" "text", "p_bibliography" "jsonb", "p_collectors" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."update_artwork"("p_artwork_id" "uuid", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text", "p_expiration_date" "date", "p_read_write_count" bigint, "p_assets" "jsonb", "p_provenance" "text", "p_bibliography" "jsonb", "p_collectors" "jsonb") TO "service_role";
+GRANT ALL ON TABLE "public"."artworks" TO "anon";
+GRANT ALL ON TABLE "public"."artworks" TO "authenticated";
+GRANT ALL ON TABLE "public"."artworks" TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_artwork"("p_artwork_id" "uuid", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text", "p_expiration_date" "date", "p_read_write_count" integer, "p_assets" "jsonb", "p_provenance" "text", "p_bibliography" "jsonb", "p_collectors" "jsonb", "p_id_number" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."update_artwork"("p_artwork_id" "uuid", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text", "p_expiration_date" "date", "p_read_write_count" integer, "p_assets" "jsonb", "p_provenance" "text", "p_bibliography" "jsonb", "p_collectors" "jsonb", "p_id_number" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_artwork"("p_artwork_id" "uuid", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text", "p_expiration_date" "date", "p_read_write_count" integer, "p_assets" "jsonb", "p_provenance" "text", "p_bibliography" "jsonb", "p_collectors" "jsonb", "p_id_number" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_last_login"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_last_login"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_last_login"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_updated_at"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_user_role"("target_user_id" "uuid", "new_role" "public"."user_role", "updated_by_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."update_user_role"("target_user_id" "uuid", "new_role" "public"."user_role", "updated_by_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_user_role"("target_user_id" "uuid", "new_role" "public"."user_role", "updated_by_user_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_user_status"("target_user_id" "uuid", "new_status" boolean, "updated_by_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."update_user_status"("target_user_id" "uuid", "new_status" boolean, "updated_by_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_user_status"("target_user_id" "uuid", "new_status" boolean, "updated_by_user_id" "uuid") TO "service_role";
 
 
 
@@ -2437,12 +3001,6 @@ GRANT ALL ON TABLE "public"."artwork_update_log" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."artworks" TO "anon";
-GRANT ALL ON TABLE "public"."artworks" TO "authenticated";
-GRANT ALL ON TABLE "public"."artworks" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."assets" TO "anon";
 GRANT ALL ON TABLE "public"."assets" TO "authenticated";
 GRANT ALL ON TABLE "public"."assets" TO "service_role";
@@ -2458,18 +3016,6 @@ GRANT ALL ON TABLE "public"."bibliography" TO "service_role";
 GRANT ALL ON TABLE "public"."collectors" TO "anon";
 GRANT ALL ON TABLE "public"."collectors" TO "authenticated";
 GRANT ALL ON TABLE "public"."collectors" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."enterprises" TO "anon";
-GRANT ALL ON TABLE "public"."enterprises" TO "authenticated";
-GRANT ALL ON TABLE "public"."enterprises" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."plans" TO "anon";
-GRANT ALL ON TABLE "public"."plans" TO "authenticated";
-GRANT ALL ON TABLE "public"."plans" TO "service_role";
 
 
 
@@ -2491,9 +3037,15 @@ GRANT ALL ON TABLE "public"."tags" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."workspaces" TO "anon";
-GRANT ALL ON TABLE "public"."workspaces" TO "authenticated";
-GRANT ALL ON TABLE "public"."workspaces" TO "service_role";
+GRANT ALL ON TABLE "public"."user_permissions" TO "anon";
+GRANT ALL ON TABLE "public"."user_permissions" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_permissions" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_sessions" TO "anon";
+GRANT ALL ON TABLE "public"."user_sessions" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_sessions" TO "service_role";
 
 
 

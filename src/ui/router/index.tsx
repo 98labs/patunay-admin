@@ -10,7 +10,8 @@ import {
   DetailedArtwork,
   Admin,
   NfcTags,
-  Team,
+
+  UserManagement,
   Devices,
   Login,
   NotFoundPage
@@ -116,10 +117,10 @@ const router = createBrowserRouter([
             ),
           },
           {
-            path: "/dashboard/admin/team",
+            path: "/dashboard/admin/users",
             element: (
               <SuspenseWrapper>
-                <Team />
+                <UserManagement />
               </SuspenseWrapper>
             ),
           },

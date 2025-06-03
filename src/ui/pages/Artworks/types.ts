@@ -1,6 +1,6 @@
 export type ArtistType = {
     id: string;
-    idnumber: number;
+    id_number: number;
     assets: any;
     title: string;
     artist: string;

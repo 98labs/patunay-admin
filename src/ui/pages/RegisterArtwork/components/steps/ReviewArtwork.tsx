@@ -32,7 +32,7 @@ const ReviewArtwork = ({
     collectors,
     description,
     height,
-    idNumber,
+    id_number,
     medium,
     provenance,
     sizeUnit,
@@ -59,7 +59,7 @@ const ReviewArtwork = ({
       value: `${height}${sizeUnit} × ${width}${sizeUnit}`,
     },
     { label: "Year", value: year },
-    { label: "ID Number", value: idNumber },
+    { label: "ID Number", value: id_number },
     { label: "Tag ID", value: tag_id },
     { label: "Provenance", value: provenance },
 

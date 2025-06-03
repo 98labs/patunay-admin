@@ -23,6 +23,7 @@ export interface AuctionProps {
   auctions: Appraisal[];
   addRow: () => void;
   selectedAppraisal?: (data: Appraisal) => void;
+  canManageAppraisals?: boolean;
 }
 
 export interface AppraisalModalProps {
