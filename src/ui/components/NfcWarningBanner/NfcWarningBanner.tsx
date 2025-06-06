@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNfcStatus } from '../../context/NfcStatusContext';
 import { useLogger } from '../../hooks/useLogger';
 
@@ -7,19 +7,50 @@ interface NfcWarningBannerProps {
 }
 
 export const NfcWarningBanner: React.FC<NfcWarningBannerProps> = ({ className = '' }) => {
-  const { isNfcAvailable, deviceStatus, refreshDeviceStatus, isLoading } = useNfcStatus();
+  const { isNfcAvailable, deviceStatus, refreshDeviceStatus, isLoading, lastManualRefreshFailed, clearManualRefreshFailed } = useNfcStatus();
   const logger = useLogger('NfcWarningBanner');
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  // Reset dismissed state when NFC status changes or manual refresh fails
+  useEffect(() => {
+    if (isNfcAvailable) {
+      setIsDismissed(false);
+    }
+    // Force show banner when manual refresh fails
+    if (lastManualRefreshFailed) {
+      setIsDismissed(false);
+      // Auto-clear the manual refresh failed state after 5 seconds
+      const timer = setTimeout(() => {
+        clearManualRefreshFailed();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isNfcAvailable, lastManualRefreshFailed, clearManualRefreshFailed]);
 
   const handleRefresh = () => {
     logger.info('User clicked refresh NFC device status');
     refreshDeviceStatus();
   };
 
+  const handleDismiss = () => {
+    logger.info('User dismissed NFC warning banner');
+    setIsDismissed(true);
+    // Also clear the manual refresh failed state when dismissing
+    if (lastManualRefreshFailed) {
+      clearManualRefreshFailed();
+    }
+  };
+
   // Log current status for debugging
   console.log('NfcWarningBanner status:', { isNfcAvailable, isLoading, deviceStatus });
 
-  // Don't show banner if NFC is available or still loading
-  if (isNfcAvailable || isLoading) {
+  // Show banner if:
+  // 1. NFC is not available and not dismissed
+  // 2. Manual refresh failed (even if previously dismissed)
+  const shouldShowBanner = (!isNfcAvailable && !isDismissed) || lastManualRefreshFailed;
+  
+  // Don't show banner if still loading
+  if (isLoading || !shouldShowBanner) {
     return null;
   }
 
@@ -59,7 +90,7 @@ export const NfcWarningBanner: React.FC<NfcWarningBannerProps> = ({ className = 
             </svg>
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-medium">{getStatusMessage()}</h3>
+            <h3 className="text-sm font-medium">NFC Not Available</h3>
             <p className="text-sm opacity-90 mt-1">{getDetailMessage()}</p>
             {deviceStatus.readers.length > 0 && (
               <p className="text-xs opacity-75 mt-1">
@@ -94,6 +125,27 @@ export const NfcWarningBanner: React.FC<NfcWarningBannerProps> = ({ className = 
               />
             </svg>
             {isLoading ? 'Checking...' : 'Refresh'}
+          </button>
+          <button
+            onClick={handleDismiss}
+            className="btn btn-sm btn-ghost hover:bg-warning-content hover:bg-opacity-20"
+            title="Dismiss warning"
+            aria-label="Dismiss NFC warning"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
           </button>
         </div>
       </div>

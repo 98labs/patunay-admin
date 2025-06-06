@@ -277,7 +277,7 @@ const DetailArtwork = () => {
         <div className="hero-content flex-col lg:flex-row">
           <div className="lg:w-1/3">
             {!artwork.assets ? (
-              <div className="bg-neutral-gray-01 border border-dashed border-neutral-gray-02 rounded-2xl text-neutral-black-02 text-center p-4 flex flex-col gap-2">
+              <div className="bg-base-200 border border-dashed border-base-300 rounded-2xl text-base-content/90 text-center p-4 flex flex-col gap-2">
                 <p className="text-sm font-semibold">
                   Drag and drop the images here (WIP),
                 </p>
