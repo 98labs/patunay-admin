@@ -167,30 +167,44 @@ const UserManagement = () => {
     return <Loading fullScreen={false} />;
   }
 
-  // Error state
+  // Error state - show actual error
   if (usersError) {
+    console.error('[UserManagement] Error loading users:', usersError);
+    
+    // Extract error message
+    let errorMessage = 'An error occurred while loading users';
+    let errorDetails = '';
+    
+    // Handle different error formats
+    const error = usersError as any;
+    if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (error?.message) {
+      errorMessage = typeof error.message === 'string' ? error.message : JSON.stringify(error.message);
+      if (error.code) errorDetails = `Code: ${error.code}`;
+      if (error.hint) errorDetails += errorDetails ? `, ${error.hint}` : error.hint;
+    } else if (error?.data?.message) {
+      errorMessage = error.data.message;
+    } else if (error?.error) {
+      errorMessage = typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
+    }
+    
     return (
       <div className="container mx-auto px-4">
         <PageHeader name="User Management" />
         <div className="alert alert-error">
           <div>
-            <h3 className="font-bold">Error loading users</h3>
+            <h3 className="font-bold">Error Loading Users</h3>
             <div className="text-sm mt-2">
-              Unable to load user data. Please try again.
+              {errorMessage}
             </div>
-            <div className="mt-4 flex gap-2">
-              <button 
-                className="btn btn-sm btn-primary" 
-                onClick={() => refetchUsers()}
-              >
-                Retry
-              </button>
-              <button
-                className="btn btn-sm btn-secondary"
-                onClick={() => setShowWorkaroundModal(true)}
-              >
-                Create User (Workaround)
-              </button>
+            {errorDetails && (
+              <div className="text-xs mt-1 opacity-70">
+                {errorDetails}
+              </div>
+            )}
+            <div className="text-xs mt-2 opacity-70">
+              Check the console for more details.
             </div>
           </div>
         </div>

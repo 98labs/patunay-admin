@@ -11,7 +11,6 @@ export interface AuthState {
   hasPermission: (permission: string) => boolean;
   isAdmin: boolean;
   isStaff: boolean;
-  isAppraiser: boolean;
 }
 
 export const useAuth = (): AuthState => {
@@ -70,7 +69,20 @@ export const useAuth = (): AuthState => {
 
   const isAdmin = hasRole('admin');
   const isStaff = hasRole('staff');
-  const isAppraiser = hasRole('appraiser');
+
+  // Debug logging
+  useEffect(() => {
+    if (user) {
+      console.log('[useAuth] User data:', {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        isAdmin,
+        isStaff,
+        permissions: user.permissions
+      });
+    }
+  }, [user, isAdmin, isStaff]);
 
   return {
     user,
@@ -80,7 +92,6 @@ export const useAuth = (): AuthState => {
     hasPermission,
     isAdmin,
     isStaff,
-    isAppraiser,
   };
 };
 
@@ -141,14 +152,14 @@ export const withRoleAccess = <P extends object>(
 
 // Hook for checking if current user can perform an action
 export const useCanPerform = () => {
-  const { hasRole, hasPermission, isAdmin, isAppraiser } = useAuth();
+  const { hasRole, hasPermission, isAdmin } = useAuth();
 
   const canManageUsers = isAdmin || hasPermission('manage_users');
   const canManageArtworks = hasPermission('manage_artworks');
   const canManageNFC = hasPermission('manage_nfc_tags');
   const canViewStatistics = hasPermission('view_statistics');
   const canManageSystem = isAdmin || hasPermission('manage_system');
-  const canManageAppraisals = isAdmin || isAppraiser || hasPermission('manage_appraisals');
+  const canManageAppraisals = isAdmin || hasPermission('manage_appraisals');
 
   return {
     canManageUsers,
@@ -160,6 +171,5 @@ export const useCanPerform = () => {
     hasRole,
     hasPermission,
     isAdmin,
-    isAppraiser,
   };
 };
