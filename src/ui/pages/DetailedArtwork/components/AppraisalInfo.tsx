@@ -11,9 +11,10 @@ import { getAppraisals } from "../../../supabase/rpc/getAppraisals";
 interface AppraisalInfoProps {
   appraisals: Appraisal[];
   artwork_id: string;
+  canManageAppraisals: boolean;
 }
 
-export default function AppraisalInfo({ appraisals: initialAppraisals, artwork_id }: AppraisalInfoProps) {
+export default function AppraisalInfo({ appraisals: initialAppraisals, artwork_id, canManageAppraisals }: AppraisalInfoProps) {
   const dispatch = useDispatch();
   const [appraisals, setAppraisals] = useState<Appraisal[]>(initialAppraisals);
   const [selectedAppraisal, setSelectedAppraisal] = useState<Appraisal | null>(null);
@@ -107,7 +108,7 @@ export default function AppraisalInfo({ appraisals: initialAppraisals, artwork_i
           appraisals={appraisals}
           onAddAppraisal={handleAddAppraisal}
           onSelectAppraisal={handleSelectedAppraisal}
-          canManageAppraisals={true}
+          canManageAppraisals={canManageAppraisals}
           isLoading={isRefreshing}
         />
 
@@ -129,7 +130,7 @@ export default function AppraisalInfo({ appraisals: initialAppraisals, artwork_i
           }}
           appraisal={selectedAppraisal}
           onEdit={handleEditAppraisal}
-          canEdit={true}
+          canEdit={canManageAppraisals}
         />
       </div>
     </div>

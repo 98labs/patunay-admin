@@ -525,7 +525,7 @@ $$;
 ALTER FUNCTION "base32"."zero_fill"("a" integer, "b" integer) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."add_artwork"("p_idnumber" "text", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text" DEFAULT NULL::"text", "p_expiration_date" "date" DEFAULT NULL::"date", "p_read_write_count" bigint DEFAULT 0, "p_assets" "jsonb" DEFAULT NULL::"jsonb", "p_provenance" "text" DEFAULT NULL::"text", "p_bibliography" "jsonb" DEFAULT NULL::"jsonb", "p_collectors" "jsonb" DEFAULT NULL::"jsonb") RETURNS TABLE("id" "uuid", "idnumber" "text", "title" "text", "description" "text", "height" double precision, "width" double precision, "size_unit" "text", "artist" "text", "year" "text", "medium" "text", "created_by" "text", "tag_id" "text", "tag_issued_by" "text", "tag_issued_at" timestamp without time zone, "created_at" timestamp without time zone, "assets" "jsonb", "provenance" "text", "bibliography" "jsonb", "collector" "text", "collectors" "jsonb")
+CREATE OR REPLACE FUNCTION "public"."add_artwork"("p_idnumber" "text", "p_title" "text", "p_description" "text", "p_height" double precision, "p_width" double precision, "p_size_unit" "text", "p_artist" "text", "p_year" "text", "p_medium" "text", "p_tag_id" "text" DEFAULT NULL::"text", "p_expiration_date" "date" DEFAULT NULL::"date", "p_read_write_count" bigint DEFAULT 0, "p_assets" "jsonb" DEFAULT NULL::"jsonb", "p_provenance" "text" DEFAULT NULL::"text", "p_bibliography" "jsonb" DEFAULT NULL::"jsonb", "p_collectors" "jsonb" DEFAULT NULL::"jsonb") RETURNS TABLE("id" "uuid", "idnumber" "text", "title" "text", "description" "text", "height" double precision, "width" double precision, "size_unit" "text", "artist" "text", "year" "text", "medium" "text", "created_by" "text", "tag_id" "text", "tag_issued_by" "text", "tag_issued_at" timestamp without time zone, "created_at" timestamp without time zone, "assets" "jsonb", "provenance" "text", "bibliography" "jsonb", "collectors" "jsonb")
     LANGUAGE "plpgsql"
     AS $$
 DECLARE
@@ -567,7 +567,7 @@ BEGIN
 
     -- Insert artwork without tag if v_tag_id is NULL
     INSERT INTO artworks (
-        idnumber, title, description, height, width, size_unit, artist, year, medium, tag_id, tag_issued_at, created_at, provenance, bibliography, collectors
+        id_number, title, description, height, width, size_unit, artist, year, medium, tag_id, tag_issued_at, created_at, provenance, bibliography, collectors
     ) VALUES (
         p_idnumber, p_title, p_description, p_height, p_width, p_size_unit, p_artist, p_year, p_medium, v_tag_id, 
         CASE WHEN v_tag_id IS NOT NULL THEN NOW() ELSE NULL END, 
@@ -588,10 +588,12 @@ BEGIN
     END IF;
 
     -- Return the newly created artwork along with its assets
+    -- FIXED: Removed the collector field from RETURNS TABLE since it's not being selected
+    -- FIXED: Return id_number as idnumber to match the expected return type
     RETURN QUERY
     SELECT 
         a.id,
-        a.idnumber,
+        a.id_number as idnumber,  -- Map id_number to idnumber
         a.title,
         a.description,
         a.height,
@@ -600,14 +602,14 @@ BEGIN
         a.artist,
         a.year,
         a.medium,
-        (
-            SELECT p.first_name || ' ' || p.last_name AS name
-            FROM profiles p WHERE p.id = a.created_by
+        COALESCE(
+            (SELECT p.first_name || ' ' || p.last_name FROM profiles p WHERE p.id = a.created_by),
+            'Unknown User'
         ) AS created_by,
         a.tag_id,
-        (
-            SELECT p.first_name || ' ' || p.last_name AS name
-            FROM profiles p WHERE p.id = a.tag_issued_by
+        COALESCE(
+            (SELECT p.first_name || ' ' || p.last_name FROM profiles p WHERE p.id = a.tag_issued_by),
+            'Unknown User'
         ) AS tag_issued_by,
         a.tag_issued_at,
         a.created_at,
@@ -624,7 +626,6 @@ BEGIN
         ) AS assets,
         a.provenance,
         a.bibliography,
-        a.collector,
         a.collectors
     FROM artworks a
     WHERE a.id = v_artwork_id;
@@ -671,7 +672,7 @@ CREATE OR REPLACE FUNCTION "public"."bulk_add_artwork"("artworks" "jsonb") RETUR
     AS $$
 BEGIN
   INSERT INTO artworks (
-    idnumber,
+    id_number,  -- Fixed: changed from idnumber to id_number
     title,
     description,
     height,
@@ -686,14 +687,14 @@ BEGIN
     collectors
   )
   SELECT
-    artwork->>'idnumber',
+    artwork->>'idnumber',  -- Keep this as idnumber since it's from the JSON input
     artwork->>'title',
     artwork->>'description',
     (artwork->>'height')::numeric,
     (artwork->>'width')::numeric,
     artwork->>'size_unit',
     artwork->>'artist',
-    (artwork->>'year')::int,
+    artwork->>'year',  -- Fixed: removed ::int cast since year is text
     artwork->>'medium',
     artwork->>'tag_id',
     artwork->>'provenance',
@@ -713,10 +714,9 @@ CREATE OR REPLACE FUNCTION "public"."check_profile_update_permissions"() RETURNS
 DECLARE
     current_user_role text;
 BEGIN
-    -- Get the current user's role
-    SELECT role INTO current_user_role 
-    FROM public.profiles 
-    WHERE id = auth.uid();
+    -- Get current user's role from JWT claims (not from profiles table)
+    SELECT current_setting('request.jwt.claims', true)::json->>'role'
+    INTO current_user_role;
 
     -- If the user is not an admin, prevent them from changing certain fields
     IF current_user_role != 'admin' OR current_user_role IS NULL THEN
@@ -749,6 +749,56 @@ ALTER FUNCTION "public"."check_profile_update_permissions"() OWNER TO "postgres"
 
 COMMENT ON FUNCTION "public"."check_profile_update_permissions"() IS 'Prevents non-admin users from changing sensitive fields in their profile';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."check_user_role"("user_id" "uuid", "check_role" "text") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  user_role text;
+BEGIN
+  -- Get the user's role from profiles table
+  SELECT role INTO user_role
+  FROM public.profiles
+  WHERE id = user_id;
+  
+  -- Return true if user has the specified role
+  RETURN user_role = check_role;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- If any error occurs (e.g., user not found), return false
+    RETURN false;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."check_user_role"("user_id" "uuid", "check_role" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."create_user"("email" "text", "password" "text") RETURNS "void"
+    LANGUAGE "plpgsql"
+    AS $$
+  declare
+  user_id uuid;
+  encrypted_pw text;
+BEGIN
+  user_id := gen_random_uuid();
+  encrypted_pw := crypt(password, gen_salt('bf'));
+  
+  INSERT INTO auth.users
+    (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
+  VALUES
+    ('00000000-0000-0000-0000-000000000000', user_id, 'authenticated', 'authenticated', email, encrypted_pw, now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '');
+  
+  INSERT INTO auth.identities (id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+  VALUES
+    (gen_random_uuid(), user_id, format('{"sub":"%s","email":"%s"}', user_id::text, email)::jsonb, 'email', now(), now(), now());
+END;
+$$;
+
+
+ALTER FUNCTION "public"."create_user"("email" "text", "password" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."create_user_manually"("user_email" "text", "user_password" "text", "first_name" "text" DEFAULT NULL::"text", "last_name" "text" DEFAULT NULL::"text", "user_role" "text" DEFAULT 'staff'::"text", "user_phone" "text" DEFAULT NULL::"text") RETURNS "json"
@@ -1156,39 +1206,38 @@ ALTER FUNCTION "public"."grant_user_permission"("target_user_id" "uuid", "permis
 
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
-  INSERT INTO profiles (id, first_name, last_name, role, is_active, created_at)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
-    COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'staff'),
-    true,
-    NOW()
-  );
-  RETURN NEW;
+    INSERT INTO public.profiles (
+        id,
+        first_name,
+        last_name,
+        role,
+        is_active,
+        created_at,
+        updated_at
+    ) VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
+        COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
+        COALESCE(NEW.raw_user_meta_data->>'role', 'staff')::user_role,
+        true,
+        NOW(),
+        NOW()
+    ) ON CONFLICT (id) DO UPDATE
+    SET updated_at = NOW();
+    
+    RETURN NEW;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE WARNING 'Error creating profile for user %: %', NEW.id, SQLERRM;
+        RETURN NEW;
 END;
 $$;
 
 
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."handle_user_delete"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    AS $$
-BEGIN
-    -- Log the deletion attempt (optional)
-    RAISE NOTICE 'User % is being deleted', OLD.id;
-    
-    -- Return OLD to allow deletion to proceed
-    RETURN OLD;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."handle_user_delete"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."log_artwork_update"() RETURNS "trigger"
@@ -1391,10 +1440,10 @@ CREATE OR REPLACE FUNCTION "public"."update_last_login"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
 BEGIN
-    UPDATE profiles 
-    SET last_login_at = now() 
-    WHERE id = NEW.user_id;
-    RETURN NEW;
+  UPDATE public.profiles
+  SET last_login_at = now()
+  WHERE id = NEW.user_id;
+  RETURN NEW;
 END;
 $$;
 
@@ -1873,6 +1922,31 @@ COMMENT ON TABLE "public"."profiles" IS 'User profiles with RLS policies for use
 
 
 
+CREATE OR REPLACE VIEW "public"."current_user_profile" AS
+ SELECT "p"."id",
+    "p"."first_name",
+    "p"."last_name",
+    "p"."role",
+    "p"."is_active",
+    "p"."phone",
+    "p"."avatar_url",
+    "p"."created_at",
+    "p"."updated_at",
+    "p"."created_by",
+    "p"."updated_by",
+    "p"."last_login_at",
+    "p"."deleted_at",
+    "p"."deleted_by",
+    "au"."email" AS "auth_email",
+    "au"."created_at" AS "auth_created_at"
+   FROM ("public"."profiles" "p"
+     JOIN "auth"."users" "au" ON (("au"."id" = "p"."id")))
+  WHERE ("p"."id" = "auth"."uid"());
+
+
+ALTER TABLE "public"."current_user_profile" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."status_history" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "tag_id" "text" NOT NULL,
@@ -2068,6 +2142,8 @@ CREATE OR REPLACE TRIGGER "cleanup_old_avatar_trigger" AFTER UPDATE OF "avatar_u
 
 
 CREATE OR REPLACE TRIGGER "prevent_unauthorized_profile_changes" BEFORE UPDATE ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."check_profile_update_permissions"();
+
+ALTER TABLE "public"."profiles" DISABLE TRIGGER "prevent_unauthorized_profile_changes";
 
 
 
@@ -2356,27 +2432,9 @@ ALTER TABLE ONLY "public"."user_sessions"
 
 
 
-CREATE POLICY "Admins can delete profiles" ON "public"."profiles" FOR DELETE USING ((EXISTS ( SELECT 1
-   FROM "public"."profiles" "p"
-  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"public"."user_role") AND ("p"."is_active" = true)))));
-
-
-
-CREATE POLICY "Admins can insert profiles" ON "public"."profiles" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
-   FROM "public"."profiles" "p"
-  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"public"."user_role") AND ("p"."is_active" = true)))));
-
-
-
 CREATE POLICY "Admins can manage all permissions" ON "public"."user_permissions" TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."profiles"
   WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."role" = 'admin'::"public"."user_role")))));
-
-
-
-CREATE POLICY "Admins can manage all profiles" ON "public"."profiles" USING ((EXISTS ( SELECT 1
-   FROM "public"."profiles" "p"
-  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"public"."user_role")))));
 
 
 
@@ -2392,23 +2450,7 @@ CREATE POLICY "Admins can manage user permissions" ON "public"."user_permissions
 
 
 
-CREATE POLICY "Admins can update all profiles" ON "public"."profiles" FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM "public"."profiles" "p"
-  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"public"."user_role") AND ("p"."is_active" = true)))));
-
-
-
-CREATE POLICY "Admins can view all profiles" ON "public"."profiles" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "public"."profiles" "p"
-  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"public"."user_role") AND ("p"."is_active" = true)))));
-
-
-
 CREATE POLICY "All - all" ON "public"."assets" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "All - all" ON "public"."profiles" USING (true) WITH CHECK (true);
 
 
 
@@ -2504,23 +2546,11 @@ CREATE POLICY "Enable update for users based on email" ON "public"."artwork_appr
 
 
 
-CREATE POLICY "Service role full access" ON "public"."profiles" USING (("current_setting"('role'::"text") = 'service_role'::"text"));
-
-
-
 CREATE POLICY "Service role full access on user_permissions" ON "public"."user_permissions" USING (("current_setting"('role'::"text") = 'service_role'::"text"));
 
 
 
 CREATE POLICY "Service role full access on user_sessions" ON "public"."user_sessions" USING (("current_setting"('role'::"text") = 'service_role'::"text"));
-
-
-
-CREATE POLICY "Users can update own profile" ON "public"."profiles" FOR UPDATE USING (("auth"."uid"() = "id")) WITH CHECK (("auth"."uid"() = "id"));
-
-
-
-CREATE POLICY "Users can view own profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
 
 
 
@@ -2794,6 +2824,18 @@ GRANT ALL ON FUNCTION "public"."check_profile_update_permissions"() TO "service_
 
 
 
+GRANT ALL ON FUNCTION "public"."check_user_role"("user_id" "uuid", "check_role" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."check_user_role"("user_id" "uuid", "check_role" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."check_user_role"("user_id" "uuid", "check_role" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."create_user"("email" "text", "password" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."create_user"("email" "text", "password" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."create_user"("email" "text", "password" "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."create_user_manually"("user_email" "text", "user_password" "text", "first_name" "text", "last_name" "text", "user_role" "text", "user_phone" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."create_user_manually"("user_email" "text", "user_password" "text", "first_name" "text", "last_name" "text", "user_role" "text", "user_phone" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."create_user_manually"("user_email" "text", "user_password" "text", "first_name" "text", "last_name" "text", "user_role" "text", "user_phone" "text") TO "service_role";
@@ -2863,12 +2905,6 @@ GRANT ALL ON FUNCTION "public"."grant_user_permission"("target_user_id" "uuid", 
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."handle_user_delete"() TO "anon";
-GRANT ALL ON FUNCTION "public"."handle_user_delete"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."handle_user_delete"() TO "service_role";
 
 
 
@@ -3022,6 +3058,12 @@ GRANT ALL ON TABLE "public"."collectors" TO "service_role";
 GRANT ALL ON TABLE "public"."profiles" TO "anon";
 GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."profiles" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."current_user_profile" TO "anon";
+GRANT ALL ON TABLE "public"."current_user_profile" TO "authenticated";
+GRANT ALL ON TABLE "public"."current_user_profile" TO "service_role";
 
 
 

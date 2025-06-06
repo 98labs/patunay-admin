@@ -85,6 +85,7 @@ export const DEFAULT_PERMISSIONS = {
   ],
   staff: [
     'manage_artworks',
+    'manage_appraisals',
     'view_statistics',
   ],
 } as const;

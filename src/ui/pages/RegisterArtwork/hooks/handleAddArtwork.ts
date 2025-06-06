@@ -15,7 +15,7 @@ export const handleAddArtwork = async ({ data, tagId }: Props) => {
     width: data.width,
     sizeUnit: data.sizeUnit,
     artist: data.artist,
-    year: new Date().getFullYear().toString(),
+    year: data.year || new Date().getFullYear().toString(),
     medium: data.medium,
     tag_id: tagId ?? null,
     expirationDate: new Date("2025-12-31"),
@@ -32,11 +32,11 @@ export const handleAddArtwork = async ({ data, tagId }: Props) => {
   const parsedRes: ArtworkEntity = {
     ...result,
     id: result.id,
-    id_number: result.id_number,
+    id_number: result.idnumber,  // Database returns idnumber, not id_number
     sizeUnit: result.size_unit,
     tag_id: result.tag_id,
-    bibliography: result.bibliography ? JSON.parse(result.collectors) : [],
-    collectors: result.collectors ? JSON.parse(result.collectors) : [],
+    bibliography: result.bibliography || [],
+    collectors: result.collectors || [],
     assets: result.assets
       ? result.assets.map((asset: any) => ({
           fileName: asset.filename ?? "",
