@@ -28,6 +28,7 @@ export { default as UserActionMenu } from "./UserActionMenu";
 export { UserAvatar } from "./UserAvatar";
 export { CreateUserWorkaround } from "./CreateUserWorkaround";
 export { SupabaseDiagnostic } from "./SupabaseDiagnostic";
+export { default as NfcTagsTable } from "./NfcTagsTable";
 
 // Type exports
 export type * from "./types/common";

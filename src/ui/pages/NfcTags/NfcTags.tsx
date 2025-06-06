@@ -1,14 +1,15 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useDispatch } from "react-redux";
-import { format } from "date-fns";
-import { Button, Loading, PageHeader } from "@components";
+import { Button, Loading, PageHeader, NfcTagsTable } from "@components";
 import { showNotification } from "../../components/NotificationMessage/slice";
 import { getTags, Tag } from "../../supabase/rpc/getTags";
 import { registerTag } from "../../supabase/rpc/registerTag";
 import { updateTagStatus } from "../../supabase/rpc/updateTagStatus";
+import { useNfcStatus } from "../../context/NfcStatusContext";
 
 const NfcTags = () => {
   const dispatch = useDispatch();
+  const { isNfcAvailable, nfcFeaturesEnabled, deviceStatus } = useNfcStatus();
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
@@ -16,7 +17,6 @@ const NfcTags = () => {
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasProcessedCard = useRef(false);
-  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchTags = useCallback(async () => {
     try {
@@ -56,6 +56,16 @@ const NfcTags = () => {
   }, []);
 
   const handleStartScanning = useCallback(() => {
+    // Check if NFC is available before starting scan
+    if (!isNfcAvailable || !nfcFeaturesEnabled) {
+      dispatch(showNotification({
+        title: 'NFC Not Available',
+        message: 'NFC service is not available. Please check your NFC reader connection.',
+        status: 'warning'
+      }));
+      return;
+    }
+
     console.log('📟 Starting NFC scanning for tag registration...');
     setIsScanning(true);
     hasProcessedCard.current = false;
@@ -81,7 +91,7 @@ const NfcTags = () => {
       }));
       handleStopScanning();
     }, 30000); // 30 seconds timeout
-  }, [dispatch, handleStopScanning]);
+  }, [dispatch, handleStopScanning, isNfcAvailable, nfcFeaturesEnabled]);
 
   const handleRegisterTag = useCallback(async (tagId: string) => {
     // Prevent duplicate registrations
@@ -147,6 +157,7 @@ const NfcTags = () => {
       }));
     }
   };
+
 
   // NFC scanning effect
   useEffect(() => {
@@ -246,110 +257,49 @@ const NfcTags = () => {
     };
   }, []);
 
-  const filteredTags = tags.filter(tag => 
-    tag.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (tag.artwork_title && tag.artwork_title.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
   if (loading) return <Loading fullScreen={false} />;
 
   return (
-    <div className="p-6">
-      <PageHeader title="NFC Tags Management" />
-      
-      <div className="mb-6 flex justify-between items-center">
-        <div className="flex-1 max-w-sm">
-          <input
-            type="text"
-            placeholder="Search tags..."
-            className="input input-bordered w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+    <div className="container mx-auto px-4 space-y-6">
+      <div className="flex items-center justify-between">
+        <PageHeader name="NFC Tags Management" />
         
-        <div className="ml-4">
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-base-content/70">
+            {tags.length} tags
+          </div>
           {isScanning ? (
             <Button
               buttonType="secondary"
               buttonLabel="Cancel Scanning"
-              className="btn-sm rounded-lg animate-pulse"
+              className="btn animate-pulse"
               onClick={handleStopScanning}
             />
           ) : (
             <Button
               buttonType="primary"
-              buttonLabel="Register New Tag"
-              className="btn-sm rounded-lg"
+              buttonLabel={!isNfcAvailable || !nfcFeaturesEnabled ? "NFC Not Available" : "Register New Tag"}
+              className="btn"
               onClick={handleStartScanning}
+              disabled={!isNfcAvailable || !nfcFeaturesEnabled}
             />
           )}
         </div>
       </div>
 
-      <div className="bg-base-100 rounded-lg shadow">
-        <div className="overflow-x-auto">
-          <table className="table table-zebra">
-            <thead>
-              <tr>
-                <th>Tag ID</th>
-                <th>Status</th>
-                <th>Attached To</th>
-                <th>Read/Write Count</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTags.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-base-content/60">
-                    {searchTerm ? 'No tags found matching your search' : 'No tags registered yet'}
-                  </td>
-                </tr>
-              ) : (
-                filteredTags.map((tag) => (
-                  <tr key={tag.id}>
-                    <td className="font-mono text-sm">{tag.id}</td>
-                    <td>
-                      <span className={`badge badge-sm ${tag.active ? 'badge-success' : 'badge-error'}`}>
-                        {tag.active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td>
-                      {tag.artwork_title ? (
-                        <span className="text-sm">{tag.artwork_title}</span>
-                      ) : (
-                        <span className="text-base-content/60 text-sm">Not attached</span>
-                      )}
-                    </td>
-                    <td className="text-center">{tag.read_write_count}</td>
-                    <td className="text-sm">
-                      {format(new Date(tag.created_at), 'MMM dd, yyyy HH:mm')}
-                    </td>
-                    <td>
-                      <Button
-                        buttonType={tag.active ? "secondary" : "primary"}
-                        buttonLabel={tag.active ? "Deactivate" : "Activate"}
-                        className="btn-xs rounded"
-                        onClick={() => handleToggleStatus(tag)}
-                        disabled={!!tag.artwork_id}
-                      />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* NFC Tags Table */}
+      <NfcTagsTable
+        tags={tags}
+        isLoading={loading}
+        onToggleStatus={handleToggleStatus}
+      />
 
       {/* NFC Scanning Indicator */}
       {isScanning && (
         <div className="fixed bottom-4 right-4 bg-base-100 border border-primary rounded-lg shadow-lg p-4 flex items-center gap-3 animate-pulse">
           <div className="loading loading-spinner loading-sm text-primary"></div>
           <div>
-            <p className="font-semibold text-sm">NFC Scanner Active</p>
+            <p className="font-semibold text-sm text-base-content">NFC Scanner Active</p>
             <p className="text-xs text-base-content/70">Tap an NFC tag to register</p>
           </div>
         </div>
@@ -358,9 +308,9 @@ const NfcTags = () => {
       {/* Registration Loading */}
       {isRegistering && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-base-100 rounded-lg p-6 flex flex-col items-center gap-4">
+          <div className="bg-base-100 border border-base-300 rounded-lg p-6 flex flex-col items-center gap-4">
             <div className="loading loading-spinner loading-lg text-primary"></div>
-            <p className="text-sm font-medium">Registering tag...</p>
+            <p className="text-sm font-medium text-base-content">Registering tag...</p>
           </div>
         </div>
       )}

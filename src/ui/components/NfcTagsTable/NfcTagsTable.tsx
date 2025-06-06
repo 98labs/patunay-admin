@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import {
   useReactTable,
   getCoreRowModel,
@@ -13,28 +13,20 @@ import {
   PaginationState,
 } from '@tanstack/react-table';
 
-import { User, UserRole, USER_ROLES } from '../../typings';
-import { Loading, UserAvatar } from '@components';
+import { Tag } from '../../supabase/rpc/getTags';
+import { Loading, Button } from '@components';
 
-interface UserTableProps {
-  users: User[];
+interface NfcTagsTableProps {
+  tags: Tag[];
   isLoading?: boolean;
-  onEditUser: (user: User) => void;
-  onDeleteUser: (user: User) => void;
-  onDeactivateUser: (user: User) => void;
-  onActivateUser: (user: User) => void;
-  onViewUser: (user: User) => void;
+  onToggleStatus: (tag: Tag) => void;
   className?: string;
 }
 
-const UserTable: React.FC<UserTableProps> = ({
-  users,
+const NfcTagsTable: React.FC<NfcTagsTableProps> = ({
+  tags,
   isLoading = false,
-  onEditUser,
-  onDeleteUser,
-  onDeactivateUser,
-  onActivateUser,
-  onViewUser,
+  onToggleStatus,
   className = '',
 }) => {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -45,121 +37,59 @@ const UserTable: React.FC<UserTableProps> = ({
     pageSize: 10,
   });
 
-  const getRoleBadgeClass = (role: UserRole) => {
-    switch (role) {
-      case 'admin':
-        return 'badge-primary';
-      case 'staff':
-        return 'badge-secondary';
-      default:
-        return 'badge-ghost';
-    }
-  };
-
-  const getStatusBadgeClass = (isActive: boolean) => {
-    return isActive ? 'badge-success' : 'badge-error';
-  };
-
-  const columns = useMemo<ColumnDef<User>[]>(() => [
+  const columns = useMemo<ColumnDef<Tag>[]>(() => [
     {
-      header: 'User',
-      accessorKey: 'email',
-      cell: ({ row }) => (
-        <div className="flex items-center space-x-3">
-          <UserAvatar
-            avatarUrl={row.original.avatar_url}
-            firstName={row.original.first_name}
-            lastName={row.original.last_name}
-            email={row.original.email}
-            size="md"
-          />
-          <div>
-            <div className="font-medium text-base-content">
-              {row.original.first_name && row.original.last_name 
-                ? `${row.original.first_name} ${row.original.last_name}`
-                : 'No name'
-              }
-            </div>
-            <div className="text-sm text-base-content/60">{row.original.email}</div>
-            {row.original.phone && (
-              <div className="text-xs text-base-content/50">{row.original.phone}</div>
-            )}
-          </div>
-        </div>
+      header: 'Tag ID',
+      accessorKey: 'id',
+      cell: ({ getValue }) => (
+        <span className="font-mono text-sm text-base-content">{getValue<string>()}</span>
       ),
       enableSorting: true,
-      sortingFn: (rowA, rowB) => {
-        const nameA = `${rowA.original.first_name || ''} ${rowA.original.last_name || ''}`.trim() || rowA.original.email;
-        const nameB = `${rowB.original.first_name || ''} ${rowB.original.last_name || ''}`.trim() || rowB.original.email;
-        return nameA.localeCompare(nameB);
-      },
     },
     {
-      header: 'Role',
-      accessorKey: 'role',
+      header: 'Status',
+      accessorKey: 'active',
       cell: ({ getValue }) => {
-        const role = getValue() as UserRole;
+        const isActive = getValue() as boolean;
         return (
-          <span className={`badge ${getRoleBadgeClass(role)} badge-sm`}>
-            {USER_ROLES[role]?.label || role}
+          <span className={`badge badge-sm ${isActive ? 'badge-success' : 'badge-error'}`}>
+            {isActive ? 'Active' : 'Inactive'}
           </span>
         );
       },
       enableSorting: true,
       filterFn: (row, columnId, filterValue) => {
-        if (!filterValue || filterValue === 'all') return true;
-        return row.original.role === filterValue;
+        if (filterValue === 'all') return true;
+        if (filterValue === 'active') return row.original.active;
+        if (filterValue === 'inactive') return !row.original.active;
+        return true;
       },
     },
     {
-      header: 'Status',
-      accessorKey: 'is_active',
-      cell: ({ getValue, row }) => {
-        const isActive = getValue() as boolean;
-        const hasConfirmedEmail = !!row.original.email_confirmed_at;
-        
-        return (
-          <div className="flex flex-col gap-1">
-            <span className={`badge ${getStatusBadgeClass(isActive)} badge-sm`}>
-              {isActive ? 'Active' : 'Inactive'}
-            </span>
-            {!hasConfirmedEmail && (
-              <span className="badge badge-warning badge-xs">
-                Email not confirmed
-              </span>
-            )}
-          </div>
+      header: 'Attached To',
+      accessorKey: 'artwork_title',
+      cell: ({ getValue }) => {
+        const title = getValue() as string | null;
+        return title ? (
+          <span className="text-sm text-base-content">{title}</span>
+        ) : (
+          <span className="text-base-content/60 text-sm italic">Not attached</span>
         );
       },
       enableSorting: true,
       filterFn: (row, columnId, filterValue) => {
         if (filterValue === 'all') return true;
-        if (filterValue === 'active') return row.original.is_active;
-        if (filterValue === 'inactive') return !row.original.is_active;
+        if (filterValue === 'attached') return !!row.original.artwork_id;
+        if (filterValue === 'unattached') return !row.original.artwork_id;
         return true;
       },
     },
     {
-      header: 'Last Login',
-      accessorKey: 'last_login_at',
-      cell: ({ getValue }) => {
-        const lastLogin = getValue() as string;
-        if (!lastLogin) {
-          return <span className="text-base-content/60 text-sm">Never</span>;
-        }
-        
-        const loginDate = new Date(lastLogin);
-        return (
-          <div className="text-sm">
-            <div className="text-base-content">
-              {formatDistanceToNow(loginDate, { addSuffix: true })}
-            </div>
-            <div className="text-xs text-base-content/60">
-              {format(loginDate, 'MMM dd, yyyy HH:mm')}
-            </div>
-          </div>
-        );
-      },
+      header: 'Read/Write Count',
+      accessorKey: 'read_write_count',
+      cell: ({ getValue }) => (
+        <span className="text-center text-base-content">{getValue<number>()}</span>
+      ),
       enableSorting: true,
     },
     {
@@ -186,73 +116,24 @@ const UserTable: React.FC<UserTableProps> = ({
     {
       header: 'Actions',
       id: 'actions',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onViewUser(row.original)}
-            className="btn btn-ghost btn-xs"
-            title="View user details"
-            disabled={isLoading}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          </button>
-          
-          <button
-            onClick={() => onEditUser(row.original)}
-            className="btn btn-ghost btn-xs"
-            title="Edit user"
-            disabled={isLoading}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </button>
-          
-          {row.original.is_active ? (
-            <button
-              onClick={() => onDeactivateUser(row.original)}
-              className="btn btn-ghost btn-xs text-warning hover:text-warning"
-              title="Deactivate user"
-              disabled={isLoading}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636" />
-              </svg>
-            </button>
-          ) : (
-            <button
-              onClick={() => onActivateUser(row.original)}
-              className="btn btn-ghost btn-xs text-success hover:text-success"
-              title="Activate user"
-              disabled={isLoading}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-          )}
-          
-          <button
-            onClick={() => onDeleteUser(row.original)}
-            className="btn btn-ghost btn-xs text-error hover:text-error"
-            title="Delete user"
-            disabled={isLoading}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const tag = row.original;
+        return (
+          <Button
+            buttonType={tag.active ? "secondary" : "primary"}
+            buttonLabel={tag.active ? "Deactivate" : "Activate"}
+            className="btn-xs rounded"
+            onClick={() => onToggleStatus(tag)}
+            disabled={!!tag.artwork_id || isLoading}
+          />
+        );
+      },
       enableSorting: false,
     },
-  ], [onEditUser, onDeleteUser, onDeactivateUser, onActivateUser, onViewUser]);
+  ], [onToggleStatus, isLoading]);
 
   const table = useReactTable({
-    data: users,
+    data: tags,
     columns,
     state: {
       sorting,
@@ -282,47 +163,24 @@ const UserTable: React.FC<UserTableProps> = ({
         <div className="flex-1">
           <input
             type="text"
-            placeholder="Search users..."
+            placeholder="Search tags..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="input input-bordered w-full bg-base-100 text-base-content"
-            aria-label="Search users"
+            aria-label="Search tags"
           />
-        </div>
-
-        {/* Role Filter */}
-        <div className="sm:w-48">
-          <select
-            value={columnFilters.find((f) => f.id === 'role')?.value || 'all'}
-            onChange={(e) => {
-              const value = e.target.value;
-              setColumnFilters((prev) => {
-                const filtered = prev.filter((f) => f.id !== 'role');
-                if (value !== 'all') {
-                  filtered.push({ id: 'role', value });
-                }
-                return filtered;
-              });
-            }}
-            className="select select-bordered w-full bg-base-100 text-base-content"
-            aria-label="Filter by role"
-          >
-            <option value="all">All Roles</option>
-            <option value="admin">Administrators</option>
-            <option value="staff">Staff</option>
-          </select>
         </div>
 
         {/* Status Filter */}
         <div className="sm:w-48">
           <select
-            value={columnFilters.find((f) => f.id === 'is_active')?.value || 'all'}
+            value={columnFilters.find((f) => f.id === 'active')?.value || 'all'}
             onChange={(e) => {
               const value = e.target.value;
               setColumnFilters((prev) => {
-                const filtered = prev.filter((f) => f.id !== 'is_active');
+                const filtered = prev.filter((f) => f.id !== 'active');
                 if (value !== 'all') {
-                  filtered.push({ id: 'is_active', value });
+                  filtered.push({ id: 'active', value });
                 }
                 return filtered;
               });
@@ -333,6 +191,29 @@ const UserTable: React.FC<UserTableProps> = ({
             <option value="all">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        {/* Attachment Filter */}
+        <div className="sm:w-48">
+          <select
+            value={columnFilters.find((f) => f.id === 'artwork_title')?.value || 'all'}
+            onChange={(e) => {
+              const value = e.target.value;
+              setColumnFilters((prev) => {
+                const filtered = prev.filter((f) => f.id !== 'artwork_title');
+                if (value !== 'all') {
+                  filtered.push({ id: 'artwork_title', value });
+                }
+                return filtered;
+              });
+            }}
+            className="select select-bordered w-full bg-base-100 text-base-content"
+            aria-label="Filter by attachment"
+          >
+            <option value="all">All Tags</option>
+            <option value="attached">Attached</option>
+            <option value="unattached">Unattached</option>
           </select>
         </div>
       </div>
@@ -390,8 +271,8 @@ const UserTable: React.FC<UserTableProps> = ({
           <div className="text-center py-12 bg-base-100">
             <div className="text-base-content/60">
               {globalFilter || columnFilters.length > 0
-                ? 'No users match your filters'
-                : 'No users found'}
+                ? 'No tags match your filters'
+                : 'No tags registered yet'}
             </div>
             {(globalFilter || columnFilters.length > 0) && (
               <button
@@ -492,4 +373,4 @@ const UserTable: React.FC<UserTableProps> = ({
   );
 };
 
-export default UserTable;
+export default NfcTagsTable;

@@ -8,6 +8,8 @@ interface NfcStatusContextType {
   refreshDeviceStatus: () => void;
   isNfcAvailable: boolean;
   nfcFeaturesEnabled: boolean;
+  lastManualRefreshFailed: boolean;
+  clearManualRefreshFailed: () => void;
 }
 
 const defaultDeviceStatus: NfcDeviceStatus = {
@@ -25,6 +27,7 @@ interface NfcStatusProviderProps {
 export const NfcStatusProvider: React.FC<NfcStatusProviderProps> = ({ children }) => {
   const [deviceStatus, setDeviceStatus] = useState<NfcDeviceStatus>(defaultDeviceStatus);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastManualRefreshFailed, setLastManualRefreshFailed] = useState(false);
   const logger = useLogger('NfcStatusProvider');
 
   // Fetch initial device status
@@ -50,15 +53,35 @@ export const NfcStatusProvider: React.FC<NfcStatusProviderProps> = ({ children }
   }, []); // Remove logger dependency to prevent infinite loop
 
   // Manual refresh function
-  const refreshDeviceStatus = useCallback(() => {
+  const refreshDeviceStatus = useCallback(async () => {
     logger.info('Manual NFC device status refresh requested');
     
     if (window.electron?.refreshNfcDeviceStatus) {
       window.electron.refreshNfcDeviceStatus();
+      // Wait a bit for the status to update
+      setTimeout(async () => {
+        // Fetch the latest status
+        if (window.electron?.getNfcDeviceStatus) {
+          const latestStatus = await window.electron.getNfcDeviceStatus();
+          if (!latestStatus.available || latestStatus.readers.length === 0) {
+            setLastManualRefreshFailed(true);
+          }
+        }
+      }, 1500);
     } else {
       logger.warn('NFC device status refresh API not available');
       // Fallback to fetching current status
-      fetchDeviceStatus();
+      await fetchDeviceStatus();
+      // Check the current device status after fetch
+      setTimeout(() => {
+        // Use a ref to get the latest state
+        setDeviceStatus(current => {
+          if (!current.available || current.readers.length === 0) {
+            setLastManualRefreshFailed(true);
+          }
+          return current;
+        });
+      }, 100);
     }
   }, [fetchDeviceStatus]); // Remove logger dependency
 
@@ -71,6 +94,10 @@ export const NfcStatusProvider: React.FC<NfcStatusProviderProps> = ({ children }
       logger.info('Received NFC device status update from main process', status);
       setDeviceStatus(status);
       setIsLoading(false);
+      // Clear manual refresh failed state if NFC becomes available
+      if (status.available && status.readers.length > 0) {
+        setLastManualRefreshFailed(false);
+      }
     };
 
     if (window.electron?.subscribeNfcDeviceStatus) {
@@ -96,12 +123,19 @@ export const NfcStatusProvider: React.FC<NfcStatusProviderProps> = ({ children }
     logger.debug(`NFC status: available=${isNfcAvailable}, enabled=${nfcFeaturesEnabled}, readers=${deviceStatus.readers.length}`);
   }, [deviceStatus, isNfcAvailable, nfcFeaturesEnabled, isLoading]); // Remove logger dependency
 
+  // Function to clear manual refresh failed state
+  const clearManualRefreshFailed = useCallback(() => {
+    setLastManualRefreshFailed(false);
+  }, []);
+
   const contextValue: NfcStatusContextType = {
     deviceStatus,
     isLoading,
     refreshDeviceStatus,
     isNfcAvailable,
-    nfcFeaturesEnabled
+    nfcFeaturesEnabled,
+    lastManualRefreshFailed,
+    clearManualRefreshFailed
   };
 
   return (
