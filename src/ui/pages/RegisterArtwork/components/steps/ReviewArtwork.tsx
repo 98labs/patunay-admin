@@ -94,7 +94,7 @@ const ReviewArtwork = ({
   return (
     <>
       <div className="flex-2 h-fill flex flex-col justify-between gap-2">
-        <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col gap-2">
+        <div className="border border-base-300 rounded-2xl flex flex-col gap-2">
           <h2 className="text-xl font-semibold px-4 pt-4">
             Review the details before submitting
           </h2>

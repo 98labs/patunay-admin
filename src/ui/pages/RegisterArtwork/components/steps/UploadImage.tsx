@@ -101,13 +101,13 @@ const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
     <div className="flex-2 h-fill flex flex-col justify-between gap-2">
       <div
         {...getRootProps()}
-        className={`outline outline-neutral-gray-01 rounded-2xl flex flex-col items-center gap-2 overflow-hidden ${assets?.length <= 0 && "p-24"}`}
+        className={`outline border border-base-300 rounded-2xl flex flex-col items-center gap-2 overflow-hidden ${assets?.length <= 0 && "p-24"}`}
       >
         {assets?.length <= 0 && (
           <>
             <input {...getInputProps()} />
             <div>
-              <ImageUp className="h-40 w-40 text-neutral-black-01" />
+              <ImageUp className="h-40 w-40 text-base-content" />
             </div>
           </>
         )}

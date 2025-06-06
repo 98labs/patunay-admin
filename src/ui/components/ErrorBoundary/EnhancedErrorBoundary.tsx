@@ -52,8 +52,8 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-red-50">
-          <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
+        <div className="min-h-screen flex items-center justify-center bg-base-100">
+          <div className="max-w-md w-full bg-base-200 shadow-lg rounded-lg p-6 border border-base-300">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -61,24 +61,24 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-base-content">
                   Something went wrong
                 </h3>
               </div>
             </div>
             
             <div className="mb-4">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-base-content/70">
                 An unexpected error occurred. The error has been logged and our team will investigate.
               </p>
             </div>
 
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mb-4">
-                <summary className="text-sm font-medium text-gray-700 cursor-pointer">
+                <summary className="text-sm font-medium text-base-content/80 cursor-pointer">
                   Error Details (Development)
                 </summary>
-                <div className="mt-2 p-3 bg-gray-100 rounded text-xs font-mono text-gray-800 overflow-auto">
+                <div className="mt-2 p-3 bg-base-300 rounded text-xs font-mono text-base-content overflow-auto">
                   <div className="mb-2">
                     <strong>Error:</strong> {this.state.error.message}
                   </div>
@@ -101,13 +101,13 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
             <div className="flex space-x-3">
               <button
                 onClick={() => window.location.reload()}
-                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="flex-1 btn btn-error text-white px-4 py-2 rounded-md text-sm font-medium"
               >
                 Reload Application
               </button>
               <button
                 onClick={() => this.setState({ hasError: false, error: undefined, errorInfo: undefined })}
-                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                className="flex-1 btn btn-ghost px-4 py-2 rounded-md text-sm font-medium"
               >
                 Try Again
               </button>
