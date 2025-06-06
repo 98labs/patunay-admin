@@ -95,15 +95,23 @@ export const userManagementApi = api.injectEndpoints({
     getUsers: builder.query<UserListResponse, UserListRequest>({
       query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc' }) => ({
         supabaseOperation: async () => {
+          console.log('[UserManagementAPI] Starting getUsers query', { page, pageSize, sortBy, sortOrder });
+          
           try {
             // Check if we have proper access
-            const { data: currentUser } = await supabase.auth.getUser();
+            const { data: currentUser, error: authError } = await supabase.auth.getUser();
+            console.log('[UserManagementAPI] Auth check result:', { 
+              hasUser: !!currentUser?.user, 
+              userId: currentUser?.user?.id,
+              authError 
+            });
             if (!currentUser?.user) {
               throw new Error('Not authenticated');
             }
             
             // For user management, we need either service role or admin privileges
             const client = supabaseAdmin || supabase;
+            console.log('[UserManagementAPI] Using client:', supabaseAdmin ? 'supabaseAdmin' : 'supabase');
             
             // Fetch profiles
             let profilesData = null;
@@ -112,6 +120,7 @@ export const userManagementApi = api.injectEndpoints({
             
             try {
               // First try with the full query
+              console.log('[UserManagementAPI] Attempting full query with pagination...');
               const result = await client
                 .from('profiles')
                 .select('*', { count: 'exact' })
@@ -122,15 +131,30 @@ export const userManagementApi = api.injectEndpoints({
               profilesError = result.error;
               count = result.count || 0;
               
+              console.log('[UserManagementAPI] Query result:', {
+                status: result.status,
+                hasData: !!profilesData,
+                dataLength: profilesData?.length,
+                hasError: !!profilesError,
+                errorCode: profilesError?.code,
+                errorMessage: profilesError?.message
+              });
+              
               // If we get a 500 error, try a simpler query
               if (result.status === 500 || (profilesError && profilesError.message?.includes('500'))) {
-                console.warn('Got 500 error, trying simpler query...');
+                console.warn('[UserManagementAPI] Got 500 error, trying simpler query...');
                 
                 // Try without count and pagination
                 const simpleResult = await client
                   .from('profiles')
                   .select('*')
                   .limit(pageSize);
+                
+                console.log('[UserManagementAPI] Simple query result:', {
+                  hasData: !!simpleResult.data,
+                  dataLength: simpleResult.data?.length,
+                  hasError: !!simpleResult.error
+                });
                 
                 if (!simpleResult.error) {
                   profilesData = simpleResult.data;
@@ -139,12 +163,17 @@ export const userManagementApi = api.injectEndpoints({
                 }
               }
             } catch (error) {
-              console.error('Error querying profiles:', error);
+              console.error('[UserManagementAPI] Error querying profiles:', error);
               profilesError = error;
             }
 
             if (profilesError) {
-              console.error('Profiles query error:', profilesError);
+              console.error('[UserManagementAPI] Profiles query error details:', {
+                code: profilesError.code,
+                message: profilesError.message,
+                details: profilesError.details,
+                hint: profilesError.hint
+              });
               
               // Check for common error codes
               if (profilesError.code === 'PGRST116') {
@@ -888,41 +917,81 @@ export const userManagementApi = api.injectEndpoints({
     getCurrentUser: builder.query<UserResponse, void>({
       query: () => ({
         supabaseOperation: async () => {
+          console.log('[UserManagementAPI] Getting current user...');
+          
           try {
             const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+            console.log('[UserManagementAPI] Current auth user:', { 
+              id: currentUser?.id, 
+              email: currentUser?.email,
+              authError 
+            });
+            
             if (authError) throw authError;
             if (!currentUser) return { data: null };
 
-            // Get profile data
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', currentUser.id)
-              .single();
+            // Get profile data with permissions using RPC function
+            let userData;
+            try {
+              // Try using the get_user_with_role function first
+              const { data: userWithRole, error: rpcError } = await supabase
+                .rpc('get_user_with_role', { user_id: currentUser.id })
+                .single();
+              
+              console.log('[UserManagementAPI] get_user_with_role result:', {
+                hasData: !!userWithRole,
+                role: userWithRole?.role,
+                permissions: userWithRole?.permissions,
+                rpcError
+              });
+              
+              if (!rpcError && userWithRole) {
+                userData = userWithRole;
+              }
+            } catch (rpcErr) {
+              console.warn('get_user_with_role failed, falling back to direct query:', rpcErr);
+            }
+            
+            // Fallback to direct profile query if RPC fails
+            if (!userData) {
+              const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
 
-            if (profileError && profileError.code !== 'PGRST116') {
-              // Ignore "not found" errors, create minimal user data
-              console.warn('Profile not found for current user:', profileError);
+              console.log('[UserManagementAPI] Profile query result:', {
+                hasProfile: !!profile,
+                profileRole: profile?.role,
+                profileError
+              });
+              
+              userData = profile;
+              
+              if (profileError && profileError.code !== 'PGRST116') {
+                // Ignore "not found" errors, create minimal user data
+                console.warn('Profile not found for current user:', profileError);
+              }
             }
 
             // Combine the data
-            const userData = {
+            const finalUserData = {
               id: currentUser.id,
-              email: currentUser.email || '',
-              first_name: profile?.first_name || '',
-              last_name: profile?.last_name || '',
-              role: profile?.role || 'staff',
-              is_active: profile?.is_active ?? true,
-              phone: profile?.phone,
-              avatar_url: profile?.avatar_url,
-              created_at: profile?.created_at || currentUser.created_at,
-              updated_at: profile?.updated_at,
-              last_login_at: profile?.last_login_at || currentUser.last_sign_in_at,
+              email: userData?.email || currentUser.email || '',
+              first_name: userData?.first_name || '',
+              last_name: userData?.last_name || '',
+              role: userData?.role || 'staff',
+              is_active: userData?.is_active ?? true,
+              phone: userData?.phone,
+              avatar_url: userData?.avatar_url,
+              created_at: userData?.created_at || currentUser.created_at,
+              updated_at: userData?.updated_at,
+              last_login_at: userData?.last_login_at || currentUser.last_sign_in_at,
               email_confirmed_at: currentUser.email_confirmed_at,
-              permissions: profile?.permissions || [],
+              permissions: userData?.permissions || [],
             };
 
-            return { data: userData };
+            return { data: finalUserData };
           } catch (error) {
             console.error('Error fetching current user:', error);
             throw error;

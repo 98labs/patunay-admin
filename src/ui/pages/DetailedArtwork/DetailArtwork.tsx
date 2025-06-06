@@ -11,6 +11,7 @@ import { selectNotif } from "../../components/NotificationMessage/selector";
 import { useSelector, useDispatch } from "react-redux";
 import AppraisalInfo from "./components/AppraisalInfo";
 import { showNotification } from "../../components/NotificationMessage/slice";
+import { useCanPerform } from "../../hooks/useAuth";
 
 import { updateArtworkDirect } from "../../supabase/rpc/updateArtworkDirect";
 import { detachNfcTag } from "../../supabase/rpc/detachNfcTag";
@@ -23,6 +24,7 @@ const DetailArtwork = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { canManageAppraisals } = useCanPerform();
   const [artwork, setArtwork] = useState<ArtworkType | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -368,7 +370,11 @@ const DetailArtwork = () => {
         </section>
         <>
           <div className="divider"></div>
-          <AppraisalInfo appraisals={appraisals} artwork_id={artwork.id} />
+          <AppraisalInfo 
+            appraisals={appraisals} 
+            artwork_id={artwork.id} 
+            canManageAppraisals={canManageAppraisals} 
+          />
         </>
         {showImageModal && (
           <ArtworkImageModal
