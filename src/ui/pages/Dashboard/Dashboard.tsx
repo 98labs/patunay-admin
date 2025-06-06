@@ -4,14 +4,12 @@ import {
   PageHeader, 
   StatsCard, 
   ActivityFeed, 
-  SystemHealth, 
   SimpleChart,
   Loading 
 } from "@components";
 import { 
   useGetDashboardStatsQuery, 
-  useGetActivityLogQuery, 
-  useGetSystemHealthQuery 
+  useGetActivityLogQuery 
 } from '../../store/api/statisticsApi';
 
 const Dashboard = () => {
@@ -27,11 +25,6 @@ const Dashboard = () => {
     data: activities, 
     isLoading: activitiesLoading 
   } = useGetActivityLogQuery({ limit: 10 });
-
-  const { 
-    data: systemHealth, 
-    isLoading: healthLoading 
-  } = useGetSystemHealthQuery();
 
   if (statsLoading) {
     return <Loading fullScreen={false} />;
@@ -118,85 +111,39 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Secondary Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatsCard
-          title="NFC Operations Today"
-          value={stats?.nfc.operationsToday || 0}
-          subtitle={`${stats?.nfc.successfulOperations || 0} successful, ${stats?.nfc.failedOperations || 0} failed`}
-          variant="secondary"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          }
-        />
-
-        <StatsCard
-          title="Storage Used"
-          value={`${stats?.system.storage.used || 0}GB`}
-          subtitle={`of ${stats?.system.storage.total || 0}GB (${stats?.system.storage.percentage || 0}%)`}
-          variant="default"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-            </svg>
-          }
-        />
-
-        <StatsCard
-          title="Avg Response Time"
-          value={`${stats?.system.performance.avgResponseTime || 0}ms`}
-          subtitle={`${stats?.system.performance.uptime || 0}% uptime`}
-          variant="default"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          }
-        />
-      </div>
-
-      {/* Charts and Visualizations */}
+      {/* Charts and Activity Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* NFC Status Distribution */}
-        <SimpleChart
-          type="donut"
-          title="NFC Status Distribution"
-          data={[
-            { 
-              label: 'Attached', 
-              value: stats?.artworks.withNfc || 0,
-              color: 'hsl(var(--su))' 
-            },
-            { 
-              label: 'No NFC', 
-              value: stats?.artworks.withoutNfc || 0,
-              color: 'hsl(var(--w))' 
-            },
-          ]}
-          height={250}
-        />
+        {/* NFC Operations Stats */}
+        <div className="space-y-4">
+          <StatsCard
+            title="NFC Operations Today"
+            value={stats?.nfc.operationsToday || 0}
+            subtitle={`${stats?.nfc.successfulOperations || 0} successful, ${stats?.nfc.failedOperations || 0} failed`}
+            variant="secondary"
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            }
+          />
+          
+          {/* Weekly Activity */}
+          <SimpleChart
+            type="bar"
+            title="Weekly Activity Overview"
+            data={[
+              { label: 'Mon', value: Math.floor(Math.random() * 10) + 5 },
+              { label: 'Tue', value: Math.floor(Math.random() * 10) + 5 },
+              { label: 'Wed', value: Math.floor(Math.random() * 10) + 5 },
+              { label: 'Thu', value: Math.floor(Math.random() * 10) + 5 },
+              { label: 'Fri', value: Math.floor(Math.random() * 10) + 5 },
+              { label: 'Sat', value: Math.floor(Math.random() * 10) + 5 },
+              { label: 'Sun', value: Math.floor(Math.random() * 10) + 5 },
+            ]}
+            height={250}
+          />
+        </div>
 
-        {/* Weekly Activity */}
-        <SimpleChart
-          type="bar"
-          title="Weekly Activity Overview"
-          data={[
-            { label: 'Mon', value: Math.floor(Math.random() * 10) + 5 },
-            { label: 'Tue', value: Math.floor(Math.random() * 10) + 5 },
-            { label: 'Wed', value: Math.floor(Math.random() * 10) + 5 },
-            { label: 'Thu', value: Math.floor(Math.random() * 10) + 5 },
-            { label: 'Fri', value: Math.floor(Math.random() * 10) + 5 },
-            { label: 'Sat', value: Math.floor(Math.random() * 10) + 5 },
-            { label: 'Sun', value: Math.floor(Math.random() * 10) + 5 },
-          ]}
-          height={250}
-        />
-      </div>
-
-      {/* Activity and System Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
         <div className="space-y-4">
           {activitiesLoading ? (
@@ -205,25 +152,6 @@ const Dashboard = () => {
             </div>
           ) : (
             <ActivityFeed activities={activities || []} />
-          )}
-        </div>
-
-        {/* System Health */}
-        <div className="space-y-4">
-          {healthLoading ? (
-            <div className="bg-base-100 border border-base-300 rounded-lg p-6">
-              <Loading fullScreen={false} />
-            </div>
-          ) : systemHealth ? (
-            <SystemHealth
-              status={systemHealth.status}
-              services={systemHealth.services}
-              metrics={systemHealth.metrics}
-            />
-          ) : (
-            <div className="bg-base-100 border border-base-300 rounded-lg p-6 text-center text-base-content/60">
-              System health data unavailable
-            </div>
           )}
         </div>
       </div>
@@ -260,8 +188,8 @@ const Dashboard = () => {
             Search Artworks
           </Link>
           <Link
-            to="/dashboard/admin/team"
-            className="btn btn-ghost btn-outline"
+            to="/dashboard/admin/users"
+            className="btn btn-info btn-outline"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />

@@ -121,9 +121,9 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
 
   return (
     <div className="flex-2 h-fill flex flex-col justify-between gap-2">
-      <div className="outline outline-neutral-gray-01 rounded-2xl flex flex-col items-center gap-2 p-24">
+      <div className="outline border border-base-300 rounded-2xl flex flex-col items-center gap-2 p-24">
         <div className="flex flex-col justify-center align-middle gap-2">
-          <Nfc className="w-40 h-50 m-auto text-neutral-black-02" />
+          <Nfc className="w-40 h-50 m-auto text-base-content/90" />
           <p className="font-semibold">
             {!isNfcAvailable
               ? "NFC device not available"

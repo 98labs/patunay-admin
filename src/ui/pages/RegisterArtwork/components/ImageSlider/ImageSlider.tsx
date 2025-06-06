@@ -59,19 +59,19 @@ const ImageSlider = ({
           </div>
           <div className="absolute w-full h-full top-0.25 flex justify-between items-center overflow-hidden">
             <div
-              className="transition-all px-1 h-full flex items-center cursor-pointer hover:scale-105 hover:bg-neutral-black-01/10"
+              className="transition-all px-1 h-full flex items-center cursor-pointer hover:scale-105 hover:bg-base-content/10"
               onClick={handlePrev}
             >
-              <div className=" bg-neutral-gray-01/90 rounded-full w-8 h-8">
-                <ChevronLeft className="text-neutral-black-02 text-center mx-auto h-full" />
+              <div className=" bg-base-300/90 rounded-full w-8 h-8">
+                <ChevronLeft className="text-base-content text-center mx-auto h-full" />
               </div>
             </div>
             <div
-              className="transition-all px-1 h-full flex items-center cursor-pointer hover:scale-105 hover:bg-neutral-black-01/10"
+              className="transition-all px-1 h-full flex items-center cursor-pointer hover:scale-105 hover:bg-base-content/10"
               onClick={handleNext}
             >
-              <div className="bg-neutral-gray-01/90 rounded-full w-8 h-8">
-                <ChevronRight className="text-neutral-black-02 text-center mx-auto h-full" />
+              <div className="bg-base-300/90 rounded-full w-8 h-8">
+                <ChevronRight className="text-base-content text-center mx-auto h-full" />
               </div>
             </div>
           </div>
@@ -80,7 +80,7 @@ const ImageSlider = ({
               {assets.map((asset, index) => (
                 <div
                   key={index}
-                  className={`w-2 h-2 rounded-full cursor-pointer transition-colors ${asset.url === activeAsset.url ? "bg-primary-400" : "bg-neutral-gray-01"}`}
+                  className={`w-2 h-2 rounded-full cursor-pointer transition-colors ${asset.url === activeAsset.url ? "bg-primary" : "bg-base-300"}`}
                   onClick={() => handleSetActiveAsset(asset, index)}
                 />
               ))}
@@ -100,7 +100,7 @@ const ImageSlider = ({
               >
                 <img
                   src={asset.url}
-                  className={`transition-all rounded-lg object-cover w-full h-full cursor-pointer ${asset.url === activeAsset.url && "border-3 border-neutral-black-01/50 p-0.5 overflow-hidden"}`}
+                  className={`transition-all rounded-lg object-cover w-full h-full cursor-pointer ${asset.url === activeAsset.url && "border-2 border-primary p-0.5 overflow-hidden"}`}
                 />
               </div>
             ))}
