@@ -29,6 +29,8 @@ export { UserAvatar } from "./UserAvatar";
 export { CreateUserWorkaround } from "./CreateUserWorkaround";
 export { SupabaseDiagnostic } from "./SupabaseDiagnostic";
 export { default as NfcTagsTable } from "./NfcTagsTable";
+export { AuthzGuard, withAuthz, Can, CanAny, CanAll } from "./AuthzGuard";
+export { UserRoleManager, PermissionManager } from "./UserRoleManager";
 
 // Type exports
 export type * from "./types/common";
