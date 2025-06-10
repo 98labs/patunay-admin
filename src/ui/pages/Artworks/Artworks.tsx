@@ -13,7 +13,6 @@ import {
 } from "@tanstack/react-table";
 
 import { useGetArtworksQuery } from "../../store/api/artworkApi";
-import { ArtworkEntity } from "../../typings";
 
 import UploadButton from "./components/UploadButton";
 import { useArtworkColumns } from "./hooks/useArtworkColumns";
@@ -80,25 +79,6 @@ const Artworks = () => {
     refetch,
   } = useGetArtworksQuery(requestParams);
 
-  // Action handlers
-  const handleEdit = useCallback((artwork: ArtworkEntity) => {
-    navigate(`/dashboard/artworks/${artwork.id}`);
-  }, [navigate]);
-
-  const handleDetach = useCallback((artwork: ArtworkEntity) => {
-    if (artwork.tag_id) {
-      setSelectedTagId(artwork.tag_id);
-      setShowDetachModal(true);
-    }
-  }, []);
-
-  const handleDelete = useCallback((artwork: ArtworkEntity) => {
-    if (artwork.id) {
-      setSelectedArtworkId(artwork.id);
-      setShowDeleteModal(true);
-    }
-  }, []);
-
   const handleFile = useCallback((file: any) => {
     console.log("Selected file:", file);
     // Navigate to upload/register page
@@ -119,7 +99,7 @@ const Artworks = () => {
   }, [refetch]);
 
   // Table columns
-  const columns = useArtworkColumns(handleEdit, handleDetach, handleDelete);
+  const columns = useArtworkColumns();
 
   // Table data
   const data = useMemo(() => artworksResponse?.data || [], [artworksResponse]);
