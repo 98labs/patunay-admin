@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useGetCurrentUserQuery } from '../store/api/userManagementApi';
+import { useGetCurrentUserQuery, useGetUserQuery } from '../store/api/userApi';
 import { User, UserRole } from '../typings';
 import supabase from '../supabase';
 
@@ -16,6 +16,7 @@ export interface AuthState {
 export const useAuth = (): AuthState => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const { 
     data: userResponse, 
@@ -25,13 +26,20 @@ export const useAuth = (): AuthState => {
     skip: !isAuthenticated,
   });
 
-  const user = userResponse?.data || null;
+  const { 
+    data: userResponseByID, 
+  } = useGetUserQuery(userId!, {
+    skip: !isAuthenticated,
+  });
+
+  const user = userResponse?.user || null;
 
   useEffect(() => {
     // Check initial auth state
     const checkAuthState = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        setUserId(session?.user?.id || null);
         setIsAuthenticated(!!session);
       } catch (error) {
         console.error('Error checking auth state:', error);
@@ -59,7 +67,7 @@ export const useAuth = (): AuthState => {
   }, [refetch]);
 
   const hasRole = (role: UserRole): boolean => {
-    return user?.role === role;
+    return user?.role === role || userResponseByID?.role === role;
   };
 
   const hasPermission = (permission: string): boolean => {
@@ -76,7 +84,7 @@ export const useAuth = (): AuthState => {
       console.log('[useAuth] User data:', {
         id: user.id,
         email: user.email,
-        role: user.role,
+        role: user.role || userResponseByID?.role,
         isAdmin,
         isStaff,
         permissions: user.permissions
