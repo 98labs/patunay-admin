@@ -13,6 +13,9 @@ export interface User {
   last_login?: string;
   is_active: boolean;
   permissions?: string[];
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
 }
 
 export interface UserProfile {
@@ -141,7 +144,7 @@ export const userApi = api.injectEndpoints({
       query: ({ page = 1, pageSize = 10, role, isActive, search }) => ({
         supabaseOperation: async () => {
           let query = supabase
-            .from('profiles')
+            .from('profiles_with_email')
             .select('*', { count: 'exact' })
             .range((page - 1) * pageSize, page * pageSize - 1)
             .order('created_at', { ascending: false });
@@ -177,37 +180,40 @@ export const userApi = api.injectEndpoints({
       query: (id) => ({
         supabaseOperation: async () => {
           const { data, error } = await supabase
-            .from('profiles')
+            .from('profiles_with_email')
             .select('*')
             .eq('id', id)
             .single();
 
           if (error) throw error;
+
           return data;
         }
       }),
       providesTags: (result, error, id) => [{ type: 'User', id }],
     }),
 
-    updateUser: builder.mutation<User, UpdateUserRequest>({
-      query: ({ id, updates }) => ({
-        supabaseOperation: async () => {
-          const { data, error } = await supabase
-            .from('profiles')
-            .update(updates)
-            .eq('id', id)
-            .select()
-            .single();
+    // updateUser: builder.mutation<User, UpdateUserRequest>({
+    //   query: ({ id, updates }) => ({
+    //     supabaseOperation: async () => {
+    //       console.log('id', id)
+    //       console.log('updates', updates)
+    //       const { data, error } = await supabase
+    //         .from('profiles')
+    //         .update(updates)
+    //         .eq('id', id)
+    //         .select()
+    //         .single();
 
-          if (error) throw error;
-          return data;
-        }
-      }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'User', id },
-        { type: 'User', id: 'LIST' },
-      ],
-    }),
+    //       if (error) throw error;
+    //       return data;
+    //     }
+    //   }),
+    //   invalidatesTags: (result, error, { id }) => [
+    //     { type: 'User', id },
+    //     { type: 'User', id: 'LIST' },
+    //   ],
+    // }),
 
     // User profile endpoints
     getUserProfile: builder.query<UserProfile, string>({
@@ -291,7 +297,7 @@ export const {
   useGetCurrentUserQuery,
   useGetUsersQuery,
   useGetUserQuery,
-  useUpdateUserMutation,
+  // useUpdateUserMutation,
   useGetUserProfileQuery,
   useUpdateUserProfileMutation,
   useGetUserStatsQuery,
