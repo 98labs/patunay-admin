@@ -144,7 +144,7 @@ export const userApi = api.injectEndpoints({
       query: ({ page = 1, pageSize = 10, role, isActive, search }) => ({
         supabaseOperation: async () => {
           let query = supabase
-            .from('profiles_with_email')
+            .from('profiles_view')
             .select('*', { count: 'exact' })
             .range((page - 1) * pageSize, page * pageSize - 1)
             .order('created_at', { ascending: false });
@@ -180,7 +180,7 @@ export const userApi = api.injectEndpoints({
       query: (id) => ({
         supabaseOperation: async () => {
           const { data, error } = await supabase
-            .from('profiles_with_email')
+            .from('profiles_view')
             .select('*')
             .eq('id', id)
             .single();
