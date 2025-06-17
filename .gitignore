@@ -17,6 +17,7 @@ dist-react
 .env
 electron-builder.env
 package-lock.json
+dump
 
 # Editor directories and files
 .vscode/*
