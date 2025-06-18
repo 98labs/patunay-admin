@@ -180,7 +180,7 @@ const UserForm: React.FC<UserFormProps> = ({
   const availablePermissions = Object.keys(PERMISSION_DESCRIPTIONS) as Array<keyof typeof PERMISSION_DESCRIPTIONS>;
 
   return (
-    <div className="bg-base-100 border border-base-300 rounded-lg p-6">
+    <div className="bg-base-100 border border-base-300 rounded-lg p-6 max-w-4xl mx-auto text-base-content">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-base-content">
           {mode === 'create' ? 'Create New User' : 'Edit User'}
@@ -200,7 +200,7 @@ const UserForm: React.FC<UserFormProps> = ({
         {/* Personal Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="form-control">
-            <label className="label">
+            <label className="block text-sm font-medium mb-1">
               <span className="label-text">Email {mode === 'create' ? '*' : ''}</span>
             </label>
             {mode === 'edit' ? (
@@ -222,15 +222,26 @@ const UserForm: React.FC<UserFormProps> = ({
               />
             )}
             {errors.email && mode === 'create' && (
-              <label className="label">
+              <label className="block text-sm font-medium mb-1">
                 <span className="label-text-alt text-error">{errors.email.message}</span>
               </label>
             )}
           </div>
+          <div className="form-control">
+            <label className="block text-sm font-medium mb-1">
+              <span className="label-text">Phone</span>
+            </label>
+            <input
+              type="tel"
+              className="input input-bordered"
+              disabled={isLoading}
+              {...register('phone')}
+            />
+          </div>
 
           {mode === 'create' && (
             <div className="form-control">
-              <label className="label">
+              <label className="block text-sm font-medium mb-1">
                 <span className="label-text">Password *</span>
               </label>
               <input
@@ -246,7 +257,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 })}
               />
               {errors.password && (
-                <label className="label">
+                <label className="block text-sm font-medium mb-1">
                   <span className="label-text-alt text-error">{errors.password.message}</span>
                 </label>
               )}
@@ -256,7 +267,7 @@ const UserForm: React.FC<UserFormProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="form-control">
-            <label className="label">
+            <label className="block text-sm font-medium mb-1">
               <span className="label-text">First Name *</span>
             </label>
             <input
@@ -272,14 +283,14 @@ const UserForm: React.FC<UserFormProps> = ({
               })}
             />
             {errors.first_name && (
-              <label className="label">
+              <label className="block text-sm font-medium mb-1">
                 <span className="label-text-alt text-error">{errors.first_name.message}</span>
               </label>
             )}
           </div>
 
           <div className="form-control">
-            <label className="label">
+            <label className="block text-sm font-medium mb-1">
               <span className="label-text">Last Name *</span>
             </label>
             <input
@@ -295,28 +306,16 @@ const UserForm: React.FC<UserFormProps> = ({
               })}
             />
             {errors.last_name && (
-              <label className="label">
+              <label className="block text-sm font-medium mb-1">
                 <span className="label-text-alt text-error">{errors.last_name.message}</span>
               </label>
             )}
           </div>
         </div>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">Phone</span>
-          </label>
-          <input
-            type="tel"
-            className="input input-bordered"
-            disabled={isLoading}
-            {...register('phone')}
-          />
-        </div>
-
         {/* Avatar Upload */}
         <div className="form-control">
-          <label className="label">
+          <label className="block text-sm font-medium mb-1">
             <span className="label-text">Profile Picture</span>
           </label>
           <div className="flex items-center space-x-4">
@@ -377,7 +376,7 @@ const UserForm: React.FC<UserFormProps> = ({
         {/* Role and Status */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="form-control">
-            <label className="label">
+            <label className="block text-sm font-medium mb-1">
               <span className="label-text">Role *</span>
             </label>
             <select
@@ -392,7 +391,7 @@ const UserForm: React.FC<UserFormProps> = ({
               ))}
             </select>
             {errors.role && (
-              <label className="label">
+              <label className="block text-sm font-medium mb-1">
                 <span className="label-text-alt text-error">{errors.role.message}</span>
               </label>
             )}

@@ -272,7 +272,7 @@ const UserManagement = () => {
 
       {/* View User Details */}
       {viewMode === 'view' && detailedUser && (
-        <div className="bg-base-100 border border-base-300 rounded-lg p-6">
+        <div className="bg-base-100 border border-base-300 rounded-lg p-6 max-w-4xl mx-auto text-base-content">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">User Details</h2>
             <div className="flex gap-2">

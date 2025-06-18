@@ -2,15 +2,10 @@ import { useMemo } from "react";
 import { format } from "date-fns";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { Link } from "react-router-dom";
-import DropdownAction from "../components/DropdownAction";
 import { ArtworkEntity } from "../../../typings";
 import logo from '../../../../assets/logo/patunay-256x256.png';
 
-export function useArtworkColumns(
-  onEdit: (artwork: ArtworkEntity) => void,
-  onDetach: (artwork: ArtworkEntity) => void,
-  onDelete: (artwork: ArtworkEntity) => void
-): ColumnDef<ArtworkEntity>[] {
+export function useArtworkColumns(): ColumnDef<ArtworkEntity>[] {
   return useMemo<ColumnDef<ArtworkEntity>[]>(() => [
     {
       header: "ID Number",
@@ -160,19 +155,5 @@ export function useArtworkColumns(
       },
       meta: { className: "w-24" },
     },
-    {
-      header: "Actions",
-      accessorKey: "actions",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <DropdownAction
-          artwork={row.original}
-          onAttach={onEdit}
-          onDetach={onDetach}
-          onDelete={onDelete}
-        />
-      ),
-      meta: { className: "w-16" },
-    },
-  ], [onEdit, onDetach, onDelete]);
+  ], []);
 }
