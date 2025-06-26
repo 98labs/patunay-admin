@@ -71,7 +71,8 @@ const Sidebar = ({
     canCreateAppraisals,
   } = usePermissions();
 
-  const { isSuperUser, currentOrganization } = useAuth();
+  const { isSuperUser, currentOrganization, user, organizations } = useAuth();
+
 
   const links: Links[] = useMemo(() => {
     const navigationLinks: Links[] = [];
@@ -105,26 +106,31 @@ const Sidebar = ({
       });
     }
 
-    // Admin section - visible based on permissions
-    const adminChildren: Links[] = [];
+    // Management section - visible based on permissions
+    const managementChildren: Links[] = [];
     
-    if (canManageOrgUsers || canManageAllUsers) {
-      adminChildren.push({ name: "User Management", path: "/dashboard/admin/users" });
+    // User Management - exclude from issuer role
+    if ((canManageOrgUsers || canManageAllUsers) && user?.role !== 'issuer') {
+      managementChildren.push({ name: "User Management", path: "/dashboard/admin/users" });
     }
     
     if (canManageOrgNfcTags || canManageAllNfcTags) {
-      adminChildren.push({ name: "NFC Tags", path: "/dashboard/admin/nfc-tags" });
+      managementChildren.push({ name: "NFC Tags", path: "/dashboard/admin/nfc-tags" });
     }
     
     if (canManageOrgNfcTags || canManageAllNfcTags) {
-      adminChildren.push({ name: "Devices", path: "/dashboard/admin/device" });
+      managementChildren.push({ name: "Devices", path: "/dashboard/admin/device" });
     }
 
-    if (adminChildren.length > 0) {
+    if (managementChildren.length > 0) {
+      // Change section name based on user's primary capabilities
+      const hasUserManagement = (canManageOrgUsers || canManageAllUsers) && user?.role !== 'issuer';
+      const sectionName = hasUserManagement ? "Admin" : "Tools";
+      
       navigationLinks.push({
-        name: "Admin",
+        name: sectionName,
         path: "/dashboard/admin",
-        children: adminChildren,
+        children: managementChildren,
       });
     }
 
@@ -149,8 +155,8 @@ const Sidebar = ({
       }
     }
 
-    // Organization Management - visible to organization admins
-    if (currentOrganization && (canManageOrgUsers || canViewOrgStatistics)) {
+    // Organization Management - visible to organization admins (exclude issuer role)
+    if (currentOrganization && (canManageOrgUsers || canViewOrgStatistics) && user?.role !== 'issuer') {
       const orgChildren: Links[] = [];
       
       if (canManageOrgUsers) {
@@ -185,6 +191,7 @@ const Sidebar = ({
     canCreateAppraisals,
     isSuperUser,
     currentOrganization,
+    user?.role,
   ]);
 
   const handleLogout = useCallback(async () => {

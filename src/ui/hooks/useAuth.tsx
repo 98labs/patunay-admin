@@ -88,7 +88,12 @@ export const useAuth = (): AuthState => {
   const hasRole = (role: UserRole, organizationId?: string): boolean => {
     const targetOrgId = organizationId || currentOrganizationId;
     
-    // Super users have all roles everywhere
+    // If checking for super_user specifically, only check the actual role
+    if (role === 'super_user') {
+      return user?.role === 'super_user';
+    }
+    
+    // Super users have all OTHER roles everywhere (but we already handled super_user above)
     if (user?.role === 'super_user') return true;
     
     // Check role in specific organization
@@ -117,12 +122,16 @@ export const useAuth = (): AuthState => {
         // Check role-based permissions + additional permissions
         const hasRolePermission = DEFAULT_PERMISSIONS[orgMembership.role]?.includes(permission);
         const hasAdditionalPermission = orgMembership.permissions?.includes(permission);
+        
         return hasRolePermission || hasAdditionalPermission;
       }
     }
     
-    // Fallback to user permissions array
-    return user?.permissions?.includes(permission) || false;
+    // Fallback to user's primary role permissions if no organization context
+    const primaryRolePermission = user?.role ? DEFAULT_PERMISSIONS[user.role]?.includes(permission) : false;
+    const userPermission = user?.permissions?.includes(permission) || false;
+    
+    return primaryRolePermission || userPermission;
   };
 
   // Enhanced permission checking for specific actions

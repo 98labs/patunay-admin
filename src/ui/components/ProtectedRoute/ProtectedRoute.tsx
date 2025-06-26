@@ -97,8 +97,8 @@ export const UserManagementRoute: React.FC<{ children: React.ReactNode }> = ({ c
 };
 
 export const ArtworkManagementRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { canCreateArtworks, canManageOrgArtworks, canManageAllArtworks } = usePermissions();
-  const { isLoading } = useAuth();
+  const { hasPermission } = usePermissions();
+  const { isLoading, user, hasRole } = useAuth();
   
   // Show loading while user data is being fetched
   if (isLoading) {
@@ -109,7 +109,17 @@ export const ArtworkManagementRoute: React.FC<{ children: React.ReactNode }> = (
     );
   }
   
-  if (!canCreateArtworks && !canManageOrgArtworks && !canManageAllArtworks) {
+  // Special handling for issuer role - they should always have access to artwork management
+  const isIssuerRole = hasRole('issuer');
+  
+  // Check for issuer-specific permissions or general artwork management permissions
+  const canAccess = isIssuerRole || // Issuer role always gets access
+                   hasPermission('create_artworks') || 
+                   hasPermission('manage_artworks') ||
+                   hasPermission('manage_org_artworks') || 
+                   hasPermission('manage_all_artworks');
+  
+  if (!canAccess) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -117,8 +127,8 @@ export const ArtworkManagementRoute: React.FC<{ children: React.ReactNode }> = (
 };
 
 export const NfcManagementRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { canManageOrgNfcTags, canManageAllNfcTags } = usePermissions();
-  const { isLoading } = useAuth();
+  const { hasPermission } = usePermissions();
+  const { isLoading, user, hasRole } = useAuth();
   
   // Show loading while user data is being fetched
   if (isLoading) {
@@ -129,7 +139,17 @@ export const NfcManagementRoute: React.FC<{ children: React.ReactNode }> = ({ ch
     );
   }
   
-  if (!canManageOrgNfcTags && !canManageAllNfcTags) {
+  // Special handling for issuer role - they should always have access to NFC management
+  const isIssuerRole = hasRole('issuer');
+  
+  // Check for issuer-specific permissions or general NFC management permissions
+  const canAccess = isIssuerRole || // Issuer role always gets access
+                   hasPermission('manage_nfc_tags') || 
+                   hasPermission('attach_nfc_tags') ||
+                   hasPermission('manage_org_nfc_tags') || 
+                   hasPermission('manage_all_nfc_tags');
+  
+  if (!canAccess) {
     return <Navigate to="/dashboard" replace />;
   }
   
