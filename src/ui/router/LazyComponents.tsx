@@ -12,3 +12,7 @@ export const UserManagement = lazy(() => import('../pages/UserManagement'));
 export const Devices = lazy(() => import('../pages/Devices'));
 export const Login = lazy(() => import('../pages/Login'));
 export const NotFoundPage = lazy(() => import('../pages/404Page'));
+
+// New multi-tenant components
+export const OrganizationManagementPage = lazy(() => import('../pages/OrganizationManagementPage'));
+export const MigrationVerificationPage = lazy(() => import('../pages/MigrationVerificationPage'));

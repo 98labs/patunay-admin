@@ -30,5 +30,30 @@ export { CreateUserWorkaround } from "./CreateUserWorkaround";
 export { SupabaseDiagnostic } from "./SupabaseDiagnostic";
 export { default as NfcTagsTable } from "./NfcTagsTable";
 
+// Multi-tenant RBAC components
+export { OrganizationSwitcher } from "./OrganizationSwitcher";
+export { OrganizationManagement, OrganizationCard, CreateOrganizationModal } from "./OrganizationManagement";
+export { MigrationVerification } from "./MigrationVerification";
+export { 
+  PermissionGuard,
+  AdminGuard,
+  SuperUserGuard,
+  IssuerGuard,
+  AppraiserGuard,
+  UserManagementGuard,
+  ArtworkManagementGuard,
+  NfcManagementGuard,
+  AppraisalManagementGuard
+} from "./PermissionGuard";
+export { 
+  ProtectedRoute,
+  AdminRoute,
+  SuperUserRoute,
+  UserManagementRoute,
+  ArtworkManagementRoute,
+  NfcManagementRoute,
+  AppraisalRoute
+} from "./ProtectedRoute";
+
 // Type exports
 export type * from "./types/common";

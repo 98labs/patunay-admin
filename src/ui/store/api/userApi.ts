@@ -6,7 +6,7 @@ export interface User {
   id: string;
   email: string;
   name?: string;
-  role: 'admin' | 'user' | 'viewer';
+  role: 'super_user' | 'admin' | 'issuer' | 'appraiser' | 'staff' | 'viewer';
   avatar_url?: string;
   created_at: string;
   updated_at: string;
@@ -16,6 +16,7 @@ export interface User {
   first_name?: string;
   last_name?: string;
   phone?: string;
+  organization_id?: string;
 }
 
 export interface UserProfile {
@@ -120,15 +121,41 @@ export const userApi = api.injectEndpoints({
       }),
     }),
 
-    // Get current user session
+    // Get current user session with profile data
     getCurrentUser: builder.query<AuthResponse, void>({
       query: () => ({
         supabaseOperation: async () => {
-          const { data: { session }, error } = await supabase.auth.getSession();
-          if (error) throw error;
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) throw sessionError;
+
+          if (!session?.user) {
+            return { user: null, session: null };
+          }
+
+          // Get profile data with the current_user_profile view
+          const { data: profile, error: profileError } = await supabase
+            .from('current_user_profile')
+            .select('*')
+            .single();
+
+          if (profileError) {
+            console.error('Error fetching user profile:', profileError);
+            // Return auth user without profile data if profile fetch fails
+            return {
+              user: {
+                ...session.user,
+                role: 'viewer', // fallback role
+                is_active: true,
+              },
+              session,
+            };
+          }
 
           return {
-            user: session?.user || null,
+            user: {
+              ...session.user,
+              ...profile,
+            },
             session,
           };
         }

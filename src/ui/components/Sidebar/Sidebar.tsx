@@ -1,6 +1,8 @@
-import { UserProfile, NfcStatusIndicator } from "@components";
+import { UserProfile, NfcStatusIndicator, OrganizationSwitcher } from "@components";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../../store/api/userApi";
+import { usePermissions } from "../../hooks/usePermissions";
+import { useAuth } from "../../hooks/useAuth";
 import { Links, NavbarItemProps } from "./types";
 import { useMemo, useCallback } from "react";
 
@@ -55,26 +57,135 @@ const Sidebar = ({
   const navigate = useNavigate();
   const [logout] = useLogoutMutation();
 
-  const links: Links[] = useMemo(() => [
-    { name: "Dashboard", path: "/dashboard" },
-    {
-      name: "Artworks",
-      path: "/dashboard/artworks",
-      children: [
-        { name: "Register Artwork", path: "/dashboard/artworks/register" },
-        { name: "Search", path: "/dashboard/artworks/search" },
-      ],
-    },
-    {
-      name: "Admin",
-      path: "/dashboard/admin",
-      children: [
-        { name: "User Management", path: "/dashboard/admin/users" },
-        { name: "NFC Tags", path: "/dashboard/admin/nfc-tags" },
-        { name: "Devices", path: "/dashboard/admin/device" },
-      ],
-    },
-  ], []);
+  const {
+    canViewArtworks,
+    canCreateArtworks,
+    canManageOrgUsers,
+    canManageAllUsers,
+    canManageOrgNfcTags,
+    canManageAllNfcTags,
+    canManageOrganizations,
+    canViewOrgStatistics,
+    canViewAllStatistics,
+    canAttachNfcTags,
+    canCreateAppraisals,
+  } = usePermissions();
+
+  const { isSuperUser, currentOrganization } = useAuth();
+
+  const links: Links[] = useMemo(() => {
+    const navigationLinks: Links[] = [];
+
+    // Dashboard - always visible to authenticated users
+    navigationLinks.push({ name: "Dashboard", path: "/dashboard" });
+
+    // Artworks section - visible if user can view or manage artworks
+    if (canViewArtworks || canCreateArtworks) {
+      const artworkChildren: Links[] = [];
+      if (canCreateArtworks || canAttachNfcTags) {
+        artworkChildren.push({ name: "Register Artwork", path: "/dashboard/artworks/register" });
+      }
+      
+      if (canViewArtworks) {
+        artworkChildren.push({ name: "Search", path: "/dashboard/artworks/search" });
+      }
+
+      navigationLinks.push({
+        name: "Artworks",
+        path: "/dashboard/artworks",
+        children: artworkChildren.length > 0 ? artworkChildren : undefined,
+      });
+    }
+
+    // Appraisals section - visible to appraisers and those who can manage appraisals
+    if (canCreateAppraisals) {
+      navigationLinks.push({
+        name: "Appraisals",
+        path: "/dashboard/appraisals",
+      });
+    }
+
+    // Admin section - visible based on permissions
+    const adminChildren: Links[] = [];
+    
+    if (canManageOrgUsers || canManageAllUsers) {
+      adminChildren.push({ name: "User Management", path: "/dashboard/admin/users" });
+    }
+    
+    if (canManageOrgNfcTags || canManageAllNfcTags) {
+      adminChildren.push({ name: "NFC Tags", path: "/dashboard/admin/nfc-tags" });
+    }
+    
+    if (canManageOrgNfcTags || canManageAllNfcTags) {
+      adminChildren.push({ name: "Devices", path: "/dashboard/admin/device" });
+    }
+
+    if (adminChildren.length > 0) {
+      navigationLinks.push({
+        name: "Admin",
+        path: "/dashboard/admin",
+        children: adminChildren,
+      });
+    }
+
+    // Super User section - only visible to super users
+    if (isSuperUser) {
+      const superUserChildren: Links[] = [];
+      
+      if (canManageOrganizations) {
+        superUserChildren.push({ name: "Organizations", path: "/dashboard/super-admin/organizations" });
+      }
+      
+      if (canViewAllStatistics) {
+        superUserChildren.push({ name: "System Statistics", path: "/dashboard/super-admin/stats" });
+      }
+
+      if (superUserChildren.length > 0) {
+        navigationLinks.push({
+          name: "Super Admin",
+          path: "/dashboard/super-admin",
+          children: superUserChildren,
+        });
+      }
+    }
+
+    // Organization Management - visible to organization admins
+    if (currentOrganization && (canManageOrgUsers || canViewOrgStatistics)) {
+      const orgChildren: Links[] = [];
+      
+      if (canManageOrgUsers) {
+        orgChildren.push({ name: "Members", path: "/dashboard/organization/members" });
+      }
+      
+      if (canViewOrgStatistics) {
+        orgChildren.push({ name: "Statistics", path: "/dashboard/organization/stats" });
+      }
+      
+      orgChildren.push({ name: "Settings", path: "/dashboard/organization/settings" });
+
+      navigationLinks.push({
+        name: "Organization",
+        path: "/dashboard/organization",
+        children: orgChildren,
+      });
+    }
+
+    return navigationLinks;
+  }, [
+    canViewArtworks,
+    canCreateArtworks,
+    canManageOrgUsers,
+    canManageAllUsers,
+    canManageOrgNfcTags,
+    canManageAllNfcTags,
+    canManageOrganizations,
+    canViewOrgStatistics,
+    canViewAllStatistics,
+    canAttachNfcTags,
+    canCreateAppraisals,
+    isSuperUser,
+    currentOrganization,
+  ]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -104,6 +215,12 @@ const Sidebar = ({
         >
           ✖
         </button>
+        
+        {/* Organization Switcher */}
+        <div className="px-4 py-3 border-b border-base-300 dark:border-base-300">
+          <OrganizationSwitcher className="w-full" />
+        </div>
+        
         <UserProfile />
 
         <ul className="w-full p-0">
