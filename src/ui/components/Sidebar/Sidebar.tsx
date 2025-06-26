@@ -224,26 +224,32 @@ const Sidebar = ({
         </button>
         
         {/* Organization Switcher */}
-        <div className="px-4 py-3 border-b border-base-300 dark:border-base-300">
+        <div className="flex-shrink-0 px-4 py-3 border-b border-base-300 dark:border-base-300">
           <OrganizationSwitcher className="w-full" />
         </div>
         
-        <UserProfile />
+        <div className="flex-shrink-0">
+          <UserProfile />
+        </div>
 
-        <ul className="w-full p-0">
-          {links.map(({ name, path, children }) => (
-            <NavbarItem
-              currentPath={pathName.pathname}
-              key={path}
-              name={name}
-              path={path}
-              childrenLinks={children}
-              onNavigate={handleNavigate}
-            />
-          ))}
-        </ul>
+        {/* Scrollable navigation menu */}
+        <div className="flex-1 overflow-y-auto">
+          <ul className="w-full p-0">
+            {links.map(({ name, path, children }) => (
+              <NavbarItem
+                currentPath={pathName.pathname}
+                key={path}
+                name={name}
+                path={path}
+                childrenLinks={children}
+                onNavigate={handleNavigate}
+              />
+            ))}
+          </ul>
+        </div>
 
-        <div className="mt-auto">
+        {/* Fixed bottom section */}
+        <div className="flex-shrink-0 mt-auto">
           <div className="px-4 py-3 border-t border-base-300 dark:border-base-300">
             <NfcStatusIndicator compact={false} showRefreshButton={true} />
           </div>
