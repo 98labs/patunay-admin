@@ -16,7 +16,11 @@ import {
   Login,
   NotFoundPage,
   OrganizationManagementPage,
-  MigrationVerificationPage
+  MigrationVerificationPage,
+  OrganizationPage,
+  MembersPage,
+  StatisticsPage,
+  SettingsPage
 } from "./LazyComponents";
 
 // Layout components are loaded separately for better optimization
@@ -151,6 +155,46 @@ const router = createBrowserRouter([
               <SuperUserRoute>
                 <SuspenseWrapper>
                   <MigrationVerificationPage />
+                </SuspenseWrapper>
+              </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization",
+            element: (
+              <SuperUserRoute>
+                <SuspenseWrapper>
+                  <OrganizationPage />
+                </SuspenseWrapper>
+              </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization/members",
+            element: (
+              <SuperUserRoute>
+                <SuspenseWrapper>
+                  <MembersPage />
+                </SuspenseWrapper>
+              </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization/statistics",
+            element: (
+              <SuperUserRoute>
+                <SuspenseWrapper>
+                  <StatisticsPage />
+                </SuspenseWrapper>
+              </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization/settings",
+            element: (
+              <SuperUserRoute>
+                <SuspenseWrapper>
+                  <SettingsPage />
                 </SuspenseWrapper>
               </SuperUserRoute>
             ),

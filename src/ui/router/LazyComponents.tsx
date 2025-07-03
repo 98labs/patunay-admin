@@ -16,3 +16,7 @@ export const NotFoundPage = lazy(() => import('../pages/404Page'));
 // New multi-tenant components
 export const OrganizationManagementPage = lazy(() => import('../pages/OrganizationManagementPage'));
 export const MigrationVerificationPage = lazy(() => import('../pages/MigrationVerificationPage'));
+export const OrganizationPage = lazy(() => import('../pages/Organization'));
+export const MembersPage = lazy(() => import('../pages/Members'));
+export const StatisticsPage = lazy(() => import('../pages/Statistics'));
+export const SettingsPage = lazy(() => import('../pages/Settings'));

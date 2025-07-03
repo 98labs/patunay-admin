@@ -164,7 +164,7 @@ const Sidebar = ({
       }
       
       if (canViewOrgStatistics) {
-        orgChildren.push({ name: "Statistics", path: "/dashboard/organization/stats" });
+        orgChildren.push({ name: "Statistics", path: "/dashboard/organization/statistics" });
       }
       
       orgChildren.push({ name: "Settings", path: "/dashboard/organization/settings" });
