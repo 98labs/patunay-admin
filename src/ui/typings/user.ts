@@ -274,6 +274,7 @@ export const DEFAULT_PERMISSIONS = {
     'create_artworks',
   ],
   appraiser: [
+    'view_artworks',
     'create_appraisals',
     'update_appraisals',
     'view_artwork_details',
