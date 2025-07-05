@@ -143,6 +143,10 @@ const Sidebar = ({
         superUserChildren.push({ name: "Organizations", path: "/dashboard/super-admin/organizations" });
       }
       
+      if (canManageAllUsers) {
+        superUserChildren.push({ name: "Super Admins", path: "/dashboard/super-admin/super-admins" });
+      }
+      
       if (canViewAllStatistics) {
         superUserChildren.push({ name: "System Statistics", path: "/dashboard/super-admin/stats" });
       }

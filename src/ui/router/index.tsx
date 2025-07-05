@@ -20,7 +20,8 @@ import {
   OrganizationPage,
   MembersPage,
   StatisticsPage,
-  SettingsPage
+  SettingsPage,
+  SuperAdmin
 } from "./LazyComponents";
 
 // Layout components are loaded separately for better optimization
@@ -145,6 +146,16 @@ const router = createBrowserRouter([
               <SuperUserRoute>
                 <SuspenseWrapper>
                   <OrganizationManagementPage />
+                </SuspenseWrapper>
+              </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/super-admin/super-admins",
+            element: (
+              <SuperUserRoute>
+                <SuspenseWrapper>
+                  <SuperAdmin />
                 </SuspenseWrapper>
               </SuperUserRoute>
             ),
