@@ -162,7 +162,7 @@ const router = createBrowserRouter([
             ),
           },
           {
-            path: "/dashboard/super-admin/super-admins",
+            path: "/dashboard/super-admin/users",
             element: (
               <SuperUserRoute>
                 <SuspenseWrapper>

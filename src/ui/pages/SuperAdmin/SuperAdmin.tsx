@@ -50,8 +50,8 @@ const SuperAdmin = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Super Admin Management"
-        subtitle={`Managing ${superUsers.length} super admin${superUsers.length !== 1 ? 's' : ''}`}
+        title="System Users"
+        subtitle={`Managing ${superUsers.length} super admin${superUsers.length !== 1 ? 's' : ''} with system-wide access`}
       />
 
       {/* Actions Bar */}

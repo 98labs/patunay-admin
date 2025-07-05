@@ -144,7 +144,7 @@ const Sidebar = ({
       }
       
       if (canManageAllUsers) {
-        superUserChildren.push({ name: "Super Admins", path: "/dashboard/super-admin/super-admins" });
+        superUserChildren.push({ name: "System Users", path: "/dashboard/super-admin/users" });
       }
       
       if (canViewAllStatistics) {
