@@ -115,7 +115,7 @@ export const usePermissions = (organizationId?: string) => {
       canManageAllArtworks: hasPermission('manage_all_artworks'),
       canManageOrgArtworks: hasPermission('manage_org_artworks', targetOrgId) || hasPermission('manage_artworks', targetOrgId) || hasPermission('manage_all_artworks'),
       canCreateArtworks: hasPermission('create_artworks', targetOrgId) || hasPermission('manage_artworks', targetOrgId) || hasPermission('manage_org_artworks', targetOrgId) || hasPermission('manage_all_artworks'),
-      canViewArtworks: hasPermission('view_artworks', targetOrgId) || hasPermission('view_own_artworks', targetOrgId) || hasPermission('manage_all_artworks'),
+      canViewArtworks: hasPermission('view_artworks', targetOrgId) || hasPermission('view_own_artworks', targetOrgId) || hasPermission('manage_org_artworks', targetOrgId) || hasPermission('manage_all_artworks'),
       canDeleteArtworks: hasPermission('manage_org_artworks', targetOrgId) || hasPermission('manage_all_artworks'),
       
       // NFC tag management
