@@ -22,7 +22,10 @@ import {
   StatisticsPage,
   SettingsPage,
   SuperAdmin,
-  SuperAdminDashboard
+  SuperAdminDashboard,
+  SuperAdminTest,
+  SuperAdminSimple,
+  DebugPermissions
 } from "./LazyComponents";
 
 // Layout components are loaded separately for better optimization
@@ -169,6 +172,14 @@ const router = createBrowserRouter([
                   <SuperAdmin />
                 </SuspenseWrapper>
               </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/debug-permissions",
+            element: (
+              <SuspenseWrapper>
+                <DebugPermissions />
+              </SuspenseWrapper>
             ),
           },
           {
