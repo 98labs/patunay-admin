@@ -69,6 +69,7 @@ const Sidebar = ({
     canViewAllStatistics,
     canAttachNfcTags,
     canCreateAppraisals,
+    canManageOrgSettings,
   } = usePermissions();
 
   const { isSuperUser, currentOrganization, user, organizations } = useAuth();
@@ -109,8 +110,8 @@ const Sidebar = ({
     // Management section - visible based on permissions
     const managementChildren: Links[] = [];
     
-    // User Management - exclude from issuer role
-    if ((canManageOrgUsers || canManageAllUsers) && user?.role !== 'issuer') {
+    // User Management - based on permissions only
+    if (canManageOrgUsers || canManageAllUsers) {
       managementChildren.push({ name: "User Management", path: "/dashboard/admin/users" });
     }
     
@@ -124,7 +125,7 @@ const Sidebar = ({
 
     if (managementChildren.length > 0) {
       // Change section name based on user's primary capabilities
-      const hasUserManagement = (canManageOrgUsers || canManageAllUsers) && user?.role !== 'issuer';
+      const hasUserManagement = canManageOrgUsers || canManageAllUsers;
       const sectionName = hasUserManagement ? "Admin" : "Tools";
       
       navigationLinks.push({
@@ -155,8 +156,8 @@ const Sidebar = ({
       }
     }
 
-    // Organization Management - visible to organization admins (exclude issuer role)
-    if (currentOrganization && (canManageOrgUsers || canViewOrgStatistics) && user?.role !== 'issuer') {
+    // Organization Management - visible based on permissions
+    if (currentOrganization && (canManageOrgUsers || canViewOrgStatistics || canManageOrgSettings)) {
       const orgChildren: Links[] = [];
       
       if (canManageOrgUsers) {
@@ -167,13 +168,17 @@ const Sidebar = ({
         orgChildren.push({ name: "Statistics", path: "/dashboard/organization/statistics" });
       }
       
-      orgChildren.push({ name: "Settings", path: "/dashboard/organization/settings" });
+      if (canManageOrgSettings) {
+        orgChildren.push({ name: "Settings", path: "/dashboard/organization/settings" });
+      }
 
-      navigationLinks.push({
-        name: "Organization",
-        path: "/dashboard/organization",
-        children: orgChildren,
-      });
+      if (orgChildren.length > 0) {
+        navigationLinks.push({
+          name: "Organization",
+          path: "/dashboard/organization",
+          children: orgChildren,
+        });
+      }
     }
 
     return navigationLinks;
@@ -189,9 +194,9 @@ const Sidebar = ({
     canViewAllStatistics,
     canAttachNfcTags,
     canCreateAppraisals,
+    canManageOrgSettings,
     isSuperUser,
     currentOrganization,
-    user?.role,
   ]);
 
   const handleLogout = useCallback(async () => {
