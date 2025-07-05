@@ -26,7 +26,7 @@ const DetailArtwork = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { canManageAppraisals } = useCanPerform();
-  const { canViewAppraisalDetails } = usePermissions();
+  const { canViewAppraisalDetails, canCreateAppraisals } = usePermissions();
   const [artwork, setArtwork] = useState<ArtworkType | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -378,7 +378,8 @@ const DetailArtwork = () => {
             <AppraisalInfo 
               appraisals={appraisals} 
               artwork_id={artwork.id} 
-              canManageAppraisals={canManageAppraisals} 
+              canManageAppraisals={canManageAppraisals}
+              canCreateAppraisals={canCreateAppraisals}
             />
           </>
         )}
