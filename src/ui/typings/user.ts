@@ -269,7 +269,6 @@ export const DEFAULT_PERMISSIONS = {
     'grant_cross_org_permissions',
   ],
   issuer: [
-    'manage_nfc_tags',
     'attach_nfc_tags',
     'view_own_artworks',
     'create_artworks',
