@@ -32,11 +32,17 @@ const SuperAdmin = () => {
   // Extract users from response
   const superUsers = usersResponse?.data || [];
   
+  // Debug log
+  console.log('SuperAdmin - usersResponse:', usersResponse);
+  console.log('SuperAdmin - superUsers:', superUsers);
+  
   // Apply search filter
   const filteredSuperUsers = superUsers.filter(user => {
     const searchLower = searchTerm.toLowerCase();
-    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase();
-    const email = user.email.toLowerCase();
+    const firstName = (user.first_name || '').toString();
+    const lastName = (user.last_name || '').toString();
+    const fullName = `${firstName} ${lastName}`.toLowerCase();
+    const email = (user.email || '').toString().toLowerCase();
     
     return fullName.includes(searchLower) || email.includes(searchLower);
   });
@@ -117,7 +123,7 @@ const SuperAdmin = () => {
                           'Unnamed User'
                         )}
                       </h3>
-                      <p className="text-sm text-base-content/70">{user.email}</p>
+                      <p className="text-sm text-base-content/70">{String(user.email || '')}</p>
                     </div>
                   </div>
                   <div className="badge badge-primary badge-sm">Super Admin</div>
@@ -144,26 +150,44 @@ const SuperAdmin = () => {
                   
                   <div className="flex justify-between">
                     <span className="text-base-content/60">Created:</span>
-                    <span>{format(new Date(user.created_at), 'MMM d, yyyy')}</span>
+                    <span>
+                      {(() => {
+                        try {
+                          return user.created_at ? format(new Date(user.created_at), 'MMM d, yyyy') : 'Unknown';
+                        } catch (e) {
+                          console.error('Error formatting created date:', e, user.created_at);
+                          return 'Invalid date';
+                        }
+                      })()}
+                    </span>
                   </div>
                   
                   {user.last_login_at && (
                     <div className="flex justify-between">
                       <span className="text-base-content/60">Last Login:</span>
-                      <span>{format(new Date(user.last_login_at), 'MMM d, yyyy')}</span>
+                      <span>
+                        {(() => {
+                          try {
+                            return format(new Date(user.last_login_at), 'MMM d, yyyy');
+                          } catch (e) {
+                            console.error('Error formatting last login date:', e, user.last_login_at);
+                            return 'Invalid date';
+                          }
+                        })()}
+                      </span>
                     </div>
                   )}
                 </div>
 
                 {/* Organization Info */}
-                {user.organizations && user.organizations.length > 0 && (
+                {user.organizations && Array.isArray(user.organizations) && user.organizations.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-base-300">
                     <p className="text-sm font-medium mb-2">Organizations:</p>
                     <div className="space-y-1">
-                      {user.organizations.map((org) => (
-                        <div key={org.id} className="text-sm">
-                          <span className="font-medium">{org.organization?.name}</span>
-                          {org.is_primary && (
+                      {user.organizations.map((org, index) => (
+                        <div key={org?.id || index} className="text-sm">
+                          <span className="font-medium">{org?.organization?.name || org?.name || 'Unknown Organization'}</span>
+                          {org?.is_primary && (
                             <span className="badge badge-sm badge-outline ml-2">Primary</span>
                           )}
                         </div>
@@ -221,7 +245,18 @@ const SuperAdmin = () => {
           </div>
           <div className="stat-title">Organizations</div>
           <div className="stat-value">
-            {new Set(superUsers.flatMap(u => u.organizations?.map(o => o.organization_id) || [])).size}
+            {(() => {
+              try {
+                const orgIds = superUsers.flatMap(u => {
+                  if (!u.organizations || !Array.isArray(u.organizations)) return [];
+                  return u.organizations.map(o => o?.organization_id || o?.id).filter(Boolean);
+                });
+                return new Set(orgIds).size;
+              } catch (e) {
+                console.error('Error calculating organizations:', e);
+                return 0;
+              }
+            })()}
           </div>
           <div className="stat-desc">Unique organizations managed</div>
         </div>
