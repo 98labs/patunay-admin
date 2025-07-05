@@ -156,8 +156,8 @@ const Sidebar = ({
       }
     }
 
-    // Organization Management - visible based on permissions
-    if (currentOrganization && (canManageOrgUsers || canViewOrgStatistics || canManageOrgSettings)) {
+    // Organization Management - visible only to super users
+    if (isSuperUser && currentOrganization && (canManageOrgUsers || canViewOrgStatistics || canManageOrgSettings)) {
       const orgChildren: Links[] = [];
       
       if (canManageOrgUsers) {
