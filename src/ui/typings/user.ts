@@ -258,6 +258,8 @@ export const DEFAULT_PERMISSIONS = {
     'view_all_statistics',
     'manage_system',
     'manage_all_appraisals',
+    'manage_all_locations',
+    'access_all_locations',
   ],
   admin: [
     'manage_org_users',
@@ -267,6 +269,8 @@ export const DEFAULT_PERMISSIONS = {
     'manage_org_settings',
     'manage_org_appraisals',
     'grant_cross_org_permissions',
+    'manage_locations',
+    'view_all_locations',
   ],
   issuer: [
     'attach_nfc_tags',
@@ -332,12 +336,19 @@ export const PERMISSION_DESCRIPTIONS = {
   
   // Legacy permissions (for backward compatibility)
   manage_users: 'Create, update, and delete user accounts',
+  
+  // Location permissions
+  manage_all_locations: 'Manage locations across all organizations',
+  manage_locations: 'Create, update, and delete locations within organization',
+  view_all_locations: 'View all locations within organization',
+  access_all_locations: 'Access data from all locations',
 } as const;
 
 // Permission categories for better organization
 export const PERMISSION_CATEGORIES = {
   organizations: 'Organizations',
   users: 'User Management',
+  locations: 'Location Management',
   artworks: 'Artwork Management',
   nfc_tags: 'NFC Tags',
   appraisals: 'Appraisals',

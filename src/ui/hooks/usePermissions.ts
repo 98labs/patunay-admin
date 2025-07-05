@@ -141,6 +141,12 @@ export const usePermissions = (organizationId?: string) => {
       canManageSystem: hasPermission('manage_system'),
       canGrantCrossOrgPermissions: hasPermission('grant_cross_org_permissions', targetOrgId),
       
+      // Location management
+      canManageAllLocations: hasPermission('manage_all_locations'),
+      canManageLocations: hasPermission('manage_locations', targetOrgId) || hasPermission('manage_all_locations'),
+      canViewAllLocations: hasPermission('view_all_locations', targetOrgId) || hasPermission('manage_locations', targetOrgId) || hasPermission('manage_all_locations'),
+      canAccessAllLocations: hasPermission('access_all_locations', targetOrgId) || hasPermission('manage_all_locations'),
+      
       // Cross-organizational capabilities
       canWorkAcrossOrganizations: isIssuer || isAppraiser || isSuperUser,
       canAccessMultipleOrgs: isSuperUser || isIssuer || isAppraiser,
