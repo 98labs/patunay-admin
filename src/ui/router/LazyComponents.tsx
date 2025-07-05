@@ -20,7 +20,7 @@ export const MigrationVerificationPage = lazy(() => import('../pages/MigrationVe
 export const OrganizationPage = lazy(() => import('../pages/Organization'));
 export const MembersPage = lazy(() => import('../pages/Members'));
 export const StatisticsPage = lazy(() => import('../pages/OrganizationStatistics'));
-export const SettingsPage = lazy(() => import('../pages/Settings'));
+export const SettingsPage = lazy(() => import('../pages/OrganizationSettings'));
 export const SuperAdmin = lazy(() => import('../pages/SuperAdmin/SuperAdmin'));
 export const SuperAdminDashboard = lazy(() => import('../pages/SuperAdmin/SuperAdminDashboard'));
 export const SystemStatistics = lazy(() => import('../pages/SuperAdmin/SystemStatistics'));
