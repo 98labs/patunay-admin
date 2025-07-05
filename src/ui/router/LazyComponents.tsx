@@ -6,6 +6,7 @@ export const Artworks = lazy(() => import('../pages/Artworks'));
 export const RegisterArtwork = lazy(() => import('../pages/RegisterArtwork'));
 export const SearchArtwork = lazy(() => import('../pages/SearchArtwork'));
 export const DetailedArtwork = lazy(() => import('../pages/DetailedArtwork'));
+export const Appraisals = lazy(() => import('../pages/Appraisals'));
 export const Admin = lazy(() => import('../pages/Admin'));
 export const NfcTags = lazy(() => import('../pages/NfcTags'));
 export const UserManagement = lazy(() => import('../pages/UserManagement'));

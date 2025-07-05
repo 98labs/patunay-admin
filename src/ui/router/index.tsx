@@ -9,6 +9,7 @@ import {
   RegisterArtwork,
   SearchArtwork,
   DetailedArtwork,
+  Appraisals,
   Admin,
   NfcTags,
   UserManagement,
@@ -131,6 +132,14 @@ const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <SearchArtwork />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: "/dashboard/appraisals",
+            element: (
+              <SuspenseWrapper>
+                <Appraisals />
               </SuspenseWrapper>
             ),
           },
