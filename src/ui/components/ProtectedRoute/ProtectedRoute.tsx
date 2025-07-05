@@ -161,3 +161,24 @@ export const AppraisalRoute: React.FC<{ children: React.ReactNode }> = ({ childr
     {children}
   </ProtectedRoute>
 );
+
+export const OrganizationRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { canViewOrgStatistics, canManageOrgSettings, canManageOrganizations } = usePermissions();
+  const { isLoading, isSuperUser } = useAuth();
+  
+  // Show loading while user data is being fetched
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
+  
+  // Allow access if user is super user or has any organization permission
+  if (!isSuperUser && !canViewOrgStatistics && !canManageOrgSettings && !canManageOrganizations) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <>{children}</>;
+};

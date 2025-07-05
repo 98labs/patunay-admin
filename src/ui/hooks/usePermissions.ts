@@ -135,6 +135,7 @@ export const usePermissions = (organizationId?: string) => {
       canViewAllStatistics: hasPermission('view_all_statistics'),
       canViewOrgStatistics: hasPermission('view_org_statistics', targetOrgId) || hasPermission('view_statistics', targetOrgId),
       canViewPublicStatistics: hasPermission('view_public_statistics', targetOrgId),
+      canExportData: hasPermission('export_data', targetOrgId) || hasPermission('manage_org_settings', targetOrgId) || isSuperUser,
       
       // System management
       canManageSystem: hasPermission('manage_system'),

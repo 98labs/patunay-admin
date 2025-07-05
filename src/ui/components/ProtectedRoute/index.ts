@@ -5,5 +5,6 @@ export {
   UserManagementRoute,
   ArtworkManagementRoute,
   NfcManagementRoute,
-  AppraisalRoute
+  AppraisalRoute,
+  OrganizationRoute
 } from './ProtectedRoute';

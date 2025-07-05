@@ -2,7 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy } from "react";
 import Providers from "../Providers";
 import SuspenseWrapper from "../layouts/SuspenseWrapper";
-import { SuperUserRoute, UserManagementRoute, NfcManagementRoute, ArtworkManagementRoute } from "../components/ProtectedRoute";
+import { SuperUserRoute, UserManagementRoute, NfcManagementRoute, ArtworkManagementRoute, OrganizationRoute } from "../components/ProtectedRoute";
 import {
   Dashboard,
   Artworks,
@@ -215,41 +215,41 @@ const router = createBrowserRouter([
           {
             path: "/dashboard/organization",
             element: (
-              <SuperUserRoute>
+              <OrganizationRoute>
                 <SuspenseWrapper>
                   <OrganizationPage />
                 </SuspenseWrapper>
-              </SuperUserRoute>
+              </OrganizationRoute>
             ),
           },
           {
             path: "/dashboard/organization/members",
             element: (
-              <SuperUserRoute>
+              <OrganizationRoute>
                 <SuspenseWrapper>
                   <MembersPage />
                 </SuspenseWrapper>
-              </SuperUserRoute>
+              </OrganizationRoute>
             ),
           },
           {
             path: "/dashboard/organization/statistics",
             element: (
-              <SuperUserRoute>
+              <OrganizationRoute>
                 <SuspenseWrapper>
                   <StatisticsPage />
                 </SuspenseWrapper>
-              </SuperUserRoute>
+              </OrganizationRoute>
             ),
           },
           {
             path: "/dashboard/organization/settings",
             element: (
-              <SuperUserRoute>
+              <OrganizationRoute>
                 <SuspenseWrapper>
                   <SettingsPage />
                 </SuspenseWrapper>
-              </SuperUserRoute>
+              </OrganizationRoute>
             ),
           },
           {
