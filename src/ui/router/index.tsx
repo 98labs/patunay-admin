@@ -23,6 +23,7 @@ import {
   SettingsPage,
   SuperAdmin,
   SuperAdminDashboard,
+  SystemStatistics,
   SuperAdminTest,
   SuperAdminSimple,
   DebugPermissions
@@ -170,6 +171,16 @@ const router = createBrowserRouter([
               <SuperUserRoute>
                 <SuspenseWrapper>
                   <SuperAdmin />
+                </SuspenseWrapper>
+              </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/super-admin/statistics",
+            element: (
+              <SuperUserRoute>
+                <SuspenseWrapper>
+                  <SystemStatistics />
                 </SuspenseWrapper>
               </SuperUserRoute>
             ),

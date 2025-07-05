@@ -148,7 +148,7 @@ const Sidebar = ({
       }
       
       if (canViewAllStatistics) {
-        superUserChildren.push({ name: "System Statistics", path: "/dashboard/super-admin/stats" });
+        superUserChildren.push({ name: "System Statistics", path: "/dashboard/super-admin/statistics" });
       }
 
       if (superUserChildren.length > 0) {

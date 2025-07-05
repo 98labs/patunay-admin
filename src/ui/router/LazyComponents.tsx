@@ -22,6 +22,7 @@ export const StatisticsPage = lazy(() => import('../pages/Statistics'));
 export const SettingsPage = lazy(() => import('../pages/Settings'));
 export const SuperAdmin = lazy(() => import('../pages/SuperAdmin/SuperAdmin'));
 export const SuperAdminDashboard = lazy(() => import('../pages/SuperAdmin/SuperAdminDashboard'));
+export const SystemStatistics = lazy(() => import('../pages/SuperAdmin/SystemStatistics'));
 export const SuperAdminTest = lazy(() => import('../pages/SuperAdmin/SuperAdminTest'));
 export const SuperAdminSimple = lazy(() => import('../pages/SuperAdmin/SuperAdminSimple'));
 export const DebugPermissions = lazy(() => import('../pages/SuperAdmin/DebugPermissions'));
