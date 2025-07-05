@@ -13,7 +13,9 @@ const SuperAdminDashboard = () => {
   const { data: usersResponse } = useGetUsersQuery({
     page: 1,
     pageSize: 100,
-    role: 'super_user' as const
+    filters: {
+      role: 'super_user' as const
+    }
   });
 
   const { data: organizationsResponse } = useGetOrganizationsQuery({
@@ -21,7 +23,7 @@ const SuperAdminDashboard = () => {
     pageSize: 100
   });
 
-  const superUserCount = usersResponse?.users?.length || 0;
+  const superUserCount = usersResponse?.data?.length || 0;
   const organizationCount = organizationsResponse?.organizations?.length || 0;
 
   const navigationCards = [

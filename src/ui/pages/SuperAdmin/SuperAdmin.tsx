@@ -22,13 +22,15 @@ const SuperAdmin = () => {
   const { data: usersResponse, isLoading, refetch } = useGetUsersQuery({
     page: 1,
     pageSize: 100, // Get more users to ensure we get all super users
-    role: 'super_user' as const
+    filters: {
+      role: 'super_user' as const
+    }
   }, {
     refetchOnMountOrArgChange: true,
   });
 
   // Extract users from response
-  const superUsers = usersResponse?.users || [];
+  const superUsers = usersResponse?.data || [];
   
   // Apply search filter
   const filteredSuperUsers = superUsers.filter(user => {
