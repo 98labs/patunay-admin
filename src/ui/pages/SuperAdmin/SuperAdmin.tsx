@@ -11,6 +11,8 @@ const SuperAdmin = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   
   // Component is now protected by route, no need to check here
 
@@ -230,18 +232,33 @@ const SuperAdmin = () => {
                     <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
                       <li>
                         <a onClick={() => {
-                          console.log('View user details:', user.id);
-                          // For now, just show user info in console
-                          alert(`User Details:\n\nID: ${user.id}\nName: ${user.first_name} ${user.last_name}\nEmail: ${user.email}\nRole: ${user.role}\nActive: ${user.is_active ? 'Yes' : 'No'}`);
+                          setSelectedUser(user);
+                          setShowDetailsModal(true);
                         }}>
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
                           View Details
                         </a>
                       </li>
                       <li>
                         <a onClick={() => {
                           navigator.clipboard.writeText(user.id);
-                          alert('User ID copied to clipboard!');
+                          // Show a toast notification instead of alert
+                          const toast = document.createElement('div');
+                          toast.className = 'toast toast-top toast-end';
+                          toast.innerHTML = `
+                            <div class="alert alert-success">
+                              <span>User ID copied!</span>
+                            </div>
+                          `;
+                          document.body.appendChild(toast);
+                          setTimeout(() => toast.remove(), 2000);
                         }}>
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
                           Copy User ID
                         </a>
                       </li>
@@ -249,8 +266,20 @@ const SuperAdmin = () => {
                         <li>
                           <a onClick={() => {
                             navigator.clipboard.writeText(user.email);
-                            alert('Email copied to clipboard!');
+                            // Show a toast notification instead of alert
+                            const toast = document.createElement('div');
+                            toast.className = 'toast toast-top toast-end';
+                            toast.innerHTML = `
+                              <div class="alert alert-success">
+                                <span>Email copied!</span>
+                              </div>
+                            `;
+                            document.body.appendChild(toast);
+                            setTimeout(() => toast.remove(), 2000);
                           }}>
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
                             Copy Email
                           </a>
                         </li>
@@ -284,6 +313,124 @@ const SuperAdmin = () => {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* User Details Modal */}
+      {showDetailsModal && selectedUser && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-2xl">
+            <h3 className="font-bold text-lg mb-4">User Details</h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <UserAvatar 
+                  user={{
+                    first_name: selectedUser.first_name || '',
+                    last_name: selectedUser.last_name || '',
+                    avatar_url: selectedUser.avatar_url || ''
+                  }}
+                  size="xl"
+                />
+                <div>
+                  <h4 className="text-xl font-semibold">
+                    {selectedUser.first_name && selectedUser.last_name 
+                      ? `${selectedUser.first_name} ${selectedUser.last_name}`
+                      : 'No name provided'
+                    }
+                  </h4>
+                  <p className="text-base-content/70">{selectedUser.email}</p>
+                </div>
+              </div>
+
+              <div className="divider"></div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">
+                    <span className="label-text font-semibold">User ID</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-mono">{selectedUser.id}</p>
+                    <button 
+                      className="btn btn-xs btn-ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedUser.id);
+                      }}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text font-semibold">Role</span>
+                  </label>
+                  <div className="badge badge-primary">{selectedUser.role}</div>
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text font-semibold">Status</span>
+                  </label>
+                  <div className={`badge ${selectedUser.is_active ? 'badge-success' : 'badge-error'}`}>
+                    {selectedUser.is_active ? 'Active' : 'Inactive'}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text font-semibold">Phone</span>
+                  </label>
+                  <p className="text-sm">{selectedUser.phone || 'Not provided'}</p>
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text font-semibold">Created</span>
+                  </label>
+                  <p className="text-sm">
+                    {selectedUser.created_at 
+                      ? new Date(selectedUser.created_at).toLocaleDateString()
+                      : 'Unknown'
+                    }
+                  </p>
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text font-semibold">Last Login</span>
+                  </label>
+                  <p className="text-sm">
+                    {selectedUser.last_login_at 
+                      ? new Date(selectedUser.last_login_at).toLocaleDateString()
+                      : 'Never'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-action">
+              <button 
+                className="btn"
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  setSelectedUser(null);
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+          <div 
+            className="modal-backdrop"
+            onClick={() => {
+              setShowDetailsModal(false);
+              setSelectedUser(null);
+            }}
+          ></div>
         </div>
       )}
     </div>
