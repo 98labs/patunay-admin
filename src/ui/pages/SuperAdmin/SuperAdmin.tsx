@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { PageHeader, Loading, UserAvatar } from "@components";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import supabase from "../../supabase";
+import { format } from "date-fns";
 
 const SuperAdmin = () => {
   const navigate = useNavigate();
   const { isSuperUser } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   
-  // Component is now protected by route, no need to check here
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
 
   // Fetch users directly with Supabase
   useEffect(() => {
@@ -70,7 +73,7 @@ const SuperAdmin = () => {
         // Map profiles and add email for current user
         const mappedProfiles = (profiles || []).map(profile => {
           // If this is the current user, we can add their email
-          const email = profile.id === currentUser?.id ? currentUser.email : `User ${profile.first_name || profile.id}`;
+          const email = profile.id === currentUser?.id ? currentUser.email : `user-${profile.id.substring(0, 8)}@system.local`;
           
           return {
             ...profile,
@@ -114,14 +117,39 @@ const SuperAdmin = () => {
     
     fetchUsers();
   }, []);
-  
+
+  // Filter users based on search
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      if (!searchTerm) return true;
+      const searchLower = searchTerm.toLowerCase();
+      const fullName = `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase();
+      return (
+        fullName.includes(searchLower) ||
+        user.email?.toLowerCase().includes(searchLower) ||
+        user.phone?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [users, searchTerm]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredUsers.length / pageSize);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   if (isLoading) {
     return <Loading fullScreen={false} />;
   }
 
   if (error) {
     return (
-      <div className="p-6">
+      <div className="space-y-6">
+        <PageHeader 
+          title="System Users"
+          subtitle="Manage super admin users"
+        />
         <div className="alert alert-error">
           <span>Error loading users: {error}</span>
         </div>
@@ -129,192 +157,237 @@ const SuperAdmin = () => {
     );
   }
 
-  // Filter users based on search term
-  const filteredUsers = users.filter((user) => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      user.email?.toLowerCase().includes(searchLower) ||
-      user.first_name?.toLowerCase().includes(searchLower) ||
-      user.last_name?.toLowerCase().includes(searchLower)
-    );
-  });
-
   return (
     <div className="space-y-6">
       <PageHeader 
         title="System Users"
         subtitle="Manage super admin users across the system"
-      />
-
-      {/* Search Bar */}
-      <div className="card bg-base-100 shadow-md">
-        <div className="card-body">
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Search Users</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              className="input input-bordered w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Results Count */}
-      <div className="flex justify-between items-center">
-        <div className="text-sm text-base-content/70">
-          Showing {filteredUsers.length} of {users.length} super admin users
-        </div>
-        {users.length === 0 && (
+        action={
           <button 
-            className="btn btn-sm btn-primary"
+            className="btn btn-primary"
             onClick={() => window.location.reload()}
           >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
             Refresh
           </button>
-        )}
-      </div>
+        }
+      />
 
-      {/* User Cards Grid */}
-      {filteredUsers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredUsers.map((user) => (
-            <div key={user.id} className="card bg-base-100 shadow-md hover:shadow-xl transition-shadow">
-              <div className="card-body">
-                <div className="flex items-start gap-4">
-                  <UserAvatar 
-                    user={{
-                      first_name: user.first_name || '',
-                      last_name: user.last_name || '',
-                      avatar_url: user.avatar_url || ''
-                    }}
-                    size="lg"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg truncate">
-                      {user.first_name && user.last_name 
-                        ? `${user.first_name} ${user.last_name}`
-                        : user.email || 'Unknown User'
-                      }
-                    </h3>
-                    <p className="text-sm text-base-content/70 truncate">{user.email || 'No email'}</p>
-                    
-                    <div className="mt-3 space-y-1">
-                      <div className="badge badge-primary badge-sm">
-                        {user.role || 'super_user'}
-                      </div>
-                      
-                      {user.is_active ? (
-                        <div className="badge badge-success badge-sm">Active</div>
-                      ) : (
-                        <div className="badge badge-error badge-sm">Inactive</div>
-                      )}
-                    </div>
-
-                    {user.created_at && (
-                      <div className="mt-3 text-xs text-base-content/60">
-                        <p>Joined: {new Date(user.created_at).toLocaleDateString()}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="card-actions justify-end mt-4">
-                  <div className="dropdown dropdown-end">
-                    <label tabIndex={0} className="btn btn-sm btn-ghost">
-                      Actions
-                    </label>
-                    <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-                      <li>
-                        <a onClick={() => {
-                          setSelectedUser(user);
-                          setShowDetailsModal(true);
-                        }}>
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          View Details
-                        </a>
-                      </li>
-                      <li>
-                        <a onClick={() => {
-                          navigator.clipboard.writeText(user.id);
-                          // Show a toast notification instead of alert
-                          const toast = document.createElement('div');
-                          toast.className = 'toast toast-top toast-end';
-                          toast.innerHTML = `
-                            <div class="alert alert-success">
-                              <span>User ID copied!</span>
-                            </div>
-                          `;
-                          document.body.appendChild(toast);
-                          setTimeout(() => toast.remove(), 2000);
-                        }}>
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                          Copy User ID
-                        </a>
-                      </li>
-                      {user.email && user.email !== 'No email available' && (
-                        <li>
-                          <a onClick={() => {
-                            navigator.clipboard.writeText(user.email);
-                            // Show a toast notification instead of alert
-                            const toast = document.createElement('div');
-                            toast.className = 'toast toast-top toast-end';
-                            toast.innerHTML = `
-                              <div class="alert alert-success">
-                                <span>Email copied!</span>
-                              </div>
-                            `;
-                            document.body.appendChild(toast);
-                            setTimeout(() => toast.remove(), 2000);
-                          }}>
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            Copy Email
-                          </a>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-              </div>
+      {/* Search and Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <div className="form-control">
+            <div className="input-group">
+              <span className="bg-base-200">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                placeholder="Search by name, email or phone..."
+                className="input input-bordered w-full"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="card bg-base-100 shadow-md">
-          <div className="card-body text-center py-12">
-            <p className="text-base-content/70">
-              {searchTerm 
-                ? "No super admin users found matching your search."
-                : "No super admin users found in the system."
-              }
-            </p>
-            {!searchTerm && (
-              <div className="mt-4">
-                <p className="text-sm text-base-content/60 mb-4">
-                  To create super admin users, you need to update the user's role in the database.
-                </p>
-                <div className="mockup-code text-left max-w-md mx-auto">
-                  <pre><code>UPDATE profiles</code></pre>
-                  <pre><code>SET role = 'super_user'</code></pre>
-                  <pre><code>WHERE email = 'user@example.com';</code></pre>
-                </div>
-              </div>
-            )}
           </div>
         </div>
-      )}
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-title">Total Super Admins</div>
+            <div className="stat-value text-primary">{users.length}</div>
+            <div className="stat-desc">System administrators</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Users Table */}
+      <div className="card bg-base-100 shadow-md">
+        <div className="overflow-x-auto">
+          <table className="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Status</th>
+                <th>Phone</th>
+                <th>Last Login</th>
+                <th>Created</th>
+                <th className="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user) => (
+                  <tr key={user.id} className="hover">
+                    <td>
+                      <div className="flex items-center space-x-3">
+                        <UserAvatar
+                          user={{
+                            first_name: user.first_name,
+                            last_name: user.last_name,
+                            avatar_url: user.avatar_url
+                          }}
+                          size="md"
+                        />
+                        <div>
+                          <div className="font-medium">
+                            {user.first_name && user.last_name
+                              ? `${user.first_name} ${user.last_name}`
+                              : 'No name'
+                            }
+                          </div>
+                          <div className="text-sm text-base-content/60">
+                            {user.email}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <span className={`badge ${user.is_active ? 'badge-success' : 'badge-error'} badge-sm`}>
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                        <span className="badge badge-primary badge-sm">
+                          {user.role}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="text-sm">
+                        {user.phone || '-'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="text-sm">
+                        {user.last_login_at 
+                          ? format(new Date(user.last_login_at), 'MMM d, yyyy')
+                          : 'Never'
+                        }
+                      </span>
+                    </td>
+                    <td>
+                      <span className="text-sm">
+                        {format(new Date(user.created_at), 'MMM d, yyyy')}
+                      </span>
+                    </td>
+                    <td className="text-right">
+                      <div className="dropdown dropdown-end">
+                        <label tabIndex={0} className="btn btn-ghost btn-sm">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                          </svg>
+                        </label>
+                        <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+                          <li>
+                            <a onClick={() => {
+                              setSelectedUser(user);
+                              setShowDetailsModal(true);
+                            }}>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              View Details
+                            </a>
+                          </li>
+                          <div className="divider my-0"></div>
+                          <li>
+                            <a onClick={() => {
+                              navigator.clipboard.writeText(user.id);
+                              // Show toast
+                              const toast = document.createElement('div');
+                              toast.className = 'toast toast-top toast-end';
+                              toast.innerHTML = '<div class="alert alert-success"><span>User ID copied!</span></div>';
+                              document.body.appendChild(toast);
+                              setTimeout(() => toast.remove(), 2000);
+                            }}>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                              Copy User ID
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="text-center py-8">
+                    <div className="text-base-content/60">
+                      {searchTerm 
+                        ? "No users found matching your search."
+                        : "No super admin users found."
+                      }
+                    </div>
+                    {!searchTerm && (
+                      <div className="mt-4">
+                        <p className="text-sm text-base-content/50 mb-2">
+                          To create super admin users, update the user's role in the database:
+                        </p>
+                        <div className="mockup-code text-left max-w-md mx-auto">
+                          <pre><code>UPDATE profiles SET role = 'super_user' WHERE email = 'user@example.com';</code></pre>
+                        </div>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="card-body border-t">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-base-content/60">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredUsers.length)} of {filteredUsers.length} users
+              </div>
+              <div className="join">
+                <button 
+                  className="join-item btn btn-sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  «
+                </button>
+                <button 
+                  className="join-item btn btn-sm"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  ‹
+                </button>
+                <button className="join-item btn btn-sm btn-active">
+                  Page {currentPage}
+                </button>
+                <button 
+                  className="join-item btn btn-sm"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  ›
+                </button>
+                <button 
+                  className="join-item btn btn-sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  »
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* User Details Modal */}
       {showDetailsModal && selectedUser && (
@@ -351,14 +424,21 @@ const SuperAdmin = () => {
                     <span className="label-text font-semibold">User ID</span>
                   </label>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-mono">{selectedUser.id}</p>
+                    <p className="text-sm font-mono bg-base-200 px-2 py-1 rounded">{selectedUser.id}</p>
                     <button 
                       className="btn btn-xs btn-ghost"
                       onClick={() => {
                         navigator.clipboard.writeText(selectedUser.id);
+                        const toast = document.createElement('div');
+                        toast.className = 'toast toast-top toast-end';
+                        toast.innerHTML = '<div class="alert alert-success"><span>Copied!</span></div>';
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 2000);
                       }}
                     >
-                      Copy
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -392,7 +472,7 @@ const SuperAdmin = () => {
                   </label>
                   <p className="text-sm">
                     {selectedUser.created_at 
-                      ? new Date(selectedUser.created_at).toLocaleDateString()
+                      ? format(new Date(selectedUser.created_at), 'MMM d, yyyy h:mm a')
                       : 'Unknown'
                     }
                   </p>
@@ -404,7 +484,7 @@ const SuperAdmin = () => {
                   </label>
                   <p className="text-sm">
                     {selectedUser.last_login_at 
-                      ? new Date(selectedUser.last_login_at).toLocaleDateString()
+                      ? format(new Date(selectedUser.last_login_at), 'MMM d, yyyy h:mm a')
                       : 'Never'
                     }
                   </p>
