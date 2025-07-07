@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Building2, Phone, Mail, Users } from 'lucide-react';
-import { PageHeader, Loading } from '@components';
+import { PageHeader, Loading, DeleteConfirmationModal } from '@components';
 import { LocationForm } from '../../components/locations/LocationForm';
 import { getLocations, createLocation, updateLocation, deleteLocation, LocationWithManager, getFullName } from '../../lib/api/locations';
 import { CreateLocationData, UpdateLocationData } from '../../typings';
@@ -254,25 +254,14 @@ const Locations: React.FC = () => {
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteModalOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg">Delete Location</h3>
-            <p className="py-4">
-              Are you sure you want to delete "{locationToDelete?.name}"? This action cannot be undone.
-              All users assigned to this location will be unassigned.
-            </p>
-            <div className="modal-action">
-              <button className="btn" onClick={() => setDeleteModalOpen(false)}>
-                Cancel
-              </button>
-              <button className="btn btn-error" onClick={handleDelete}>
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Location"
+        message="Are you sure you want to delete this location? All users assigned to this location will be unassigned."
+        itemName={locationToDelete?.name}
+      />
     </div>
   );
 };

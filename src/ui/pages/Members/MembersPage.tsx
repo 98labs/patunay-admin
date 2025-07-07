@@ -3,7 +3,9 @@ import {
   PageHeader, 
   Loading,
   UserAvatar,
-  ConfirmationModal,
+  InviteMemberModal,
+  EditMemberModal,
+  DeleteConfirmationModal,
   FormField
 } from '@components';
 import { 
@@ -109,14 +111,14 @@ const MembersPage: React.FC = () => {
   }, [membersResponse?.users, searchTerm, roleFilter, statusFilter]);
 
   // Handlers
-  const handleInviteMember = async () => {
+  const handleInviteMember = async (data: typeof inviteForm) => {
     try {
       // Generate a temporary password
       const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
       
       const result = await createUser({
         userData: {
-          ...inviteForm,
+          ...data,
           password: tempPassword,
           organization_id: organizationId,
         },
@@ -139,7 +141,7 @@ const MembersPage: React.FC = () => {
     }
   };
 
-  const handleUpdateMember = async () => {
+  const handleUpdateMember = async (role: UserRole) => {
     if (!selectedMember) return;
 
     try {
@@ -147,7 +149,7 @@ const MembersPage: React.FC = () => {
         membership_id: selectedMember.organizations[0].id,
         user_id: selectedMember.id,
         organization_id: organizationId,
-        role: selectedMember.organizations[0].role,
+        role: role,
         permissions: selectedMember.organizations[0].permissions,
       }).unwrap();
 
@@ -415,168 +417,42 @@ const MembersPage: React.FC = () => {
       )}
 
       {/* Invite Member Modal */}
-      {showInviteModal && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Invite New Member</h3>
-            
-            <div className="space-y-4">
-              <FormField
-                label="Email"
-                type="email"
-                value={inviteForm.email}
-                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                required
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  label="First Name"
-                  value={inviteForm.first_name}
-                  onChange={(e) => setInviteForm({ ...inviteForm, first_name: e.target.value })}
-                  required
-                />
-
-                <FormField
-                  label="Last Name"
-                  value={inviteForm.last_name}
-                  onChange={(e) => setInviteForm({ ...inviteForm, last_name: e.target.value })}
-                  required
-                />
-              </div>
-
-              <FormField
-                label="Phone (Optional)"
-                type="tel"
-                value={inviteForm.phone}
-                onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })}
-              />
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Role</span>
-                </label>
-                <select
-                  className="select select-bordered"
-                  value={inviteForm.role}
-                  onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value as UserRole })}
-                >
-                  <option value="viewer">Viewer</option>
-                  <option value="staff">Staff</option>
-                  <option value="appraiser">Appraiser</option>
-                  <option value="issuer">Issuer</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-
-              <div className="alert alert-info">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-sm">The user will receive an email to set their password and activate their account.</span>
-              </div>
-            </div>
-
-            <div className="modal-action">
-              <button 
-                className="btn btn-ghost"
-                onClick={() => {
-                  setShowInviteModal(false);
-                  setInviteForm({
-                    email: '',
-                    first_name: '',
-                    last_name: '',
-                    role: 'viewer',
-                    permissions: [],
-                    phone: '',
-                  });
-                }}
-                disabled={isCreating}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-primary"
-                onClick={handleInviteMember}
-                disabled={isCreating || !inviteForm.email || !inviteForm.first_name || !inviteForm.last_name}
-              >
-                {isCreating ? 'Inviting...' : 'Send Invitation'}
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={() => setShowInviteModal(false)}></div>
-        </div>
-      )}
+      <InviteMemberModal
+        isOpen={showInviteModal}
+        onClose={() => {
+          setShowInviteModal(false);
+          setInviteForm({
+            email: '',
+            first_name: '',
+            last_name: '',
+            role: 'viewer',
+            permissions: [],
+            phone: '',
+          });
+        }}
+        onSubmit={handleInviteMember}
+        isLoading={isCreating}
+        initialData={inviteForm}
+      />
 
       {/* Edit Member Modal */}
-      {showEditModal && selectedMember && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Edit Member Role</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-base-content/60">Member</p>
-                <p className="font-medium">{selectedMember.first_name} {selectedMember.last_name}</p>
-                <p className="text-sm text-base-content/60">{selectedMember.email}</p>
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Role</span>
-                </label>
-                <select
-                  className="select select-bordered"
-                  value={selectedMember.organizations[0].role}
-                  onChange={(e) => setSelectedMember({
-                    ...selectedMember,
-                    organizations: [{
-                      ...selectedMember.organizations[0],
-                      role: e.target.value as UserRole
-                    }]
-                  })}
-                >
-                  <option value="viewer">Viewer</option>
-                  <option value="staff">Staff</option>
-                  <option value="appraiser">Appraiser</option>
-                  <option value="issuer">Issuer</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium mb-2">Default Permissions for Role</p>
-                <div className="flex flex-wrap gap-2">
-                  {(DEFAULT_PERMISSIONS[selectedMember.organizations[0].role as UserRole] || []).map((perm, idx) => (
-                    <span key={idx} className="badge badge-sm">{perm}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-action">
-              <button 
-                className="btn btn-ghost"
-                onClick={() => {
-                  setShowEditModal(false);
-                  setSelectedMember(null);
-                }}
-                disabled={isUpdating}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-primary"
-                onClick={handleUpdateMember}
-                disabled={isUpdating}
-              >
-                {isUpdating ? 'Updating...' : 'Update Role'}
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={() => setShowEditModal(false)}></div>
-        </div>
-      )}
+      <EditMemberModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedMember(null);
+        }}
+        onSubmit={handleUpdateMember}
+        member={selectedMember ? {
+          id: selectedMember.id,
+          first_name: selectedMember.first_name || '',
+          last_name: selectedMember.last_name || '',
+          email: selectedMember.email,
+          role: selectedMember.organizations[0].role
+        } : null}
+        defaultPermissions={DEFAULT_PERMISSIONS}
+        isLoading={isUpdating}
+      />
 
       {/* Remove Member Confirmation */}
       <ConfirmationModal

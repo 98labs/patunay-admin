@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Shield, Calendar, Building, User } from 'lucide-react';
-import { PageHeader, Loading, UserAvatar } from '@components';
+import { PageHeader, Loading, UserAvatar, DeleteConfirmationModal } from '@components';
 import { AddUserToLocationDialog } from '../../components/locations/AddUserToLocationDialog';
 import { EditLocationUserDialog } from '../../components/locations/EditLocationUserDialog';
 import { getLocation, getLocationUsers, removeUserFromLocation, LocationWithManager, LocationUserWithDetails, getFullName } from '../../lib/api/locations';
@@ -268,31 +268,21 @@ const LocationUsers: React.FC = () => {
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteModalOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg">Remove User from Location</h3>
-            <p className="py-4">
-              Are you sure you want to remove {
-                userToDelete ? (
-                  userToDelete.user.first_name || userToDelete.user.last_name ?
-                    getFullName(userToDelete.user.first_name, userToDelete.user.last_name) :
-                    userToDelete.user.email
-                ) : ''
-              } from this location?
-              They will lose access to location-specific resources.
-            </p>
-            <div className="modal-action">
-              <button className="btn" onClick={() => setDeleteModalOpen(false)}>
-                Cancel
-              </button>
-              <button className="btn btn-error" onClick={handleRemoveUser}>
-                Remove
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleRemoveUser}
+        title="Remove User from Location"
+        message="Are you sure you want to remove this user from this location? They will lose access to location-specific resources."
+        itemName={
+          userToDelete ? (
+            userToDelete.user.first_name || userToDelete.user.last_name ?
+              getFullName(userToDelete.user.first_name, userToDelete.user.last_name) :
+              userToDelete.user.email
+          ) : undefined
+        }
+        confirmText="Remove"
+      />
     </div>
   );
 };

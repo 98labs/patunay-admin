@@ -6,7 +6,14 @@ export { default as ErrorBoundary } from "./ErrorBoundary";
 export { default as FormField } from "./FormField";
 export { default as FormStepTitle } from "./FormStepTitle";
 export { default as Loading } from "./Loading";
-export { Modal, DetachNFCModal, DeleteArtworkModal } from "./Modal";
+export { 
+  Modal, 
+  DetachNFCModal, 
+  DeleteArtworkModal,
+  DeleteConfirmationModal,
+  InviteMemberModal,
+  EditMemberModal
+} from "./Modal";
 export { default as NfcListener } from "./NfcListener";
 export { default as NfcManager } from "./NfcManager";
 export { default as NfcStatusDashboard } from "./NfcStatusDashboard";
