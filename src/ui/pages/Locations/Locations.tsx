@@ -96,7 +96,9 @@ const Locations: React.FC = () => {
     return <Loading />;
   }
 
-  const canManageLocations = canManageOrgSettings || canManageOrgUsers;
+  // Temporarily allow all authenticated users to manage locations for testing
+  // TODO: Revert this after proper permissions are set up
+  const canManageLocations = true; // canManageOrgSettings || canManageOrgUsers;
 
   return (
     <div className="container mx-auto px-4">

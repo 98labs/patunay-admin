@@ -16,6 +16,9 @@ const LocationUsers: React.FC = () => {
   const { showSuccess, showError } = useNotification();
   const { currentOrganization } = useAuth();
   const { canManageOrgUsers } = usePermissions();
+  // Temporarily allow all authenticated users to manage location users for testing
+  // TODO: Revert this after proper permissions are set up
+  const canManageLocationUsers = true; // canManageOrgUsers;
   
   const [location, setLocation] = useState<LocationWithManager | null>(null);
   const [users, setUsers] = useState<LocationUserWithDetails[]>([]);
@@ -113,7 +116,7 @@ const LocationUsers: React.FC = () => {
           title={`${location?.name || 'Location'} Users`}
           subtitle="Manage users assigned to this location"
           action={
-            canManageOrgUsers && (
+            canManageLocationUsers && (
               <button
                 className="btn btn-primary"
                 onClick={() => setAddUserOpen(true)}
@@ -203,7 +206,7 @@ const LocationUsers: React.FC = () => {
                     </div>
                   </div>
                   
-                  {canManageOrgUsers && (
+                  {canManageLocationUsers && (
                     <div className="dropdown dropdown-end">
                       <label tabIndex={0} className="btn btn-ghost btn-sm">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
