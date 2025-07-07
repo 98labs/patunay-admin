@@ -6,6 +6,7 @@ import {
   InviteMemberModal,
   EditMemberModal,
   DeleteConfirmationModal,
+  ConfirmationModal,
   FormField
 } from '@components';
 import { 
