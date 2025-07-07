@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS location_users (
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     
     -- Role at this specific location (can be different from org role)
-    role user_role NOT NULL DEFAULT 'viewer',
+    role user_role NOT NULL DEFAULT 'staff',
     
     -- Location-specific permissions (overrides/extends org permissions)
     permissions TEXT[] DEFAULT '{}',
@@ -72,8 +72,7 @@ CREATE TABLE IF NOT EXISTS location_users (
     deleted_at TIMESTAMPTZ,
     
     -- Constraints
-    CONSTRAINT unique_user_location UNIQUE(location_id, user_id),
-    CONSTRAINT one_primary_location_per_user_org UNIQUE(user_id, organization_id, is_primary_location) WHERE is_primary_location = true
+    CONSTRAINT unique_user_location UNIQUE(location_id, user_id)
 );
 
 -- Create indexes for performance
@@ -84,6 +83,11 @@ CREATE INDEX idx_location_users_location_id ON location_users(location_id);
 CREATE INDEX idx_location_users_user_id ON location_users(user_id);
 CREATE INDEX idx_location_users_organization_id ON location_users(organization_id);
 CREATE INDEX idx_location_users_is_active ON location_users(is_active);
+
+-- Create partial unique index for one primary location per user per org
+CREATE UNIQUE INDEX unique_primary_location_per_user_org 
+ON location_users(user_id, organization_id) 
+WHERE is_primary_location = true;
 
 -- Enable RLS
 ALTER TABLE locations ENABLE ROW LEVEL SECURITY;

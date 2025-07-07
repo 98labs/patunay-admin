@@ -27,7 +27,9 @@ import {
   SystemStatistics,
   SuperAdminTest,
   SuperAdminSimple,
-  DebugPermissions
+  DebugPermissions,
+  LocationsPage,
+  LocationUsersPage
 } from "./LazyComponents";
 
 // Layout components are loaded separately for better optimization
@@ -248,6 +250,26 @@ const router = createBrowserRouter([
               <OrganizationRoute>
                 <SuspenseWrapper>
                   <SettingsPage />
+                </SuspenseWrapper>
+              </OrganizationRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization/locations",
+            element: (
+              <OrganizationRoute>
+                <SuspenseWrapper>
+                  <LocationsPage />
+                </SuspenseWrapper>
+              </OrganizationRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization/locations/:id",
+            element: (
+              <OrganizationRoute>
+                <SuspenseWrapper>
+                  <LocationUsersPage />
                 </SuspenseWrapper>
               </OrganizationRoute>
             ),

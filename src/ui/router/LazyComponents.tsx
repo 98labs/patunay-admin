@@ -27,3 +27,7 @@ export const SystemStatistics = lazy(() => import('../pages/SuperAdmin/SystemSta
 export const SuperAdminTest = lazy(() => import('../pages/SuperAdmin/SuperAdminTest'));
 export const SuperAdminSimple = lazy(() => import('../pages/SuperAdmin/SuperAdminSimple'));
 export const DebugPermissions = lazy(() => import('../pages/SuperAdmin/DebugPermissions'));
+
+// Location management components
+export const LocationsPage = lazy(() => import('../pages/Locations'));
+export const LocationUsersPage = lazy(() => import('../pages/LocationUsers'));

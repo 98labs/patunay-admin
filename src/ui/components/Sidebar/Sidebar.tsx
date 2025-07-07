@@ -168,6 +168,11 @@ const Sidebar = ({
         orgChildren.push({ name: "Members", path: "/dashboard/organization/members" });
       }
       
+      // Add Locations to organization menu
+      if (canManageOrgUsers || canManageOrgSettings) {
+        orgChildren.push({ name: "Locations", path: "/dashboard/organization/locations" });
+      }
+      
       if (canViewOrgStatistics) {
         orgChildren.push({ name: "Statistics", path: "/dashboard/organization/statistics" });
       }
