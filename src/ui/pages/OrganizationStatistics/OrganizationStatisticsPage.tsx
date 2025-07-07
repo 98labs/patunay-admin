@@ -3,8 +3,10 @@ import {
   PageHeader, 
   Loading,
   StatsCard,
-  SimpleChart
+  SimpleChart,
+  DataTable
 } from '@components';
+import { ColumnDef } from '@tanstack/react-table';
 import { 
   useGetOrganizationStatsQuery,
   useGetOrganizationMembersQuery,
@@ -174,6 +176,94 @@ const OrganizationStatisticsPage: React.FC = () => {
       { label: 'Loaned', value: statusCount.loaned, color: '#3B82F6' }
     ].filter(item => item.value > 0);
   }, [artworksResponse]);
+
+  // Column definitions for members table
+  const memberColumns: ColumnDef<any>[] = useMemo(() => [
+    {
+      header: 'Name',
+      accessorKey: 'user',
+      cell: ({ row }) => (
+        <div className="flex items-center space-x-3">
+          <div className="avatar placeholder">
+            <div className="bg-neutral-focus text-neutral-content rounded-full w-8">
+              <span className="text-xs">
+                {row.original.user?.first_name?.[0]}{row.original.user?.last_name?.[0]}
+              </span>
+            </div>
+          </div>
+          <div>
+            <div className="font-bold text-sm">
+              {row.original.user?.first_name} {row.original.user?.last_name}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Role',
+      accessorKey: 'role',
+      cell: ({ getValue }) => (
+        <span className="badge badge-sm badge-primary">{getValue() as string}</span>
+      ),
+    },
+    {
+      header: 'Joined',
+      accessorKey: 'created_at',
+      cell: ({ getValue }) => (
+        <span className="text-sm">
+          {format(new Date(getValue() as string), 'MMM d, yyyy')}
+        </span>
+      ),
+    },
+    {
+      header: 'Status',
+      accessorKey: 'is_active',
+      cell: ({ getValue }) => {
+        const isActive = getValue() as boolean;
+        return (
+          <span className={`badge badge-sm ${isActive ? 'badge-success' : 'badge-error'}`}>
+            {isActive ? 'Active' : 'Inactive'}
+          </span>
+        );
+      },
+    },
+  ], []);
+
+  // Column definitions for artworks table
+  const artworkColumns: ColumnDef<any>[] = useMemo(() => [
+    {
+      header: 'Title',
+      accessorKey: 'title',
+      cell: ({ getValue }) => (
+        <span className="font-medium">{getValue() as string}</span>
+      ),
+    },
+    {
+      header: 'Artist',
+      accessorKey: 'artist',
+    },
+    {
+      header: 'Created',
+      accessorKey: 'created_at',
+      cell: ({ getValue }) => (
+        <span className="text-sm">
+          {format(new Date(getValue() as string), 'MMM d, yyyy')}
+        </span>
+      ),
+    },
+    {
+      header: 'Status',
+      accessorKey: 'deleted_at',
+      cell: ({ getValue }) => {
+        const isArchived = !!getValue();
+        return (
+          <span className={`badge badge-sm ${isArchived ? 'badge-error' : 'badge-success'}`}>
+            {isArchived ? 'Archived' : 'Active'}
+          </span>
+        );
+      },
+    },
+  ], []);
 
   // Activity timeline data (mock for now)
   const activityData: ActivityData[] = useMemo(() => {
@@ -476,60 +566,18 @@ const OrganizationStatisticsPage: React.FC = () => {
           </div>
 
           {/* Recent Members */}
-          {isLoadingMembers ? (
-            <Loading fullScreen={false} />
-          ) : (
-            <div className="card bg-base-100 shadow-md">
-              <div className="card-body">
-                <h3 className="card-title text-lg mb-4">Recent Members</h3>
-                <div className="overflow-x-auto">
-                  <table className="table table-zebra">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Role</th>
-                        <th>Joined</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {members?.slice(0, 10).map((member: any) => (
-                        <tr key={member.user_id}>
-                          <td>
-                            <div className="flex items-center space-x-3">
-                              <div className="avatar placeholder">
-                                <div className="bg-neutral-focus text-neutral-content rounded-full w-8">
-                                  <span className="text-xs">
-                                    {member.user?.first_name?.[0]}{member.user?.last_name?.[0]}
-                                  </span>
-                                </div>
-                              </div>
-                              <div>
-                                <div className="font-bold text-sm">
-                                  {member.user?.first_name} {member.user?.last_name}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="badge badge-sm badge-primary">{member.role}</span>
-                          </td>
-                          <td className="text-sm">
-                            {format(new Date(member.created_at), 'MMM d, yyyy')}
-                          </td>
-                          <td>
-                            <span className={`badge badge-sm ${member.is_active ? 'badge-success' : 'badge-error'}`}>
-                              {member.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+          <div className="card bg-base-100 shadow-md">
+            <div className="card-body">
+              <h3 className="card-title text-lg mb-4">Recent Members</h3>
+              <DataTable
+                columns={memberColumns}
+                data={members?.slice(0, 10) || []}
+                enablePagination={false}
+                isLoading={isLoadingMembers}
+                emptyMessage="No members found"
+              />
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -582,43 +630,18 @@ const OrganizationStatisticsPage: React.FC = () => {
           </div>
 
           {/* Recent Artworks */}
-          {isLoadingArtworks ? (
-            <Loading fullScreen={false} />
-          ) : (
-            <div className="card bg-base-100 shadow-md">
-              <div className="card-body">
-                <h3 className="card-title text-lg mb-4">Recent Artworks</h3>
-                <div className="overflow-x-auto">
-                  <table className="table table-zebra">
-                    <thead>
-                      <tr>
-                        <th>Title</th>
-                        <th>Artist</th>
-                        <th>Created</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {artworksResponse?.artworks.slice(0, 10).map((artwork) => (
-                        <tr key={artwork.id}>
-                          <td className="font-medium">{artwork.title}</td>
-                          <td>{artwork.artist}</td>
-                          <td className="text-sm">
-                            {format(new Date(artwork.created_at), 'MMM d, yyyy')}
-                          </td>
-                          <td>
-                            <span className={`badge badge-sm ${artwork.deleted_at ? 'badge-error' : 'badge-success'}`}>
-                              {artwork.deleted_at ? 'Archived' : 'Active'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+          <div className="card bg-base-100 shadow-md">
+            <div className="card-body">
+              <h3 className="card-title text-lg mb-4">Recent Artworks</h3>
+              <DataTable
+                columns={artworkColumns}
+                data={artworksResponse?.artworks.slice(0, 10) || []}
+                enablePagination={false}
+                isLoading={isLoadingArtworks}
+                emptyMessage="No artworks found"
+              />
             </div>
-          )}
+          </div>
         </div>
       )}
 

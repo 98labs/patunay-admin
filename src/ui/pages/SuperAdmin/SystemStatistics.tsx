@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { PageHeader, Loading, SimpleChart } from "@components";
+import React, { useState, useEffect, useMemo } from "react";
+import { PageHeader, Loading, SimpleChart, DataTable } from "@components";
+import { ColumnDef } from '@tanstack/react-table';
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import supabase from "../../supabase";
@@ -24,6 +25,61 @@ const SystemStatistics = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState(30); // Last 30 days by default
+
+  // Column definitions for organizations table
+  const organizationColumns: ColumnDef<any>[] = useMemo(() => [
+    {
+      header: 'Rank',
+      id: 'rank',
+      cell: ({ row }) => {
+        const idx = row.index;
+        return (
+          <div className={`badge ${idx < 3 ? 'badge-primary' : 'badge-ghost'}`}>
+            #{idx + 1}
+          </div>
+        );
+      },
+    },
+    {
+      header: 'Organization',
+      accessorKey: 'name',
+      cell: ({ getValue }) => (
+        <span className="font-medium">{getValue() as string}</span>
+      ),
+    },
+    {
+      header: 'Artworks',
+      accessorKey: 'artworks',
+      cell: ({ getValue, row }) => {
+        const artworks = getValue() as number;
+        const maxArtworks = Math.max(...(stats?.organizationStats || []).map(o => o.artworks));
+        return (
+          <div className="flex items-center gap-2">
+            <span>{artworks}</span>
+            <progress 
+              className="progress progress-primary w-20" 
+              value={artworks} 
+              max={maxArtworks}
+            />
+          </div>
+        );
+      },
+    },
+    {
+      header: 'Users',
+      accessorKey: 'users',
+    },
+    {
+      header: 'Avg per User',
+      id: 'average',
+      cell: ({ row }) => {
+        const artworks = row.original.artworks;
+        const users = row.original.users;
+        const avg = users > 0 ? (artworks / users).toFixed(1) : '0';
+        return <span>{avg}</span>;
+      },
+    },
+  ], [stats?.organizationStats]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -321,43 +377,13 @@ const SystemStatistics = () => {
       <div className="card bg-base-100 shadow-md">
         <div className="card-body">
           <h2 className="card-title mb-4">Top Organizations by Artworks</h2>
-          <div className="overflow-x-auto">
-            <table className="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Organization</th>
-                  <th>Artworks</th>
-                  <th>Users</th>
-                  <th>Avg per User</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(stats.organizationStats || []).map((org, idx) => (
-                  <tr key={idx}>
-                    <td>
-                      <div className={`badge ${idx < 3 ? 'badge-primary' : 'badge-ghost'}`}>
-                        #{idx + 1}
-                      </div>
-                    </td>
-                    <td className="font-medium">{org.name}</td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <span>{org.artworks}</span>
-                        <progress 
-                          className="progress progress-primary w-20" 
-                          value={org.artworks} 
-                          max={(stats.organizationStats && stats.organizationStats[0]?.artworks) || 1}
-                        ></progress>
-                      </div>
-                    </td>
-                    <td>{org.users}</td>
-                    <td>{org.users > 0 ? (org.artworks / org.users).toFixed(1) : '0'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={organizationColumns}
+            data={stats.organizationStats || []}
+            enablePagination={false}
+            enableSorting={false}
+            emptyMessage="No organizations found"
+          />
         </div>
       </div>
 

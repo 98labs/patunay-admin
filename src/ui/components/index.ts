@@ -29,6 +29,7 @@ export { UserAvatar } from "./UserAvatar";
 export { CreateUserWorkaround } from "./CreateUserWorkaround";
 export { SupabaseDiagnostic } from "./SupabaseDiagnostic";
 export { default as NfcTagsTable } from "./NfcTagsTable";
+export { DataTable } from "./DataTable";
 
 // Multi-tenant RBAC components
 export { OrganizationSwitcher } from "./OrganizationSwitcher";
