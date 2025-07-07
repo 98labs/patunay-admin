@@ -14,9 +14,10 @@ This document outlines the implementation strategy for transitioning the Patunay
 
 ### Target State
 - **Roles**: 6 roles (super_user, admin, issuer, appraiser, staff, viewer)
-- **Scope**: Multi-tenant with organizational boundaries
-- **Permissions**: Hierarchical RBAC + cross-organizational ABAC
-- **Access Control**: Context-aware permission system
+- **Scope**: Multi-tenant with organizational and location boundaries
+- **Permissions**: Hierarchical RBAC + cross-organizational ABAC + location-based access
+- **Access Control**: Context-aware permission system with location granularity
+- **Location Management**: Branch/location-based access control and user assignments
 
 ## Implementation Phases
 
@@ -36,6 +37,8 @@ This document outlines the implementation strategy for transitioning the Patunay
 - Added `cross_org_permissions` for ABAC
 - Updated `profiles` table with new role enum
 - Added organization context to `artworks` and `tags`
+- Added `locations` table for branch/location management
+- Added `location_users` for location-specific access control
 
 **Data Migration Steps**:
 ```sql
@@ -151,7 +154,31 @@ GET    /api/users?organization_id=:id           // Organization-scoped users
 <DashboardLayout />     // Add organization context
 ```
 
-### Phase 4: Advanced Access Control Implementation
+### Phase 4: Location-Based Access Control
+
+**Priority**: HIGH
+**Estimated Time**: 2-3 days
+
+**Tasks**:
+1. **Implement Location Management**
+   - Create location CRUD operations
+   - Add location assignment for users
+   - Implement primary location designation
+   - Add location managers
+
+2. **Location-Based Permissions**
+   - Restrict access based on location assignment
+   - Allow cross-location access permissions
+   - Location-specific role overrides
+   - Location manager permissions
+
+3. **UI Components**
+   - Location management interface
+   - Location user assignment dialog
+   - Location-based filtering
+   - Location selector in navigation
+
+### Phase 5: Advanced Access Control Implementation
 
 **Priority**: MEDIUM
 **Estimated Time**: 2-3 days
@@ -161,26 +188,34 @@ GET    /api/users?organization_id=:id           // Organization-scoped users
    - Create permission checking hooks
    - Add component-level permission guards
    - Implement field-level access control
+   - Location-aware permission checks
 
 2. **Add Cross-Organizational Features**
    - Issuer workflow for cross-org NFC tagging
    - Appraiser workflow for cross-org appraisals
    - Permission request/approval system
+   - Cross-location collaboration
 
 3. **Create Audit System**
    - Track permission changes
    - Log cross-organizational access
    - Generate access reports
+   - Location access audit trail
 
 **Permission Checking Examples**:
 ```typescript
 // Hook usage
-const { canPerform, hasOrgRole } = usePermissions();
+const { canPerform, hasOrgRole, hasLocationAccess } = usePermissions();
 
 // Component-level guards
 <PermissionGuard permission="manage_org_users">
   <UserManagementPanel />
 </PermissionGuard>
+
+// Location-based guards
+<LocationGuard locationId={locationId}>
+  <LocationDashboard />
+</LocationGuard>
 
 // Conditional rendering
 {canPerform('manage_nfc_tags', artwork.organization_id) && (
@@ -190,6 +225,16 @@ const { canPerform, hasOrgRole } = usePermissions();
 // Role-based access
 {hasOrgRole('admin', organization.id) && (
   <OrganizationSettings />
+)}
+
+// Location-based access
+{hasLocationAccess(locationId) && (
+  <LocationInventory locationId={locationId} />
+)}
+
+// Location manager check
+{isLocationManager(locationId) && (
+  <LocationSettings locationId={locationId} />
 )}
 ```
 

@@ -30,6 +30,8 @@ This document outlines comprehensive test scenarios to validate the multi-tenant
 - ✅ View system-wide statistics
 - ✅ Access migration verification tools
 - ✅ Grant cross-organizational permissions
+- ✅ Manage all locations across organizations
+- ✅ Assign users to any location
 
 **Test Cases**:
 1. Login and verify global navigation menu appears
@@ -39,6 +41,9 @@ This document outlines comprehensive test scenarios to validate the multi-tenant
 5. Manage users in City Museum
 6. View system statistics across all organizations
 7. Grant cross-org permissions to other users
+8. Create locations for any organization
+9. Assign users to locations across organizations
+10. View all location-based analytics
 
 ### 2. Organization Admin Access Tests
 
@@ -48,6 +53,10 @@ This document outlines comprehensive test scenarios to validate the multi-tenant
 - ✅ Manage Metro Gallery users only
 - ✅ Manage Metro Gallery artworks
 - ✅ Manage Metro Gallery NFC tags
+- ✅ Create and manage Metro Gallery locations
+- ✅ Assign Metro Gallery users to locations
+- ✅ Designate location managers
+- ✅ View location-specific analytics
 - ✅ View Metro Gallery statistics
 - ✅ Grant cross-org permissions for Metro Gallery
 - ❌ Cannot access other organizations' data
@@ -261,6 +270,48 @@ GROUP BY u.first_name, u.last_name, u.role, o.name
 ORDER BY u.first_name;
 ```
 
+### 8. Location-Based Access Tests
+
+**Test Locations Created**:
+- Metro Gallery Main Branch (Headquarters)
+- Metro Gallery Makati Branch
+- City Museum Central Location
+- City Museum BGC Branch
+
+**Location Manager Tests**:
+
+**User**: Frank Garcia (Staff at Metro Gallery, Manager of Makati Branch)
+
+**Expected Capabilities**:
+- ✅ View and update Makati Branch details
+- ✅ Manage users assigned to Makati Branch
+- ✅ View Makati Branch analytics
+- ❌ Cannot delete the location
+- ❌ Cannot manage Main Branch
+
+**Location User Assignment Tests**:
+
+1. **Primary Location Assignment**
+   - User can have only one primary location per organization
+   - Primary location affects default view and access
+
+2. **Multi-Location Access**
+   - Users with `can_access_other_locations` can view multiple locations
+   - Users without this permission see only assigned locations
+
+3. **Location-Specific Roles**
+   - User can have different roles at different locations
+   - Location role overrides organization role when applicable
+
+**Test Cases**:
+1. Assign Isabel Wilson to both Metro Gallery branches
+2. Set Makati Branch as her primary location
+3. Verify she sees Makati Branch by default
+4. Test cross-location access permissions
+5. Verify location-based data filtering
+6. Test location manager permissions
+7. Verify location-based analytics
+
 ## Expected Results Summary
 
 After running all tests, the system should demonstrate:
@@ -271,5 +322,7 @@ After running all tests, the system should demonstrate:
 4. **Secure API access** with proper validation
 5. **Intuitive user experience** with permission-aware UI
 6. **Robust security** preventing unauthorized access
+7. **Location-based access control** with proper filtering
+8. **Location manager permissions** working correctly
 
 Any failing test cases should be documented and addressed before deployment to production.
