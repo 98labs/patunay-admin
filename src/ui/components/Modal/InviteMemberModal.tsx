@@ -1,7 +1,7 @@
 import React from 'react';
 import { UserRole } from '../../typings';
-import { FormField } from '../FormField';
 import { Info } from 'lucide-react';
+import FormField from '../FormField';
 
 interface InviteFormData {
   email: string;
