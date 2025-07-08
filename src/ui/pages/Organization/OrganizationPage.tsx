@@ -195,85 +195,96 @@ const OrganizationPage: React.FC = () => {
           </div>
 
           {isEditingInfo ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Organization Name</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                />
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Organization Name</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    placeholder="Enter organization name"
+                  />
+                </div>
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Type</span>
+                  </label>
+                  <select
+                    className="select select-bordered w-full"
+                    value={editForm.type}
+                    onChange={(e) => setEditForm({ ...editForm, type: e.target.value as OrganizationType })}
+                  >
+                    <option value="gallery">Gallery</option>
+                    <option value="museum">Museum</option>
+                    <option value="auction_house">Auction House</option>
+                    <option value="private_collection">Private Collection</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="form-control">
+              <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text">Type</span>
-                </label>
-                <select
-                  className="select select-bordered"
-                  value={editForm.type}
-                  onChange={(e) => setEditForm({ ...editForm, type: e.target.value as OrganizationType })}
-                >
-                  <option value="gallery">Gallery</option>
-                  <option value="museum">Museum</option>
-                  <option value="auction_house">Auction House</option>
-                  <option value="private_collection">Private Collection</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div className="form-control md:col-span-2">
-                <label className="label">
-                  <span className="label-text">Description</span>
+                  <span className="label-text font-medium">Description</span>
                 </label>
                 <textarea
-                  className="textarea textarea-bordered"
+                  className="textarea textarea-bordered w-full"
                   rows={3}
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  placeholder="Enter organization description"
                 />
               </div>
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Website</span>
-                </label>
-                <input
-                  type="url"
-                  className="input input-bordered"
-                  value={editForm.website}
-                  onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Website</span>
+                  </label>
+                  <input
+                    type="url"
+                    className="input input-bordered w-full"
+                    value={editForm.website}
+                    onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                    placeholder="https://example.com"
+                  />
+                </div>
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Contact Email</span>
+                  </label>
+                  <input
+                    type="email"
+                    className="input input-bordered w-full"
+                    value={editForm.contact_email}
+                    onChange={(e) => setEditForm({ ...editForm, contact_email: e.target.value })}
+                    placeholder="contact@example.com"
+                  />
+                </div>
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Contact Phone</span>
+                  </label>
+                  <input
+                    type="tel"
+                    className="input input-bordered w-full"
+                    value={editForm.contact_phone}
+                    onChange={(e) => setEditForm({ ...editForm, contact_phone: e.target.value })}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
               </div>
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Contact Email</span>
-                </label>
-                <input
-                  type="email"
-                  className="input input-bordered"
-                  value={editForm.contact_email}
-                  onChange={(e) => setEditForm({ ...editForm, contact_email: e.target.value })}
-                />
-              </div>
+              <div className="divider"></div>
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Contact Phone</span>
-                </label>
-                <input
-                  type="tel"
-                  className="input input-bordered"
-                  value={editForm.contact_phone}
-                  onChange={(e) => setEditForm({ ...editForm, contact_phone: e.target.value })}
-                />
-              </div>
-
-              <div className="md:col-span-2 flex justify-end gap-2">
+              <div className="flex justify-end gap-3">
                 <button 
                   onClick={handleCancelEdit}
                   className="btn btn-ghost"
@@ -286,7 +297,14 @@ const OrganizationPage: React.FC = () => {
                   className="btn btn-primary"
                   disabled={isUpdating}
                 >
-                  {isUpdating ? 'Saving...' : 'Save Changes'}
+                  {isUpdating ? (
+                    <>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </button>
               </div>
             </div>

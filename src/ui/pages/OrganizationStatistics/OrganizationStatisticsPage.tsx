@@ -571,7 +571,7 @@ const OrganizationStatisticsPage: React.FC = () => {
               <h3 className="card-title text-lg mb-4">Recent Members</h3>
               <DataTable
                 columns={memberColumns}
-                data={members?.slice(0, 10) || []}
+                data={members ? members.slice(0, 10) : []}
                 enablePagination={false}
                 isLoading={isLoadingMembers}
                 emptyMessage="No members found"
@@ -635,7 +635,7 @@ const OrganizationStatisticsPage: React.FC = () => {
               <h3 className="card-title text-lg mb-4">Recent Artworks</h3>
               <DataTable
                 columns={artworkColumns}
-                data={artworksResponse?.artworks.slice(0, 10) || []}
+                data={artworksResponse?.artworks ? artworksResponse.artworks.slice(0, 10) : []}
                 enablePagination={false}
                 isLoading={isLoadingArtworks}
                 emptyMessage="No artworks found"

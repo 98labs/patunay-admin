@@ -308,13 +308,13 @@ const OrganizationSettingsPage: React.FC = () => {
           <div className="card-body">
             <h2 className="card-title mb-4">General Settings</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="form-control">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+              <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text">Date Format</span>
+                  <span className="label-text font-medium">Date Format</span>
                 </label>
                 <select
-                  className="select select-bordered"
+                  className="select select-bordered w-full"
                   value={settings.general.dateFormat}
                   onChange={(e) => handleSettingChange('general', 'dateFormat', e.target.value)}
                 >
@@ -325,12 +325,12 @@ const OrganizationSettingsPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="form-control">
+              <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text">Time Format</span>
+                  <span className="label-text font-medium">Time Format</span>
                 </label>
                 <select
-                  className="select select-bordered"
+                  className="select select-bordered w-full"
                   value={settings.general.timeFormat}
                   onChange={(e) => handleSettingChange('general', 'timeFormat', e.target.value)}
                 >
@@ -339,12 +339,12 @@ const OrganizationSettingsPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="form-control">
+              <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text">Currency</span>
+                  <span className="label-text font-medium">Currency</span>
                 </label>
                 <select
-                  className="select select-bordered"
+                  className="select select-bordered w-full"
                   value={settings.general.currency}
                   onChange={(e) => handleSettingChange('general', 'currency', e.target.value)}
                 >
@@ -357,12 +357,12 @@ const OrganizationSettingsPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="form-control">
+              <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text">Language</span>
+                  <span className="label-text font-medium">Language</span>
                 </label>
                 <select
-                  className="select select-bordered"
+                  className="select select-bordered w-full"
                   value={settings.general.language}
                   onChange={(e) => handleSettingChange('general', 'language', e.target.value)}
                 >
@@ -375,12 +375,12 @@ const OrganizationSettingsPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="form-control md:col-span-2">
+              <div className="form-control w-full md:col-span-2">
                 <label className="label">
-                  <span className="label-text">Timezone</span>
+                  <span className="label-text font-medium">Timezone</span>
                 </label>
                 <select
-                  className="select select-bordered"
+                  className="select select-bordered w-full"
                   value={settings.general.timezone}
                   onChange={(e) => handleSettingChange('general', 'timezone', e.target.value)}
                 >
@@ -407,16 +407,14 @@ const OrganizationSettingsPage: React.FC = () => {
             
             <div className="space-y-4">
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    <div>
-                      <p className="font-medium">Email Notifications</p>
-                      <p className="text-sm text-base-content/60">Receive notifications via email</p>
-                    </div>
-                  </span>
+                <label className="label cursor-pointer justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">Email Notifications</p>
+                    <p className="text-sm text-base-content/60">Receive notifications via email</p>
+                  </div>
                   <input
                     type="checkbox"
-                    className="toggle toggle-primary"
+                    className="toggle toggle-primary ml-4"
                     checked={settings.notifications.emailNotifications}
                     onChange={(e) => handleSettingChange('notifications', 'emailNotifications', e.target.checked)}
                   />
@@ -426,16 +424,14 @@ const OrganizationSettingsPage: React.FC = () => {
               <div className="divider"></div>
 
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    <div>
-                      <p className="font-medium">New Artwork Alerts</p>
-                      <p className="text-sm text-base-content/60">Get notified when new artworks are added</p>
-                    </div>
-                  </span>
+                <label className="label cursor-pointer justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">New Artwork Alerts</p>
+                    <p className="text-sm text-base-content/60">Get notified when new artworks are added</p>
+                  </div>
                   <input
                     type="checkbox"
-                    className="toggle"
+                    className="toggle ml-4"
                     checked={settings.notifications.newArtworkAlerts}
                     onChange={(e) => handleSettingChange('notifications', 'newArtworkAlerts', e.target.checked)}
                     disabled={!settings.notifications.emailNotifications}
@@ -444,16 +440,14 @@ const OrganizationSettingsPage: React.FC = () => {
               </div>
 
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    <div>
-                      <p className="font-medium">Appraisal Updates</p>
-                      <p className="text-sm text-base-content/60">Notifications about appraisal changes</p>
-                    </div>
-                  </span>
+                <label className="label cursor-pointer justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">Appraisal Updates</p>
+                    <p className="text-sm text-base-content/60">Notifications about appraisal changes</p>
+                  </div>
                   <input
                     type="checkbox"
-                    className="toggle"
+                    className="toggle ml-4"
                     checked={settings.notifications.appraisalUpdates}
                     onChange={(e) => handleSettingChange('notifications', 'appraisalUpdates', e.target.checked)}
                     disabled={!settings.notifications.emailNotifications}
@@ -462,16 +456,14 @@ const OrganizationSettingsPage: React.FC = () => {
               </div>
 
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    <div>
-                      <p className="font-medium">Member Join Alerts</p>
-                      <p className="text-sm text-base-content/60">Get notified when new members join</p>
-                    </div>
-                  </span>
+                <label className="label cursor-pointer justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">Member Join Alerts</p>
+                    <p className="text-sm text-base-content/60">Get notified when new members join</p>
+                  </div>
                   <input
                     type="checkbox"
-                    className="toggle"
+                    className="toggle ml-4"
                     checked={settings.notifications.memberJoinAlerts}
                     onChange={(e) => handleSettingChange('notifications', 'memberJoinAlerts', e.target.checked)}
                     disabled={!settings.notifications.emailNotifications}
@@ -482,16 +474,14 @@ const OrganizationSettingsPage: React.FC = () => {
               <div className="divider"></div>
 
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    <div>
-                      <p className="font-medium">Weekly Reports</p>
-                      <p className="text-sm text-base-content/60">Receive weekly activity summaries</p>
-                    </div>
-                  </span>
+                <label className="label cursor-pointer justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">Weekly Reports</p>
+                    <p className="text-sm text-base-content/60">Receive weekly activity summaries</p>
+                  </div>
                   <input
                     type="checkbox"
-                    className="toggle"
+                    className="toggle ml-4"
                     checked={settings.notifications.weeklyReports}
                     onChange={(e) => handleSettingChange('notifications', 'weeklyReports', e.target.checked)}
                     disabled={!settings.notifications.emailNotifications}
@@ -500,16 +490,14 @@ const OrganizationSettingsPage: React.FC = () => {
               </div>
 
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    <div>
-                      <p className="font-medium">Monthly Reports</p>
-                      <p className="text-sm text-base-content/60">Receive monthly organization reports</p>
-                    </div>
-                  </span>
+                <label className="label cursor-pointer justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">Monthly Reports</p>
+                    <p className="text-sm text-base-content/60">Receive monthly organization reports</p>
+                  </div>
                   <input
                     type="checkbox"
-                    className="toggle"
+                    className="toggle ml-4"
                     checked={settings.notifications.monthlyReports}
                     onChange={(e) => handleSettingChange('notifications', 'monthlyReports', e.target.checked)}
                     disabled={!settings.notifications.emailNotifications}
@@ -529,30 +517,28 @@ const OrganizationSettingsPage: React.FC = () => {
             
             <div className="space-y-6">
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    <div>
-                      <p className="font-medium">Require Two-Factor Authentication</p>
-                      <p className="text-sm text-base-content/60">All members must enable 2FA</p>
-                    </div>
-                  </span>
+                <label className="label cursor-pointer justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">Require Two-Factor Authentication</p>
+                    <p className="text-sm text-base-content/60">All members must enable 2FA</p>
+                  </div>
                   <input
                     type="checkbox"
-                    className="toggle toggle-error"
+                    className="toggle toggle-error ml-4"
                     checked={settings.security.requireTwoFactor}
                     onChange={(e) => handleSettingChange('security', 'requireTwoFactor', e.target.checked)}
                   />
                 </label>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-control">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text">Session Timeout (minutes)</span>
+                    <span className="label-text font-medium">Session Timeout (minutes)</span>
                   </label>
                   <input
                     type="number"
-                    className="input input-bordered"
+                    className="input input-bordered w-full"
                     value={settings.security.sessionTimeout}
                     onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value) || 30)}
                     min="5"
@@ -563,13 +549,13 @@ const OrganizationSettingsPage: React.FC = () => {
                   </label>
                 </div>
 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text">Password Expiry (days)</span>
+                    <span className="label-text font-medium">Password Expiry (days)</span>
                   </label>
                   <input
                     type="number"
-                    className="input input-bordered"
+                    className="input input-bordered w-full"
                     value={settings.security.passwordExpiry}
                     onChange={(e) => handleSettingChange('security', 'passwordExpiry', parseInt(e.target.value) || 90)}
                     min="0"
@@ -693,16 +679,14 @@ const OrganizationSettingsPage: React.FC = () => {
             
             <div className="space-y-4">
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    <div>
-                      <p className="font-medium">Enable NFC Features</p>
-                      <p className="text-sm text-base-content/60">Allow NFC tag management and scanning</p>
-                    </div>
-                  </span>
+                <label className="label cursor-pointer justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">Enable NFC Features</p>
+                    <p className="text-sm text-base-content/60">Allow NFC tag management and scanning</p>
+                  </div>
                   <input
                     type="checkbox"
-                    className="toggle toggle-primary"
+                    className="toggle toggle-primary ml-4"
                     checked={settings.features.enableNFC}
                     onChange={(e) => handleSettingChange('features', 'enableNFC', e.target.checked)}
                   />
@@ -710,16 +694,14 @@ const OrganizationSettingsPage: React.FC = () => {
               </div>
 
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    <div>
-                      <p className="font-medium">Enable Appraisals</p>
-                      <p className="text-sm text-base-content/60">Allow artwork appraisal functionality</p>
-                    </div>
-                  </span>
+                <label className="label cursor-pointer justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">Enable Appraisals</p>
+                    <p className="text-sm text-base-content/60">Allow artwork appraisal functionality</p>
+                  </div>
                   <input
                     type="checkbox"
-                    className="toggle toggle-primary"
+                    className="toggle toggle-primary ml-4"
                     checked={settings.features.enableAppraisals}
                     onChange={(e) => handleSettingChange('features', 'enableAppraisals', e.target.checked)}
                   />
@@ -727,16 +709,14 @@ const OrganizationSettingsPage: React.FC = () => {
               </div>
 
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    <div>
-                      <p className="font-medium">Enable Public Gallery</p>
-                      <p className="text-sm text-base-content/60">Make selected artworks publicly viewable</p>
-                    </div>
-                  </span>
+                <label className="label cursor-pointer justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">Enable Public Gallery</p>
+                    <p className="text-sm text-base-content/60">Make selected artworks publicly viewable</p>
+                  </div>
                   <input
                     type="checkbox"
-                    className="toggle toggle-primary"
+                    className="toggle toggle-primary ml-4"
                     checked={settings.features.enablePublicGallery}
                     onChange={(e) => handleSettingChange('features', 'enablePublicGallery', e.target.checked)}
                   />
@@ -746,16 +726,14 @@ const OrganizationSettingsPage: React.FC = () => {
               <div className="divider"></div>
 
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    <div>
-                      <p className="font-medium">Enable API Access</p>
-                      <p className="text-sm text-base-content/60">Allow external API integrations</p>
-                    </div>
-                  </span>
+                <label className="label cursor-pointer justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">Enable API Access</p>
+                    <p className="text-sm text-base-content/60">Allow external API integrations</p>
+                  </div>
                   <input
                     type="checkbox"
-                    className="toggle toggle-warning"
+                    className="toggle toggle-warning ml-4"
                     checked={settings.features.enableAPI}
                     onChange={(e) => handleSettingChange('features', 'enableAPI', e.target.checked)}
                   />
@@ -792,14 +770,14 @@ const OrganizationSettingsPage: React.FC = () => {
             <h2 className="card-title mb-4">Branding Settings</h2>
             
             <div className="space-y-6">
-              <div className="form-control">
+              <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text">Primary Color</span>
+                  <span className="label-text font-medium">Primary Color</span>
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <input
                     type="color"
-                    className="input input-bordered w-20 h-10 p-1 cursor-pointer"
+                    className="w-20 h-12 rounded-lg border border-base-300 cursor-pointer"
                     value={settings.branding.primaryColor}
                     onChange={(e) => handleSettingChange('branding', 'primaryColor', e.target.value)}
                   />
@@ -817,13 +795,13 @@ const OrganizationSettingsPage: React.FC = () => {
                 </label>
               </div>
 
-              <div className="form-control">
+              <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text">Logo URL</span>
+                  <span className="label-text font-medium">Logo URL</span>
                 </label>
                 <input
                   type="url"
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   value={settings.branding.logoUrl}
                   onChange={(e) => handleSettingChange('branding', 'logoUrl', e.target.value)}
                   placeholder="https://example.com/logo.png"
@@ -833,13 +811,13 @@ const OrganizationSettingsPage: React.FC = () => {
                 </label>
               </div>
 
-              <div className="form-control">
+              <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text">Custom Domain</span>
+                  <span className="label-text font-medium">Custom Domain</span>
                 </label>
                 <input
                   type="text"
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   value={settings.branding.customDomain}
                   onChange={(e) => handleSettingChange('branding', 'customDomain', e.target.value)}
                   placeholder="gallery.yourcompany.com"
@@ -849,12 +827,12 @@ const OrganizationSettingsPage: React.FC = () => {
                 </label>
               </div>
 
-              <div className="form-control">
+              <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text">Email Footer Text</span>
+                  <span className="label-text font-medium">Email Footer Text</span>
                 </label>
                 <textarea
-                  className="textarea textarea-bordered"
+                  className="textarea textarea-bordered w-full"
                   rows={3}
                   value={settings.branding.emailFooter}
                   onChange={(e) => handleSettingChange('branding', 'emailFooter', e.target.value)}
