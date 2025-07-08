@@ -10,7 +10,7 @@ RETURNS TABLE (
     is_primary_location BOOLEAN,
     can_access_other_locations BOOLEAN,
     department TEXT,
-    position TEXT,
+    "position" TEXT,
     employee_id TEXT,
     start_date DATE,
     end_date DATE,
@@ -29,7 +29,24 @@ LANGUAGE sql
 SECURITY DEFINER
 AS $$
     SELECT 
-        lu.*,
+        lu.id,
+        lu.location_id,
+        lu.user_id,
+        lu.organization_id,
+        lu.role,
+        lu.permissions,
+        lu.is_primary_location,
+        lu.can_access_other_locations,
+        lu.department,
+        lu.position,
+        lu.employee_id,
+        lu.start_date,
+        lu.end_date,
+        lu.is_active,
+        lu.created_at,
+        lu.updated_at,
+        lu.created_by,
+        lu.deleted_at,
         au.email as user_email,
         p.first_name as user_first_name,
         p.last_name as user_last_name,
@@ -42,7 +59,6 @@ AS $$
     WHERE lu.location_id = p_location_id
         AND lu.deleted_at IS NULL
         AND p.deleted_at IS NULL
-        AND au.deleted_at IS NULL
     ORDER BY COALESCE(p.first_name, '') || ' ' || COALESCE(p.last_name, '');
 $$;
 

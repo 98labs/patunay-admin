@@ -1,5 +1,10 @@
--- Create locations table (branches of organizations)
-CREATE TABLE IF NOT EXISTS locations (
+-- Create locations table only if organizations exists
+DO $$
+BEGIN
+    -- Check if organizations table exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'organizations') THEN
+        -- Create locations table (branches of organizations)
+        CREATE TABLE IF NOT EXISTS locations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
