@@ -28,16 +28,26 @@ Patunay Admin is a desktop application designed for art galleries, museums, and 
 - Appraisal data visualization
 
 ### 👥 User Management
-- Role-based access control
+- Multi-tenant role-based access control (RBAC)
+- 6 user roles: super_user, admin, issuer, appraiser, staff, viewer
+- Organization and location-based access control
+- Cross-organizational permissions
 - User authentication via Supabase
-- Admin user management
 - Profile management
+
+### 🏢 Organization Management
+- Multi-organization support
+- Location/branch management
+- Organization-specific settings
+- Member management and invitations
 
 ### 📊 Dashboard & Analytics
 - Real-time statistics and metrics
+- Organization and location-based analytics
 - Activity feed
 - System health monitoring
 - Data visualization with charts
+- Export capabilities
 
 ## Technology Stack
 
@@ -192,6 +202,8 @@ ENABLE_DEVTOOLS=true     # Force enable DevTools
 - [Build Process](BUILD_PROCESS.md)
 - [Development Guide](CLAUDE.md)
 - [Logging Best Practices](LOGGING_BEST_PRACTICES.md)
+- [Multi-Tenant RBAC Implementation](MULTI_TENANT_RBAC_IMPLEMENTATION_STRATEGY.md)
+- [Locations Feature](LOCATIONS_FEATURE.md)
 - [Security Review](../review/SECURITY-REVIEW.md)
 
 ## License

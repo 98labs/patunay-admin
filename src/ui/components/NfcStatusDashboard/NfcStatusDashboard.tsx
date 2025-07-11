@@ -1,5 +1,8 @@
 import { useNfc } from '../../hooks/useNfc';
 import { NfcOperationStatus } from '../../store/nfc/types';
+import { useMemo } from 'react';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '../DataTable';
 
 interface NfcStatusDashboardProps {
   className?: string;
@@ -19,6 +22,77 @@ const NfcStatusDashboard = ({
     clearHistory,
     removeHistoryItem
   } = useNfc();
+
+  // Column definitions for history table
+  const historyColumns: ColumnDef<any>[] = useMemo(() => [
+    {
+      header: 'Time',
+      accessorKey: 'timestamp',
+      cell: ({ getValue }) => (
+        <span className="text-xs font-mono">
+          {formatTimestamp(getValue() as number)}
+        </span>
+      ),
+    },
+    {
+      header: 'Operation',
+      accessorKey: 'operation',
+      cell: ({ getValue }) => {
+        const operation = getValue() as string;
+        return (
+          <div className="flex items-center gap-2">
+            <span>{getOperationIcon(operation)}</span>
+            <span className="capitalize">{operation}</span>
+          </div>
+        );
+      },
+    },
+    {
+      header: 'Status',
+      accessorKey: 'status',
+      cell: ({ getValue }) => {
+        const status = getValue() as string;
+        return (
+          <div className="flex items-center gap-2">
+            <span>{getOperationStatusIcon(status)}</span>
+            <span className={`badge ${status === 'success' ? 'badge-success' : 'badge-error'}`}>
+              {status}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      header: 'Card UID',
+      accessorKey: 'cardUid',
+      cell: ({ getValue }) => (
+        <span className="font-mono text-xs">
+          {getValue() || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Data',
+      id: 'data',
+      cell: ({ row }) => (
+        <span className="max-w-xs truncate text-xs">
+          {row.original.data || row.original.error || '-'}
+        </span>
+      ),
+    },
+    {
+      header: '',
+      id: 'actions',
+      cell: ({ row }) => (
+        <button 
+          className="btn btn-ghost btn-xs"
+          onClick={() => removeHistoryItem(row.original.id)}
+        >
+          ✕
+        </button>
+      ),
+    },
+  ], [removeHistoryItem]);
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -174,67 +248,16 @@ const NfcStatusDashboard = ({
               )}
             </div>
 
-            {operationHistory.length === 0 ? (
-              <div className="text-center text-base-content/50 py-8">
-                No operations recorded yet
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="table table-zebra">
-                  <thead>
-                    <tr>
-                      <th>Time</th>
-                      <th>Operation</th>
-                      <th>Status</th>
-                      <th>Card UID</th>
-                      <th>Data</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {operationHistory.slice(0, 10).map((entry) => (
-                      <tr key={entry.id}>
-                        <td className="text-xs font-mono">
-                          {formatTimestamp(entry.timestamp)}
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <span>{getOperationIcon(entry.operation)}</span>
-                            <span className="capitalize">{entry.operation}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <span>{getOperationStatusIcon(entry.status)}</span>
-                            <span className={`badge ${entry.status === 'success' ? 'badge-success' : 'badge-error'}`}>
-                              {entry.status}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="font-mono text-xs">
-                          {entry.cardUid || '-'}
-                        </td>
-                        <td className="max-w-xs truncate text-xs">
-                          {entry.data || entry.error || '-'}
-                        </td>
-                        <td>
-                          <button 
-                            className="btn btn-ghost btn-xs"
-                            onClick={() => removeHistoryItem(entry.id)}
-                          >
-                            ✕
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {operationHistory.length > 10 && (
-                  <div className="text-center text-sm text-base-content/50 mt-4">
-                    Showing latest 10 of {operationHistory.length} operations
-                  </div>
-                )}
+            <DataTable
+              columns={historyColumns}
+              data={operationHistory.slice(0, 10)}
+              enablePagination={false}
+              enableSorting={false}
+              emptyMessage="No operations recorded yet"
+            />
+            {operationHistory.length > 10 && (
+              <div className="text-center text-sm text-base-content/50 mt-4">
+                Showing latest 10 of {operationHistory.length} operations
               </div>
             )}
           </div>

@@ -2,19 +2,34 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy } from "react";
 import Providers from "../Providers";
 import SuspenseWrapper from "../layouts/SuspenseWrapper";
+import { SuperUserRoute, UserManagementRoute, NfcManagementRoute, ArtworkManagementRoute, OrganizationRoute } from "../components/ProtectedRoute";
 import {
   Dashboard,
   Artworks,
   RegisterArtwork,
   SearchArtwork,
   DetailedArtwork,
+  Appraisals,
   Admin,
   NfcTags,
-
   UserManagement,
   Devices,
   Login,
-  NotFoundPage
+  NotFoundPage,
+  OrganizationManagementPage,
+  MigrationVerificationPage,
+  OrganizationPage,
+  MembersPage,
+  StatisticsPage,
+  SettingsPage,
+  SuperAdmin,
+  SuperAdminDashboard,
+  SystemStatistics,
+  SuperAdminTest,
+  SuperAdminSimple,
+  DebugPermissions,
+  LocationsPage,
+  LocationUsersPage
 } from "./LazyComponents";
 
 // Layout components are loaded separately for better optimization
@@ -87,25 +102,31 @@ const router = createBrowserRouter([
           {
             path: "/dashboard/admin/device",
             element: (
-              <SuspenseWrapper>
-                <Devices />
-              </SuspenseWrapper>
+              <NfcManagementRoute>
+                <SuspenseWrapper>
+                  <Devices />
+                </SuspenseWrapper>
+              </NfcManagementRoute>
             ),
           },
           {
             path: "/dashboard/admin/nfc-tags",
             element: (
-              <SuspenseWrapper>
-                <NfcTags />
-              </SuspenseWrapper>
+              <NfcManagementRoute>
+                <SuspenseWrapper>
+                  <NfcTags />
+                </SuspenseWrapper>
+              </NfcManagementRoute>
             ),
           },
           {
             path: "/dashboard/artworks/register",
             element: (
-              <SuspenseWrapper>
-                <RegisterArtwork />
-              </SuspenseWrapper>
+              <ArtworkManagementRoute>
+                <SuspenseWrapper>
+                  <RegisterArtwork />
+                </SuspenseWrapper>
+              </ArtworkManagementRoute>
             ),
           },
           {
@@ -117,11 +138,140 @@ const router = createBrowserRouter([
             ),
           },
           {
-            path: "/dashboard/admin/users",
+            path: "/dashboard/appraisals",
             element: (
               <SuspenseWrapper>
-                <UserManagement />
+                <Appraisals />
               </SuspenseWrapper>
+            ),
+          },
+          {
+            path: "/dashboard/admin/users",
+            element: (
+              <UserManagementRoute>
+                <SuspenseWrapper>
+                  <UserManagement />
+                </SuspenseWrapper>
+              </UserManagementRoute>
+            ),
+          },
+          // Super Admin routes
+          {
+            path: "/dashboard/super-admin",
+            element: (
+              <SuperUserRoute>
+                <SuspenseWrapper>
+                  <SuperAdminDashboard />
+                </SuspenseWrapper>
+              </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/super-admin/organizations",
+            element: (
+              <SuperUserRoute>
+                <SuspenseWrapper>
+                  <OrganizationManagementPage />
+                </SuspenseWrapper>
+              </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/super-admin/users",
+            element: (
+              <SuperUserRoute>
+                <SuspenseWrapper>
+                  <SuperAdmin />
+                </SuspenseWrapper>
+              </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/super-admin/statistics",
+            element: (
+              <SuperUserRoute>
+                <SuspenseWrapper>
+                  <SystemStatistics />
+                </SuspenseWrapper>
+              </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/debug-permissions",
+            element: (
+              <SuspenseWrapper>
+                <DebugPermissions />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: "/dashboard/super-admin/migration-verification",
+            element: (
+              <SuperUserRoute>
+                <SuspenseWrapper>
+                  <MigrationVerificationPage />
+                </SuspenseWrapper>
+              </SuperUserRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization",
+            element: (
+              <OrganizationRoute>
+                <SuspenseWrapper>
+                  <OrganizationPage />
+                </SuspenseWrapper>
+              </OrganizationRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization/members",
+            element: (
+              <OrganizationRoute>
+                <SuspenseWrapper>
+                  <MembersPage />
+                </SuspenseWrapper>
+              </OrganizationRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization/statistics",
+            element: (
+              <OrganizationRoute>
+                <SuspenseWrapper>
+                  <StatisticsPage />
+                </SuspenseWrapper>
+              </OrganizationRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization/settings",
+            element: (
+              <OrganizationRoute>
+                <SuspenseWrapper>
+                  <SettingsPage />
+                </SuspenseWrapper>
+              </OrganizationRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization/locations",
+            element: (
+              <OrganizationRoute>
+                <SuspenseWrapper>
+                  <LocationsPage />
+                </SuspenseWrapper>
+              </OrganizationRoute>
+            ),
+          },
+          {
+            path: "/dashboard/organization/locations/:id",
+            element: (
+              <OrganizationRoute>
+                <SuspenseWrapper>
+                  <LocationUsersPage />
+                </SuspenseWrapper>
+              </OrganizationRoute>
             ),
           },
           {
