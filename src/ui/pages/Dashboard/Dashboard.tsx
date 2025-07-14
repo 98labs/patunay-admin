@@ -11,8 +11,10 @@ import {
   useGetDashboardStatsQuery, 
   useGetActivityLogQuery 
 } from '../../store/api/statisticsApi';
+import { useAuth } from '../../hooks/useAuth';
 
 const Dashboard = () => {
+  const { isSuperUser } = useAuth();
 
   // Fetch dashboard data
   const { 
@@ -198,6 +200,41 @@ const Dashboard = () => {
           </Link>
         </div>
       </div>
+
+      {/* Debug Section for Super Users */}
+      {isSuperUser && (
+        <div className="card bg-base-100 shadow-md">
+          <div className="card-body">
+            <h3 className="card-title text-warning">Super User Debug Section</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Link 
+                to="/dashboard/super-admin"
+                className="btn btn-primary"
+              >
+                Super Admin Dashboard
+              </Link>
+              <Link 
+                to="/dashboard/super-admin/users"
+                className="btn btn-secondary"
+              >
+                Super Admin Users List
+              </Link>
+              <button 
+                onClick={() => {
+                  console.log('Testing Super Admin Users route...');
+                  window.location.href = '/dashboard/super-admin/users';
+                }}
+                className="btn btn-accent"
+              >
+                Force Navigate to Super Users
+              </button>
+              <div className="text-sm">
+                <p>Is Super User: {isSuperUser ? 'Yes' : 'No'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

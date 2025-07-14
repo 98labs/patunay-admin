@@ -2,7 +2,7 @@ import { api } from './baseApi';
 import supabase, { supabaseAdmin } from '../../supabase';
 
 // Types for user management
-export type UserRole = 'admin' | 'staff';
+export type UserRole = 'super_user' | 'admin' | 'issuer' | 'appraiser' | 'staff' | 'viewer';
 
 export interface UserProfile {
   id: string;

@@ -12,6 +12,7 @@ import { useSelector, useDispatch } from "react-redux";
 import AppraisalInfo from "./components/AppraisalInfo";
 import { showNotification } from "../../components/NotificationMessage/slice";
 import { useCanPerform } from "../../hooks/useAuth";
+import { usePermissions } from "../../hooks/usePermissions";
 
 import { updateArtworkDirect } from "../../supabase/rpc/updateArtworkDirect";
 import { detachNfcTag } from "../../supabase/rpc/detachNfcTag";
@@ -25,6 +26,7 @@ const DetailArtwork = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { canManageAppraisals } = useCanPerform();
+  const { canViewAppraisalDetails, canCreateAppraisals } = usePermissions();
   const [artwork, setArtwork] = useState<ArtworkType | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -212,9 +214,11 @@ const DetailArtwork = () => {
           collectors: safeJsonParse(data[0].collectors),
         });
 
-        // Fetch appraisals separately
-        const appraisalData = await getAppraisals(id!);
-        setAppraisals(appraisalData);
+        // Fetch appraisals only if user has permission
+        if (canViewAppraisalDetails) {
+          const appraisalData = await getAppraisals(id!);
+          setAppraisals(appraisalData);
+        }
       } catch (error) {
         console.error("Error fetching artwork:", error);
         navigate("/dashboard/artworks");
@@ -223,7 +227,7 @@ const DetailArtwork = () => {
       }
     };
     fetchArtwork();
-  }, [id, navigate, status]);
+  }, [id, navigate, status, canViewAppraisalDetails]);
 
   if (loading) return <Loading fullScreen={false} />;
   if (!artwork) return <div className="p-6">Artwork not found.</div>;
@@ -368,14 +372,17 @@ const DetailArtwork = () => {
               />
             )}
         </section>
-        <>
-          <div className="divider"></div>
-          <AppraisalInfo 
-            appraisals={appraisals} 
-            artwork_id={artwork.id} 
-            canManageAppraisals={canManageAppraisals} 
-          />
-        </>
+        {canViewAppraisalDetails && (
+          <>
+            <div className="divider"></div>
+            <AppraisalInfo 
+              appraisals={appraisals} 
+              artwork_id={artwork.id} 
+              canManageAppraisals={canManageAppraisals}
+              canCreateAppraisals={canCreateAppraisals}
+            />
+          </>
+        )}
         {showImageModal && (
           <ArtworkImageModal
             images={artwork.assets?.map((asset) => asset.url) || []}

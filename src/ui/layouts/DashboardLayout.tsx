@@ -44,9 +44,11 @@ const DashboardLayout = () => {
         </header>
         <div className="grow">
           <div className="px-4 sm:px-6 lg:px-8 py-4 w-full max-w-9xl mx-auto">
-            <NfcWarningBanner className="mb-4" />
-            <NotificationMessage />
-            <Outlet />
+            <div className="text-base-content">
+              <NfcWarningBanner className="mb-4" />
+              <NotificationMessage />
+              <Outlet />
+            </div>
           </div>
         </div>
       </main>

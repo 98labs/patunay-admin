@@ -18,6 +18,8 @@ dist-react
 electron-builder.env
 package-lock.json
 dump
+migrations_backup
+.claude
 
 # Editor directories and files
 .vscode/*

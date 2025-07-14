@@ -4,13 +4,13 @@ import { useSelector } from "react-redux";
 
 import { selectUser } from '../../store/features/auth';
 import { UserAvatar } from '@components';
-import { useGetCurrentUserQuery } from '../../store/api/userManagementApi';
+import { useAuth } from '../../hooks/useAuth';
+import { USER_ROLES } from '../../typings';
 
 const UserProfile = () => {
   const [currentTheme, setCurrentTheme] = useState("light");
-  const user = useSelector(selectUser);
-  const { data: currentUserResponse } = useGetCurrentUserQuery();
-  const currentUser = currentUserResponse?.data;
+  const legacyUser = useSelector(selectUser);
+  const { user: currentUser } = useAuth();
   useEffect(() => {
     themeChange(false);
     try {
@@ -58,7 +58,7 @@ const UserProfile = () => {
     
     setCurrentTheme(newTheme);
   };
-    const username = user?.email.split("@")[0];
+    const username = currentUser?.email?.split("@")[0] || legacyUser?.email?.split("@")[0];
 
   return (
     <div className="px-8 py-8 bg-base-200 dark:bg-base-200 border-b border-base-300 dark:border-base-300">
@@ -67,7 +67,7 @@ const UserProfile = () => {
           avatarUrl={currentUser?.avatar_url}
           firstName={currentUser?.first_name}
           lastName={currentUser?.last_name}
-          email={user?.email}
+          email={currentUser?.email || legacyUser?.email}
           size="lg"
           className="ring ring-primary ring-offset-2 ring-offset-base-200 dark:ring-offset-base-200"
         />
@@ -75,11 +75,11 @@ const UserProfile = () => {
           <div className="text-base font-semibold text-base-content dark:text-base-content">
             {currentUser?.first_name && currentUser?.last_name 
               ? `${currentUser.first_name} ${currentUser.last_name}`
-              : user ? username : "User"
+              : currentUser || legacyUser ? username : "User"
             }
           </div>
           <div className="text-sm text-base-content/70 dark:text-base-content/70">
-            {currentUser?.role === 'admin' ? 'Administrator' : 'Staff'}
+            {currentUser?.role ? USER_ROLES[currentUser.role]?.label : 'User'}
           </div>
         </div>
         <div className="flex items-center">

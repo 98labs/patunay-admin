@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 import { HashRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
+import "./styles/dark-mode-fixes.css";
 import { ErrorBoundary } from "@components";
 
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'))

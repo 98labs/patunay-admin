@@ -1,22 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { useGetCurrentUserQuery, useGetUserQuery } from '../store/api/userApi';
-import { User, UserRole } from '../typings';
+import { User, UserRole, Organization, OrganizationUser, DEFAULT_PERMISSIONS } from '../typings';
 import supabase from '../supabase';
 
 export interface AuthState {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  hasRole: (role: UserRole) => boolean;
-  hasPermission: (permission: string) => boolean;
+  currentOrganization: Organization | null;
+  organizations: OrganizationUser[];
+  hasRole: (role: UserRole, organizationId?: string) => boolean;
+  hasPermission: (permission: string, organizationId?: string) => boolean;
+  canPerform: (action: string, organizationId?: string) => boolean;
+  switchOrganization: (organizationId: string) => void;
+  // Legacy role checks for backward compatibility
   isAdmin: boolean;
   isStaff: boolean;
+  // New role checks
+  isSuperUser: boolean;
+  isIssuer: boolean;
+  isAppraiser: boolean;
+  isViewer: boolean;
 }
 
 export const useAuth = (): AuthState => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [currentOrganizationId, setCurrentOrganizationId] = useState<string | null>(null);
+  const [organizations, setOrganizations] = useState<OrganizationUser[]>([]);
 
   const { 
     data: userResponse, 
@@ -24,6 +36,7 @@ export const useAuth = (): AuthState => {
     refetch 
   } = useGetCurrentUserQuery(undefined, {
     skip: !isAuthenticated,
+    refetchOnMountOrArgChange: true, // Always refetch on mount
   });
 
   const { 
@@ -66,40 +79,144 @@ export const useAuth = (): AuthState => {
     return () => subscription.unsubscribe();
   }, [refetch]);
 
-  const hasRole = (role: UserRole): boolean => {
-    return user?.role === role || userResponseByID?.role === role;
-  };
+  // Get current organization context
+  const currentOrganization = organizations.find(
+    org => org.organization_id === currentOrganizationId
+  )?.organization || null;
 
-  const hasPermission = (permission: string): boolean => {
-    if (!user?.permissions) return false;
-    return user.permissions.includes(permission);
-  };
-
-  const isAdmin = hasRole('admin');
-  const isStaff = hasRole('staff');
-
-  // Debug logging
-  useEffect(() => {
-    if (user) {
-      console.log('[useAuth] User data:', {
-        id: user.id,
-        email: user.email,
-        role: user.role || userResponseByID?.role,
-        isAdmin,
-        isStaff,
-        permissions: user.permissions
-      });
+  // Role checking with organization context
+  const hasRole = (role: UserRole, organizationId?: string): boolean => {
+    const targetOrgId = organizationId || currentOrganizationId;
+    
+    // If checking for super_user specifically, only check the actual role
+    if (role === 'super_user') {
+      return user?.role === 'super_user';
     }
-  }, [user, isAdmin, isStaff]);
+    
+    // Super users have all OTHER roles everywhere (but we already handled super_user above)
+    if (user?.role === 'super_user') return true;
+    
+    // Check role in specific organization
+    if (targetOrgId) {
+      const orgMembership = organizations.find(org => org.organization_id === targetOrgId);
+      return orgMembership?.role === role;
+    }
+    
+    // Fallback to primary role
+    return user?.role === role;
+  };
+
+  // Permission checking with organization context
+  const hasPermission = (permission: string, organizationId?: string): boolean => {
+    const targetOrgId = organizationId || currentOrganizationId;
+    
+    // Super users have all permissions
+    if (user?.role === 'super_user') {
+      return true;
+    }
+    
+    // Check organization-specific permissions
+    if (targetOrgId) {
+      const orgMembership = organizations.find(org => org.organization_id === targetOrgId);
+      if (orgMembership) {
+        // Check role-based permissions + additional permissions
+        const hasRolePermission = DEFAULT_PERMISSIONS[orgMembership.role]?.includes(permission);
+        const hasAdditionalPermission = orgMembership.permissions?.includes(permission);
+        
+        return hasRolePermission || hasAdditionalPermission;
+      }
+    }
+    
+    // Fallback to user's primary role permissions if no organization context
+    const primaryRolePermission = user?.role ? DEFAULT_PERMISSIONS[user.role]?.includes(permission) : false;
+    const userPermission = user?.permissions?.includes(permission) || false;
+    
+    return primaryRolePermission || userPermission;
+  };
+
+  // Enhanced permission checking for specific actions
+  const canPerform = (action: string, organizationId?: string): boolean => {
+    return hasPermission(action, organizationId);
+  };
+
+  // Organization switching
+  const switchOrganization = (organizationId: string) => {
+    const orgExists = organizations.some(org => org.organization_id === organizationId);
+    if (orgExists) {
+      setCurrentOrganizationId(organizationId);
+      // Store in localStorage for persistence
+      localStorage.setItem('currentOrganizationId', organizationId);
+    }
+  };
+
+  // Role checks
+  const isSuperUser = hasRole('super_user');
+  const isAdmin = hasRole('admin');
+  const isIssuer = hasRole('issuer');
+  const isAppraiser = hasRole('appraiser');
+  const isStaff = hasRole('staff');
+  const isViewer = hasRole('viewer');
+
+  // Load user organizations when user data is available
+  useEffect(() => {
+    const loadUserOrganizations = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data: userOrgs, error } = await supabase
+          .from('organization_users')
+          .select(`
+            *,
+            organization:organizations(*)
+          `)
+          .eq('user_id', user.id)
+          .eq('is_active', true);
+        
+        if (error) {
+          console.error('Error loading user organizations:', error);
+          return;
+        }
+        
+        setOrganizations(userOrgs || []);
+        
+        // Set current organization
+        if (userOrgs && userOrgs.length > 0) {
+          // Try to use stored organization or primary organization
+          const storedOrgId = localStorage.getItem('currentOrganizationId');
+          const primaryOrg = userOrgs.find(org => org.is_primary);
+          const targetOrg = userOrgs.find(org => org.organization_id === storedOrgId) || primaryOrg || userOrgs[0];
+          
+          if (targetOrg) {
+            setCurrentOrganizationId(targetOrg.organization_id);
+          }
+        }
+      } catch (error) {
+        console.error('Error in loadUserOrganizations:', error);
+      }
+    };
+    
+    loadUserOrganizations();
+  }, [user?.id]);
+
 
   return {
     user,
     isLoading: !isInitialized || (isAuthenticated && isLoadingUser),
     isAuthenticated,
+    currentOrganization,
+    organizations,
     hasRole,
     hasPermission,
+    canPerform,
+    switchOrganization,
+    // Legacy role checks
     isAdmin,
     isStaff,
+    // New role checks
+    isSuperUser,
+    isIssuer,
+    isAppraiser,
+    isViewer,
   };
 };
 
