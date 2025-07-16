@@ -7,9 +7,10 @@ import { version } from "./package.json";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  root: "src/ui",
   base: "./",
   build: {
-    outDir: "dist-react",
+    outDir: "dist",
     target: 'esnext',
     rollupOptions: {
       // Manual chunk splitting for better caching
