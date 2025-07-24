@@ -1,0 +1,336 @@
+{
+  "schema_version": "1.1",
+  "type_definitions": [
+    {
+      "type": "user",
+      "relations": {},
+      "metadata": {}
+    },
+    {
+      "type": "organization",
+      "relations": {
+        "super_admin": {
+          "this": {}
+        },
+        "admin": {
+          "this": {}
+        },
+        "staff": {
+          "this": {}
+        },
+        "viewer": {
+          "this": {}
+        },
+        "issuer": {
+          "this": {}
+        },
+        "appraiser": {
+          "this": {}
+        },
+        "member": {
+          "union": {
+            "child": [
+              {"computedUserset": {"relation": "admin"}},
+              {"computedUserset": {"relation": "staff"}},
+              {"computedUserset": {"relation": "viewer"}},
+              {"computedUserset": {"relation": "issuer"}},
+              {"computedUserset": {"relation": "appraiser"}}
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "super_admin": {"directly_related_user_types": [{"type": "user"}]},
+          "admin": {"directly_related_user_types": [{"type": "user"}]},
+          "staff": {"directly_related_user_types": [{"type": "user"}]},
+          "viewer": {"directly_related_user_types": [{"type": "user"}]},
+          "issuer": {"directly_related_user_types": [{"type": "user"}]},
+          "appraiser": {"directly_related_user_types": [{"type": "user"}]}
+        }
+      }
+    },
+    {
+      "type": "artwork",
+      "relations": {
+        "organization": {
+          "this": {}
+        },
+        "can_view": {
+          "tupleToUserset": {
+            "tupleset": {"relation": "organization"},
+            "computedUserset": {"relation": "member"}
+          }
+        },
+        "can_create": {
+          "union": {
+            "child": [
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "admin"}
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "staff"}
+                }
+              }
+            ]
+          }
+        },
+        "can_update": {
+          "union": {
+            "child": [
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "admin"}
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "staff"}
+                }
+              }
+            ]
+          }
+        },
+        "can_delete": {
+          "tupleToUserset": {
+            "tupleset": {"relation": "organization"},
+            "computedUserset": {"relation": "admin"}
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "organization": {"directly_related_user_types": [{"type": "organization"}]}
+        }
+      }
+    },
+    {
+      "type": "appraisal",
+      "relations": {
+        "organization": {
+          "this": {}
+        },
+        "creator": {
+          "this": {}
+        },
+        "can_view": {
+          "union": {
+            "child": [
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "member"}
+                }
+              },
+              {"computedUserset": {"relation": "creator"}}
+            ]
+          }
+        },
+        "can_create": {
+          "union": {
+            "child": [
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "admin"}
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "staff"}
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "appraiser"}
+                }
+              }
+            ]
+          }
+        },
+        "can_update": {
+          "union": {
+            "child": [
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "admin"}
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "staff"}
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "appraiser"}
+                }
+              },
+              {"computedUserset": {"relation": "creator"}}
+            ]
+          }
+        },
+        "can_delete": {
+          "tupleToUserset": {
+            "tupleset": {"relation": "organization"},
+            "computedUserset": {"relation": "admin"}
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "organization": {"directly_related_user_types": [{"type": "organization"}]},
+          "creator": {"directly_related_user_types": [{"type": "user"}]}
+        }
+      }
+    },
+    {
+      "type": "nfc_tag",
+      "relations": {
+        "organization": {
+          "this": {}
+        },
+        "can_view": {
+          "tupleToUserset": {
+            "tupleset": {"relation": "organization"},
+            "computedUserset": {"relation": "member"}
+          }
+        },
+        "can_attach": {
+          "union": {
+            "child": [
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "admin"}
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "issuer"}
+                }
+              }
+            ]
+          }
+        },
+        "can_detach": {
+          "union": {
+            "child": [
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "admin"}
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {"relation": "organization"},
+                  "computedUserset": {"relation": "issuer"}
+                }
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "organization": {"directly_related_user_types": [{"type": "organization"}]}
+        }
+      }
+    },
+    {
+      "type": "user_management",
+      "relations": {
+        "organization": {
+          "this": {}
+        },
+        "can_manage_users": {
+          "tupleToUserset": {
+            "tupleset": {"relation": "organization"},
+            "computedUserset": {"relation": "admin"}
+          }
+        },
+        "can_invite_users": {
+          "tupleToUserset": {
+            "tupleset": {"relation": "organization"},
+            "computedUserset": {"relation": "admin"}
+          }
+        },
+        "can_remove_users": {
+          "tupleToUserset": {
+            "tupleset": {"relation": "organization"},
+            "computedUserset": {"relation": "admin"}
+          }
+        },
+        "can_update_roles": {
+          "tupleToUserset": {
+            "tupleset": {"relation": "organization"},
+            "computedUserset": {"relation": "admin"}
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "organization": {"directly_related_user_types": [{"type": "organization"}]}
+        }
+      }
+    },
+    {
+      "type": "organization_settings",
+      "relations": {
+        "organization": {
+          "this": {}
+        },
+        "can_view": {
+          "tupleToUserset": {
+            "tupleset": {"relation": "organization"},
+            "computedUserset": {"relation": "member"}
+          }
+        },
+        "can_update": {
+          "tupleToUserset": {
+            "tupleset": {"relation": "organization"},
+            "computedUserset": {"relation": "admin"}
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "organization": {"directly_related_user_types": [{"type": "organization"}]}
+        }
+      }
+    },
+    {
+      "type": "global_system",
+      "relations": {
+        "super_user": {
+          "this": {}
+        },
+        "can_access_all_organizations": {
+          "computedUserset": {"relation": "super_user"}
+        },
+        "can_manage_system": {
+          "computedUserset": {"relation": "super_user"}
+        }
+      },
+      "metadata": {
+        "relations": {
+          "super_user": {"directly_related_user_types": [{"type": "user"}]}
+        }
+      }
+    }
+  ]
+}

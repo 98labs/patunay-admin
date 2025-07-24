@@ -1,0 +1,58 @@
+model
+  schema 1.1
+
+type user
+
+type organization
+  relations
+    define super_admin: [user]
+    define admin: [user]
+    define staff: [user]
+    define viewer: [user]
+    define issuer: [user]
+    define appraiser: [user]
+    define member: [user] or admin or staff or viewer or issuer or appraiser
+
+type artwork
+  relations
+    define organization: [organization]
+    define can_view: member from organization
+    define can_create: admin from organization or staff from organization
+    define can_update: admin from organization or staff from organization
+    define can_delete: admin from organization
+
+type appraisal
+  relations
+    define organization: [organization]
+    define creator: [user]
+    define can_view: member from organization or creator
+    define can_create: admin from organization or staff from organization or appraiser from organization
+    define can_update: admin from organization or staff from organization or appraiser from organization or creator
+    define can_delete: admin from organization
+
+type nfc_tag
+  relations
+    define organization: [organization]
+    define can_view: member from organization
+    define can_attach: admin from organization or issuer from organization
+    define can_detach: admin from organization or issuer from organization
+
+type user_management
+  relations
+    define organization: [organization]
+    define can_manage_users: admin from organization
+    define can_invite_users: admin from organization
+    define can_remove_users: admin from organization
+    define can_update_roles: admin from organization
+
+type organization_settings
+  relations
+    define organization: [organization]
+    define can_view: member from organization
+    define can_update: admin from organization
+
+type global_system
+  relations
+    define super_user: [user]
+    define can_access_all_organizations: super_user
+    define can_manage_system: super_user
