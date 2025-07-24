@@ -1,6 +1,8 @@
-import { UserProfile, NfcStatusIndicator } from "@components";
+import { UserProfile, NfcStatusIndicator, OrganizationSwitcher } from "@components";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../../store/api/userApi";
+import { usePermissions } from "../../hooks/usePermissions";
+import { useAuth } from "../../hooks/useAuth";
 import { Links, NavbarItemProps } from "./types";
 import { useMemo, useCallback } from "react";
 
@@ -55,26 +57,156 @@ const Sidebar = ({
   const navigate = useNavigate();
   const [logout] = useLogoutMutation();
 
-  const links: Links[] = useMemo(() => [
-    { name: "Dashboard", path: "/dashboard" },
-    {
-      name: "Artworks",
-      path: "/dashboard/artworks",
-      children: [
-        { name: "Register Artwork", path: "/dashboard/artworks/register" },
-        { name: "Search", path: "/dashboard/artworks/search" },
-      ],
-    },
-    {
-      name: "Admin",
-      path: "/dashboard/admin",
-      children: [
-        { name: "User Management", path: "/dashboard/admin/users" },
-        { name: "NFC Tags", path: "/dashboard/admin/nfc-tags" },
-        { name: "Devices", path: "/dashboard/admin/device" },
-      ],
-    },
-  ], []);
+  const {
+    canViewArtworks,
+    canCreateArtworks,
+    canManageOrgUsers,
+    canManageAllUsers,
+    canManageOrgNfcTags,
+    canManageAllNfcTags,
+    canManageOrganizations,
+    canViewOrgStatistics,
+    canViewAllStatistics,
+    canAttachNfcTags,
+    canCreateAppraisals,
+    canManageOrgSettings,
+  } = usePermissions();
+
+  const { isSuperUser, currentOrganization, user, organizations } = useAuth();
+
+
+  const links: Links[] = useMemo(() => {
+    const navigationLinks: Links[] = [];
+
+    // Dashboard - always visible to authenticated users
+    navigationLinks.push({ name: "Dashboard", path: "/dashboard" });
+
+    // Artworks section - visible if user can view or manage artworks
+    if (canViewArtworks || canCreateArtworks) {
+      const artworkChildren: Links[] = [];
+      if (canCreateArtworks || canAttachNfcTags) {
+        artworkChildren.push({ name: "Register Artwork", path: "/dashboard/artworks/register" });
+      }
+      
+      if (canViewArtworks) {
+        artworkChildren.push({ name: "Search", path: "/dashboard/artworks/search" });
+      }
+
+      navigationLinks.push({
+        name: "Artworks",
+        path: "/dashboard/artworks",
+        children: artworkChildren.length > 0 ? artworkChildren : undefined,
+      });
+    }
+
+    // Appraisals section - visible to appraisers and those who can manage appraisals
+    if (canCreateAppraisals) {
+      navigationLinks.push({
+        name: "Appraisals",
+        path: "/dashboard/appraisals",
+      });
+    }
+
+    // Management section - visible based on permissions
+    const managementChildren: Links[] = [];
+    
+    // User Management - based on permissions only
+    if (canManageOrgUsers || canManageAllUsers) {
+      managementChildren.push({ name: "User Management", path: "/dashboard/admin/users" });
+    }
+    
+    if (canManageOrgNfcTags || canManageAllNfcTags) {
+      managementChildren.push({ name: "NFC Tags", path: "/dashboard/admin/nfc-tags" });
+    }
+    
+    if (canManageOrgNfcTags || canManageAllNfcTags) {
+      managementChildren.push({ name: "Devices", path: "/dashboard/admin/device" });
+    }
+
+    if (managementChildren.length > 0) {
+      // Change section name based on user's primary capabilities
+      const hasUserManagement = canManageOrgUsers || canManageAllUsers;
+      const sectionName = hasUserManagement ? "Admin" : "Tools";
+      
+      navigationLinks.push({
+        name: sectionName,
+        path: "/dashboard/admin",
+        children: managementChildren,
+      });
+    }
+
+    // Super User section - only visible to super users
+    if (isSuperUser) {
+      const superUserChildren: Links[] = [];
+      
+      if (canManageOrganizations) {
+        superUserChildren.push({ name: "Organizations", path: "/dashboard/super-admin/organizations" });
+      }
+      
+      if (canManageAllUsers) {
+        superUserChildren.push({ name: "System Users", path: "/dashboard/super-admin/users" });
+      }
+      
+      if (canViewAllStatistics) {
+        superUserChildren.push({ name: "System Statistics", path: "/dashboard/super-admin/statistics" });
+      }
+
+      if (superUserChildren.length > 0) {
+        navigationLinks.push({
+          name: "Super Admin",
+          path: "/dashboard/super-admin",
+          children: superUserChildren,
+        });
+      }
+    }
+
+    // Organization Management - visible only to super users
+    if (isSuperUser && currentOrganization && (canManageOrgUsers || canViewOrgStatistics || canManageOrgSettings)) {
+      const orgChildren: Links[] = [];
+      
+      if (canManageOrgUsers) {
+        orgChildren.push({ name: "Members", path: "/dashboard/organization/members" });
+      }
+      
+      // Add Locations to organization menu
+      if (canManageOrgUsers || canManageOrgSettings) {
+        orgChildren.push({ name: "Locations", path: "/dashboard/organization/locations" });
+      }
+      
+      if (canViewOrgStatistics) {
+        orgChildren.push({ name: "Statistics", path: "/dashboard/organization/statistics" });
+      }
+      
+      if (canManageOrgSettings) {
+        orgChildren.push({ name: "Settings", path: "/dashboard/organization/settings" });
+      }
+
+      if (orgChildren.length > 0) {
+        navigationLinks.push({
+          name: "Organization",
+          path: "/dashboard/organization",
+          children: orgChildren,
+        });
+      }
+    }
+
+    return navigationLinks;
+  }, [
+    canViewArtworks,
+    canCreateArtworks,
+    canManageOrgUsers,
+    canManageAllUsers,
+    canManageOrgNfcTags,
+    canManageAllNfcTags,
+    canManageOrganizations,
+    canViewOrgStatistics,
+    canViewAllStatistics,
+    canAttachNfcTags,
+    canCreateAppraisals,
+    canManageOrgSettings,
+    isSuperUser,
+    currentOrganization,
+  ]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -104,22 +236,34 @@ const Sidebar = ({
         >
           ✖
         </button>
-        <UserProfile />
+        
+        {/* Organization Switcher */}
+        <div className="flex-shrink-0 px-4 py-3 border-b border-base-300 dark:border-base-300">
+          <OrganizationSwitcher className="w-full" />
+        </div>
+        
+        <div className="flex-shrink-0">
+          <UserProfile />
+        </div>
 
-        <ul className="w-full p-0">
-          {links.map(({ name, path, children }) => (
-            <NavbarItem
-              currentPath={pathName.pathname}
-              key={path}
-              name={name}
-              path={path}
-              childrenLinks={children}
-              onNavigate={handleNavigate}
-            />
-          ))}
-        </ul>
+        {/* Scrollable navigation menu */}
+        <div className="flex-1 overflow-y-auto">
+          <ul className="w-full p-0">
+            {links.map(({ name, path, children }) => (
+              <NavbarItem
+                currentPath={pathName.pathname}
+                key={path}
+                name={name}
+                path={path}
+                childrenLinks={children}
+                onNavigate={handleNavigate}
+              />
+            ))}
+          </ul>
+        </div>
 
-        <div className="mt-auto">
+        {/* Fixed bottom section */}
+        <div className="flex-shrink-0 mt-auto">
           <div className="px-4 py-3 border-t border-base-300 dark:border-base-300">
             <NfcStatusIndicator compact={false} showRefreshButton={true} />
           </div>

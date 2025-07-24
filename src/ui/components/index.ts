@@ -6,7 +6,14 @@ export { default as ErrorBoundary } from "./ErrorBoundary";
 export { default as FormField } from "./FormField";
 export { default as FormStepTitle } from "./FormStepTitle";
 export { default as Loading } from "./Loading";
-export { Modal, DetachNFCModal, DeleteArtworkModal } from "./Modal";
+export { 
+  Modal, 
+  DetachNFCModal, 
+  DeleteArtworkModal,
+  DeleteConfirmationModal,
+  InviteMemberModal,
+  EditMemberModal
+} from "./Modal";
 export { default as NfcListener } from "./NfcListener";
 export { default as NfcManager } from "./NfcManager";
 export { default as NfcStatusDashboard } from "./NfcStatusDashboard";
@@ -29,6 +36,32 @@ export { UserAvatar } from "./UserAvatar";
 export { CreateUserWorkaround } from "./CreateUserWorkaround";
 export { SupabaseDiagnostic } from "./SupabaseDiagnostic";
 export { default as NfcTagsTable } from "./NfcTagsTable";
+export { DataTable } from "./DataTable";
+
+// Multi-tenant RBAC components
+export { OrganizationSwitcher } from "./OrganizationSwitcher";
+export { OrganizationManagement, OrganizationCard, CreateOrganizationModal } from "./OrganizationManagement";
+export { MigrationVerification } from "./MigrationVerification";
+export { 
+  PermissionGuard,
+  AdminGuard,
+  SuperUserGuard,
+  IssuerGuard,
+  AppraiserGuard,
+  UserManagementGuard,
+  ArtworkManagementGuard,
+  NfcManagementGuard,
+  AppraisalManagementGuard
+} from "./PermissionGuard";
+export { 
+  ProtectedRoute,
+  AdminRoute,
+  SuperUserRoute,
+  UserManagementRoute,
+  ArtworkManagementRoute,
+  NfcManagementRoute,
+  AppraisalRoute
+} from "./ProtectedRoute";
 
 // Type exports
 export type * from "./types/common";

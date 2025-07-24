@@ -522,3 +522,207 @@ const ArtworksPage = () => {
 ```
 
 This documentation provides comprehensive coverage of the application's API surface, making it easy for developers to understand and use the available components, hooks, and services consistently.
+
+## Location Management API
+
+### Location Functions
+
+#### getLocations
+Retrieves all locations for an organization.
+
+```typescript
+getLocations(organizationId: string): Promise<LocationWithManager[]>
+```
+
+**Parameters:**
+- `organizationId`: The organization ID to fetch locations for
+
+**Returns:**
+Array of locations with manager information
+
+#### getLocation
+Retrieves a single location by ID.
+
+```typescript
+getLocation(id: string): Promise<LocationWithManager>
+```
+
+#### createLocation
+Creates a new location.
+
+```typescript
+createLocation(location: CreateLocationData): Promise<Location>
+```
+
+**CreateLocationData Interface:**
+```typescript
+interface CreateLocationData {
+  organization_id: string;
+  name: string;
+  code?: string;
+  description?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+  phone?: string;
+  email?: string;
+  manager_id?: string;
+  is_headquarters?: boolean;
+  is_active?: boolean;
+}
+```
+
+#### updateLocation
+Updates an existing location.
+
+```typescript
+updateLocation(id: string, location: Partial<UpdateLocationData>): Promise<Location>
+```
+
+#### deleteLocation
+Soft deletes a location.
+
+```typescript
+deleteLocation(id: string): Promise<void>
+```
+
+### Location Users Functions
+
+#### getLocationUsers
+Retrieves all users assigned to a location.
+
+```typescript
+getLocationUsers(locationId: string): Promise<LocationUserWithDetails[]>
+```
+
+#### addUserToLocation
+Assigns a user to a location.
+
+```typescript
+addUserToLocation(locationUser: AssignUserToLocationData): Promise<LocationUser>
+```
+
+**AssignUserToLocationData Interface:**
+```typescript
+interface AssignUserToLocationData {
+  location_id: string;
+  user_id: string;
+  organization_id: string;
+  role: 'admin' | 'staff';
+  department?: string;
+  position?: string;
+  employee_id?: string;
+  is_primary_location?: boolean;
+  can_access_other_locations?: boolean;
+  start_date?: string;
+}
+```
+
+#### updateLocationUser
+Updates a user's location assignment.
+
+```typescript
+updateLocationUser(id: string, updates: Partial<LocationUser>): Promise<LocationUser>
+```
+
+#### removeUserFromLocation
+Removes a user from a location.
+
+```typescript
+removeUserFromLocation(id: string): Promise<void>
+```
+
+### Location Components
+
+#### LocationForm
+Modal form for creating/editing locations.
+
+```typescript
+<LocationForm
+  location={existingLocation}
+  open={isOpen}
+  onClose={handleClose}
+  onSave={handleSave}
+/>
+```
+
+#### AddUserToLocationDialog
+Dialog for assigning users to a location.
+
+```typescript
+<AddUserToLocationDialog
+  open={isOpen}
+  onClose={handleClose}
+  locationId={locationId}
+  organizationId={organizationId}
+  onSuccess={handleSuccess}
+/>
+```
+
+#### EditLocationUserDialog
+Dialog for editing a user's location assignment.
+
+```typescript
+<EditLocationUserDialog
+  open={isOpen}
+  onClose={handleClose}
+  locationUser={locationUser}
+  onSuccess={handleSuccess}
+/>
+```
+
+### Helper Functions
+
+#### getFullName
+Constructs a full name from first and last names.
+
+```typescript
+getFullName(firstName: string, lastName: string): string
+```
+
+#### checkLocationAccess
+Checks if a user has access to a specific location.
+
+```typescript
+checkLocationAccess(userId: string, locationId: string): Promise<boolean>
+```
+
+#### getUserPrimaryLocation
+Gets a user's primary location for an organization.
+
+```typescript
+getUserPrimaryLocation(userId: string, organizationId: string): Promise<LocationUser | null>
+```
+
+### Usage Examples
+
+```typescript
+// In a component
+const LocationsPage = () => {
+  const { currentOrganization } = useAuth();
+  const [locations, setLocations] = useState<LocationWithManager[]>([]);
+  
+  useEffect(() => {
+    if (currentOrganization) {
+      getLocations(currentOrganization.id)
+        .then(setLocations)
+        .catch(console.error);
+    }
+  }, [currentOrganization]);
+  
+  const handleCreateLocation = async (data: CreateLocationData) => {
+    try {
+      const newLocation = await createLocation(data);
+      // Refresh locations list
+      const updated = await getLocations(currentOrganization.id);
+      setLocations(updated);
+    } catch (error) {
+      console.error('Failed to create location:', error);
+    }
+  };
+  
+  // Component rendering
+};
+```

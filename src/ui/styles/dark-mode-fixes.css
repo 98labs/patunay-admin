@@ -1,0 +1,129 @@
+/* Dark mode fixes for DaisyUI components */
+
+/* Fix btn-outline in dark mode */
+html[data-theme="dark"] .btn-outline,
+.dark .btn-outline {
+  @apply border-base-content/20 text-base-content hover:bg-base-content/10 hover:border-base-content/40;
+}
+
+html[data-theme="dark"] .btn-outline.btn-primary,
+.dark .btn-outline.btn-primary {
+  @apply border-primary text-primary hover:bg-primary hover:text-primary-content;
+}
+
+html[data-theme="dark"] .btn-outline.btn-secondary,
+.dark .btn-outline.btn-secondary {
+  @apply border-secondary text-secondary hover:bg-secondary hover:text-secondary-content;
+}
+
+html[data-theme="dark"] .btn-outline.btn-accent,
+.dark .btn-outline.btn-accent {
+  @apply border-accent text-accent hover:bg-accent hover:text-accent-content;
+}
+
+/* Fix borders in dark mode */
+html[data-theme="dark"] .border-gray-200,
+.dark .border-gray-200 {
+  @apply border-base-300;
+}
+
+html[data-theme="dark"] .border-gray-300,
+.dark .border-gray-300 {
+  @apply border-base-300;
+}
+
+/* Fix text colors in dark mode */
+html[data-theme="dark"] .text-gray-600,
+.dark .text-gray-600 {
+  @apply text-base-content/70;
+}
+
+html[data-theme="dark"] .text-gray-500,
+.dark .text-gray-500 {
+  @apply text-base-content/60;
+}
+
+html[data-theme="dark"] .text-gray-400,
+.dark .text-gray-400 {
+  @apply text-base-content/50;
+}
+
+/* Fix backgrounds in dark mode */
+html[data-theme="dark"] .bg-white,
+.dark .bg-white {
+  @apply bg-base-100;
+}
+
+html[data-theme="dark"] .bg-gray-50,
+.dark .bg-gray-50 {
+  @apply bg-base-200;
+}
+
+html[data-theme="dark"] .bg-gray-100,
+.dark .bg-gray-100 {
+  @apply bg-base-200;
+}
+
+/* Fix hover states in dark mode */
+html[data-theme="dark"] .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-50:hover {
+  @apply hover:bg-base-200;
+}
+
+html[data-theme="dark"] .hover\:bg-gray-100:hover,
+.dark .hover\:bg-gray-100:hover {
+  @apply hover:bg-base-300;
+}
+
+/* Fix text-black in dark mode */
+html[data-theme="dark"] .text-black,
+.dark .text-black {
+  @apply text-base-content;
+}
+
+/* Ensure proper contrast for borders */
+html[data-theme="dark"] .border,
+.dark .border {
+  @apply border-base-300;
+}
+
+/* Fix loading skeleton colors */
+html[data-theme="dark"] .animate-pulse .bg-gray-200,
+.dark .animate-pulse .bg-gray-200 {
+  @apply bg-base-300;
+}
+
+/* Fix dropdown and menu backgrounds */
+html[data-theme="dark"] .dropdown-content,
+.dark .dropdown-content {
+  @apply bg-base-200 border-base-300;
+}
+
+/* Ensure proper table borders in dark mode */
+html[data-theme="dark"] .table th,
+html[data-theme="dark"] .table td,
+.dark .table th,
+.dark .table td {
+  @apply border-base-300;
+}
+
+/* Fix input and select borders */
+html[data-theme="dark"] .input,
+html[data-theme="dark"] .select,
+html[data-theme="dark"] .textarea,
+.dark .input,
+.dark .select,
+.dark .textarea {
+  @apply border-base-300 bg-base-100;
+}
+
+/* Fix card shadows in dark mode */
+html[data-theme="dark"] .shadow-md,
+.dark .shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="dark"] .shadow-lg,
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
