@@ -94,6 +94,9 @@ CREATE UNIQUE INDEX unique_primary_location_per_user_org
 ON location_users(user_id, organization_id) 
 WHERE is_primary_location = true;
 
+    END IF;
+END $$;
+
 -- Enable RLS
 ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE location_users ENABLE ROW LEVEL SECURITY;

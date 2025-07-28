@@ -1,6 +1,12 @@
-create type "public"."user_role" as enum ('admin', 'staff');
+-- Create user_role type only if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+        CREATE TYPE "public"."user_role" AS ENUM ('admin', 'staff');
+    END IF;
+END$$;
 
-create table "public"."appraisal_appraisers" (
+create table if not exists "public"."appraisal_appraisers" (
     "id" uuid not null default gen_random_uuid(),
     "appraisal_id" uuid,
     "appraiser_id" uuid,
@@ -15,7 +21,7 @@ create table "public"."appraisal_appraisers" (
 
 alter table "public"."appraisal_appraisers" enable row level security;
 
-create table "public"."artwork_appraisals" (
+create table if not exists "public"."artwork_appraisals" (
     "id" uuid not null default gen_random_uuid(),
     "condition" text,
     "acquisition_cost" numeric,
@@ -37,7 +43,7 @@ create table "public"."artwork_appraisals" (
 
 alter table "public"."artwork_appraisals" enable row level security;
 
-create table "public"."artwork_appraisers" (
+create table if not exists "public"."artwork_appraisers" (
     "id" uuid not null default gen_random_uuid(),
     "created_at" timestamp with time zone not null default now(),
     "name" text not null,
@@ -53,7 +59,7 @@ create table "public"."artwork_appraisers" (
 
 alter table "public"."artwork_appraisers" enable row level security;
 
-create table "public"."artwork_bibliography" (
+create table if not exists "public"."artwork_bibliography" (
     "id" uuid not null default gen_random_uuid(),
     "created_at" timestamp with time zone not null default now(),
     "artwork_id" uuid not null default gen_random_uuid(),
@@ -69,7 +75,7 @@ create table "public"."artwork_bibliography" (
 
 alter table "public"."artwork_bibliography" enable row level security;
 
-create table "public"."artwork_collectors" (
+create table if not exists "public"."artwork_collectors" (
     "id" uuid not null default gen_random_uuid(),
     "created_at" timestamp with time zone not null default now(),
     "artwork_id" uuid default gen_random_uuid(),
@@ -85,7 +91,7 @@ create table "public"."artwork_collectors" (
 
 alter table "public"."artwork_collectors" enable row level security;
 
-create table "public"."artwork_update_log" (
+create table if not exists "public"."artwork_update_log" (
     "id" uuid not null default gen_random_uuid(),
     "artwork_id" uuid not null,
     "updated_by" uuid,
@@ -97,7 +103,7 @@ create table "public"."artwork_update_log" (
 );
 
 
-create table "public"."artworks" (
+create table if not exists "public"."artworks" (
     "id" uuid not null default gen_random_uuid(),
     "title" text not null,
     "description" text not null,
@@ -126,7 +132,7 @@ create table "public"."artworks" (
 
 alter table "public"."artworks" enable row level security;
 
-create table "public"."assets" (
+create table if not exists "public"."assets" (
     "id" uuid not null default gen_random_uuid(),
     "artwork_id" uuid,
     "filename" text,
@@ -139,7 +145,7 @@ create table "public"."assets" (
 
 alter table "public"."assets" enable row level security;
 
-create table "public"."bibliography" (
+create table if not exists "public"."bibliography" (
     "id" uuid not null default gen_random_uuid(),
     "created_at" timestamp with time zone not null default now(),
     "title" text,
@@ -155,7 +161,7 @@ create table "public"."bibliography" (
 
 alter table "public"."bibliography" enable row level security;
 
-create table "public"."collectors" (
+create table if not exists "public"."collectors" (
     "id" uuid not null default gen_random_uuid(),
     "created_at" timestamp with time zone not null default now(),
     "title" text,
@@ -171,7 +177,7 @@ create table "public"."collectors" (
 
 alter table "public"."collectors" enable row level security;
 
-create table "public"."profiles" (
+create table if not exists "public"."profiles" (
     "id" uuid not null,
     "first_name" text,
     "last_name" text,
@@ -189,7 +195,7 @@ create table "public"."profiles" (
 );
 
 
-create table "public"."status_history" (
+create table if not exists "public"."status_history" (
     "id" uuid not null default gen_random_uuid(),
     "tag_id" text not null,
     "status" boolean not null,
@@ -205,7 +211,7 @@ create table "public"."status_history" (
 
 alter table "public"."status_history" enable row level security;
 
-create table "public"."tags" (
+create table if not exists "public"."tags" (
     "id" text not null,
     "read_write_count" bigint not null default '0'::bigint,
     "expiration_date" date,
@@ -222,7 +228,7 @@ create table "public"."tags" (
 
 alter table "public"."tags" enable row level security;
 
-create table "public"."user_permissions" (
+create table if not exists "public"."user_permissions" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid,
     "permission" text not null,
@@ -234,7 +240,7 @@ create table "public"."user_permissions" (
 
 alter table "public"."user_permissions" enable row level security;
 
-create table "public"."user_sessions" (
+create table if not exists "public"."user_sessions" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid,
     "session_token" text,
@@ -249,53 +255,53 @@ create table "public"."user_sessions" (
 
 alter table "public"."user_sessions" enable row level security;
 
-CREATE UNIQUE INDEX appraisal_appraisers_pkey ON public.appraisal_appraisers USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS appraisal_appraisers_pkey ON public.appraisal_appraisers USING btree (id);
 
-CREATE UNIQUE INDEX art_appraiser_pkey ON public.artwork_appraisers USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS art_appraiser_pkey ON public.artwork_appraisers USING btree (id);
 
-CREATE UNIQUE INDEX artwork_appraisals_pkey ON public.artwork_appraisals USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS artwork_appraisals_pkey ON public.artwork_appraisals USING btree (id);
 
-CREATE UNIQUE INDEX artwork_appraisers_name_key ON public.artwork_appraisers USING btree (name);
+CREATE UNIQUE INDEX IF NOT EXISTS artwork_appraisers_name_key ON public.artwork_appraisers USING btree (name);
 
-CREATE UNIQUE INDEX artwork_bibliography_pkey ON public.artwork_bibliography USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS artwork_bibliography_pkey ON public.artwork_bibliography USING btree (id);
 
-CREATE UNIQUE INDEX artwork_collectors_pkey ON public.artwork_collectors USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS artwork_collectors_pkey ON public.artwork_collectors USING btree (id);
 
-CREATE UNIQUE INDEX artwork_update_log_pkey ON public.artwork_update_log USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS artwork_update_log_pkey ON public.artwork_update_log USING btree (id);
 
-CREATE UNIQUE INDEX artworks_pkey ON public.artworks USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS artworks_pkey ON public.artworks USING btree (id);
 
-CREATE UNIQUE INDEX artworks_tag_id_key ON public.artworks USING btree (tag_id);
+CREATE UNIQUE INDEX IF NOT EXISTS artworks_tag_id_key ON public.artworks USING btree (tag_id);
 
-CREATE UNIQUE INDEX assets_pkey ON public.assets USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS assets_pkey ON public.assets USING btree (id);
 
-CREATE UNIQUE INDEX bibliography_pkey ON public.bibliography USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS bibliography_pkey ON public.bibliography USING btree (id);
 
-CREATE UNIQUE INDEX collectors_pkey ON public.collectors USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS collectors_pkey ON public.collectors USING btree (id);
 
-CREATE INDEX idx_profiles_created_at ON public.profiles USING btree (created_at);
+CREATE INDEX IF NOT EXISTS idx_profiles_created_at ON public.profiles USING btree (created_at);
 
-CREATE INDEX idx_profiles_deleted_at ON public.profiles USING btree (deleted_at);
+CREATE INDEX IF NOT EXISTS idx_profiles_deleted_at ON public.profiles USING btree (deleted_at);
 
-CREATE INDEX idx_profiles_is_active ON public.profiles USING btree (is_active);
+CREATE INDEX IF NOT EXISTS idx_profiles_is_active ON public.profiles USING btree (is_active);
 
-CREATE INDEX idx_profiles_role ON public.profiles USING btree (role);
+CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles USING btree (role);
 
-CREATE INDEX idx_user_permissions_user_id ON public.user_permissions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON public.user_permissions USING btree (user_id);
 
-CREATE INDEX idx_user_sessions_user_id ON public.user_sessions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON public.user_sessions USING btree (user_id);
 
-CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_pkey ON public.profiles USING btree (id);
 
-CREATE UNIQUE INDEX status_history_pkey ON public.status_history USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS status_history_pkey ON public.status_history USING btree (id);
 
-CREATE UNIQUE INDEX tags_pkey ON public.tags USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS tags_pkey ON public.tags USING btree (id);
 
-CREATE UNIQUE INDEX user_permissions_pkey ON public.user_permissions USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS user_permissions_pkey ON public.user_permissions USING btree (id);
 
-CREATE UNIQUE INDEX user_permissions_user_id_permission_key ON public.user_permissions USING btree (user_id, permission);
+CREATE UNIQUE INDEX IF NOT EXISTS user_permissions_user_id_permission_key ON public.user_permissions USING btree (user_id, permission);
 
-CREATE UNIQUE INDEX user_sessions_pkey ON public.user_sessions USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS user_sessions_pkey ON public.user_sessions USING btree (id);
 
 alter table "public"."appraisal_appraisers" add constraint "appraisal_appraisers_pkey" PRIMARY KEY using index "appraisal_appraisers_pkey";
 
@@ -2223,6 +2229,8 @@ grant truncate on table "public"."user_sessions" to "service_role";
 
 grant update on table "public"."user_sessions" to "service_role";
 
+DROP POLICY IF EXISTS "Enable delete for authenticated users" ON "public"."appraisal_appraisers";
+
 create policy "Enable delete for authenticated users"
 on "public"."appraisal_appraisers"
 as permissive
@@ -2531,6 +2539,43 @@ grant truncate on table "storage"."s3_multipart_uploads_parts" to "postgres";
 
 grant update on table "storage"."s3_multipart_uploads_parts" to "postgres";
 
+-- Drop all existing storage policies to avoid conflicts
+DO $$
+DECLARE
+    policy_names TEXT[] := ARRAY[
+        'Allow authenticated users to delete artifacts',
+        'Allow authenticated users to delete avatars',
+        'Allow authenticated users to update artifacts',
+        'Allow authenticated users to update avatars',
+        'Allow authenticated users to upload artifacts',
+        'Allow authenticated users to upload avatars',
+        'Allow public read access to artifacts',
+        'Allow public read access to avatars',
+        'Allow service role to manage all artifacts',
+        'Allow service role to manage all avatars',
+        'Give access to a file to user 9akkwx_0',
+        'Give access to a file to user 9akkwx_1',
+        'Give access to a file to user 9akkwx_2',
+        'Give access to a file to user 9akkwx_3',
+        'Give anon users access to JPG images in folder 9akkwx_0',
+        'Give users authenticated access to folder 9akkwx_0',
+        'Give users authenticated access to folder 9akkwx_1',
+        'Give users authenticated access to folder 9akkwx_2',
+        'Give users authenticated access to folder 9akkwx_3'
+    ];
+    policy_name TEXT;
+BEGIN
+    FOREACH policy_name IN ARRAY policy_names
+    LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', policy_name);
+    END LOOP;
+END$$;
+
+-- Drop all storage policies first
+
+
+DROP POLICY IF EXISTS "Allow authenticated users to delete artifacts" ON "storage"."objects";
+
 create policy "Allow authenticated users to delete artifacts"
 on "storage"."objects"
 as permissive
@@ -2539,6 +2584,8 @@ to authenticated
 using (((bucket_id = 'artifacts'::text) AND ((auth.uid())::text IS NOT NULL)));
 
 
+DROP POLICY IF EXISTS "Allow authenticated users to delete avatars" ON "storage"."objects";
+
 create policy "Allow authenticated users to delete avatars"
 on "storage"."objects"
 as permissive
@@ -2546,6 +2593,8 @@ for delete
 to authenticated
 using (((bucket_id = 'user-avatars'::text) AND ((auth.uid())::text IS NOT NULL)));
 
+
+DROP POLICY IF EXISTS "Allow authenticated users to update artifacts" ON "storage"."objects";
 
 create policy "Allow authenticated users to update artifacts"
 on "storage"."objects"
@@ -2556,6 +2605,8 @@ using (((bucket_id = 'artifacts'::text) AND ((auth.uid())::text IS NOT NULL)))
 with check (((bucket_id = 'artifacts'::text) AND ((auth.uid())::text IS NOT NULL)));
 
 
+DROP POLICY IF EXISTS "Allow authenticated users to update avatars" ON "storage"."objects";
+
 create policy "Allow authenticated users to update avatars"
 on "storage"."objects"
 as permissive
@@ -2564,6 +2615,8 @@ to authenticated
 using (((bucket_id = 'user-avatars'::text) AND ((auth.uid())::text IS NOT NULL)))
 with check (((bucket_id = 'user-avatars'::text) AND ((auth.uid())::text IS NOT NULL)));
 
+
+DROP POLICY IF EXISTS "Allow authenticated users to upload artifacts" ON "storage"."objects";
 
 create policy "Allow authenticated users to upload artifacts"
 on "storage"."objects"
