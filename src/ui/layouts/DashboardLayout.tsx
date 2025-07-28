@@ -4,11 +4,15 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useSession } from "../context/SessionContext";
 import { useDispatch } from "react-redux";
 import { setUser, setSession } from "../store/features/auth";
+import { useOpenFGASync } from "../hooks/useOpenFGASync";
 
 const DashboardLayout = () => {
   const { session } = useSession();
   const dispatch = useDispatch();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Initialize OpenFGA synchronization
+  useOpenFGASync();
   
   useEffect(() => {
     if (session?.user) {

@@ -3,6 +3,7 @@ import { HashRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
 import "./styles/dark-mode-fixes.css";
 import { ErrorBoundary } from "@components";
+import { useAppInitialization } from './hooks/useAppInitialization';
 
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'))
 const Admin = lazy(() => import('./pages/Admin'));
@@ -15,6 +16,9 @@ const RegisterArtwork = lazy(() => import('./pages/RegisterArtwork'));
 const SearchArtwork = lazy(() => import('./pages/SearchArtwork'));
 
 function App() {
+  // Initialize app-wide services
+  useAppInitialization();
+  
   return (
     <ErrorBoundary>
       <HashRouter>
