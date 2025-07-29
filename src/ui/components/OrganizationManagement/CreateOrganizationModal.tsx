@@ -90,223 +90,246 @@ export const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center">
-        {/* Backdrop */}
-        <div 
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-          onClick={onClose}
-        />
+    <div className="modal modal-open">
+      <div className="modal-box max-w-3xl">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-2xl font-semibold">Create New Organization</h3>
+          <button
+            type="button"
+            className="btn btn-sm btn-circle btn-ghost"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+        </div>
 
-        {/* Modal */}
-        <div className="relative inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-medium text-gray-900">
-              Create New Organization
-            </h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-500"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-6">
+            {/* Basic Information Section */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium text-base-content/80">Basic Information</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Organization Name */}
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Organization Name</span>
+                    <span className="label-text-alt text-error">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className={`input input-bordered w-full ${errors.name ? 'input-error' : ''}`}
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="Enter organization name"
+                  />
+                  {errors.name && (
+                    <label className="label">
+                      <span className="label-text-alt text-error">{errors.name}</span>
+                    </label>
+                  )}
+                </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Organization Name *
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.name ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter organization name"
-                />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-                )}
+                {/* Organization Type */}
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Type</span>
+                  </label>
+                  <select
+                    className="select select-bordered w-full"
+                    value={formData.type}
+                    onChange={(e) => handleInputChange('type', e.target.value as OrganizationType)}
+                  >
+                    {Object.entries(ORGANIZATION_TYPES).map(([key, { label }]) => (
+                      <option key={key} value={key}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-                  Organization Type
+              {/* Description */}
+              <div className="form-control w-full">
+                <label className="label">
+                  <span className="label-text font-medium">Description</span>
                 </label>
-                <select
-                  id="type"
-                  value={formData.type}
-                  onChange={(e) => handleInputChange('type', e.target.value as OrganizationType)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {Object.entries(ORGANIZATION_TYPES).map(([key, { label, description }]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="contact_email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Email
-                </label>
-                <input
-                  type="email"
-                  id="contact_email"
-                  value={formData.contact_email}
-                  onChange={(e) => handleInputChange('contact_email', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.contact_email ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="contact@organization.com"
+                <textarea
+                  className="textarea textarea-bordered w-full"
+                  rows={3}
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="Brief description of the organization..."
                 />
-                {errors.contact_email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.contact_email}</p>
-                )}
               </div>
             </div>
 
-            {/* Additional Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="contact_phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Phone
-                </label>
-                <input
-                  type="tel"
-                  id="contact_phone"
-                  value={formData.contact_phone}
-                  onChange={(e) => handleInputChange('contact_phone', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="+1 (555) 123-4567"
-                />
+            <div className="divider"></div>
+
+            {/* Contact Information Section */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium text-base-content/80">Contact Information</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Contact Email</span>
+                  </label>
+                  <input
+                    type="email"
+                    className={`input input-bordered w-full ${errors.contact_email ? 'input-error' : ''}`}
+                    value={formData.contact_email}
+                    onChange={(e) => handleInputChange('contact_email', e.target.value)}
+                    placeholder="contact@organization.com"
+                  />
+                  {errors.contact_email && (
+                    <label className="label">
+                      <span className="label-text-alt text-error">{errors.contact_email}</span>
+                    </label>
+                  )}
+                </div>
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Contact Phone</span>
+                  </label>
+                  <input
+                    type="tel"
+                    className="input input-bordered w-full"
+                    value={formData.contact_phone}
+                    onChange={(e) => handleInputChange('contact_phone', e.target.value)}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">
-                  Website
+              {/* Website */}
+              <div className="form-control w-full">
+                <label className="label">
+                  <span className="label-text font-medium">Website</span>
                 </label>
                 <input
                   type="url"
-                  id="website"
+                  className={`input input-bordered w-full ${errors.website ? 'input-error' : ''}`}
                   value={formData.website}
                   onChange={(e) => handleInputChange('website', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.website ? 'border-red-300' : 'border-gray-300'
-                  }`}
                   placeholder="https://www.organization.com"
                 />
                 {errors.website && (
-                  <p className="mt-1 text-sm text-red-600">{errors.website}</p>
+                  <label className="label">
+                    <span className="label-text-alt text-error">{errors.website}</span>
+                  </label>
                 )}
               </div>
             </div>
 
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                id="description"
-                rows={3}
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Brief description of the organization..."
-              />
-            </div>
+            <div className="divider"></div>
 
-            {/* Address */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Address (Optional)</h4>
+            {/* Address Section */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium text-base-content/80">Address <span className="text-sm font-normal text-base-content/60">(Optional)</span></h4>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <input
-                    type="text"
-                    value={formData.address?.street || ''}
-                    onChange={(e) => handleAddressChange('street', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Street address"
-                  />
+                  <div className="form-control w-full">
+                    <label className="label">
+                      <span className="label-text">Street Address</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered w-full"
+                      value={formData.address?.street || ''}
+                      onChange={(e) => handleAddressChange('street', e.target.value)}
+                      placeholder="123 Main Street"
+                    />
+                  </div>
                 </div>
 
-                <div>
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text">City</span>
+                  </label>
                   <input
                     type="text"
+                    className="input input-bordered w-full"
                     value={formData.address?.city || ''}
                     onChange={(e) => handleAddressChange('city', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="City"
                   />
                 </div>
 
-                <div>
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text">State/Province</span>
+                  </label>
                   <input
                     type="text"
+                    className="input input-bordered w-full"
                     value={formData.address?.state || ''}
                     onChange={(e) => handleAddressChange('state', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="State/Province"
                   />
                 </div>
 
-                <div>
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text">Country</span>
+                  </label>
                   <input
                     type="text"
+                    className="input input-bordered w-full"
                     value={formData.address?.country || ''}
                     onChange={(e) => handleAddressChange('country', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Country"
                   />
                 </div>
 
-                <div>
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text">Postal Code</span>
+                  </label>
                   <input
                     type="text"
+                    className="input input-bordered w-full"
                     value={formData.address?.postal_code || ''}
                     onChange={(e) => handleAddressChange('postal_code', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Postal code"
+                    placeholder="12345"
                   />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                {isLoading && (
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                )}
-                Create Organization
-              </button>
-            </div>
-          </form>
-        </div>
+          {/* Modal Actions */}
+          <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-base-200">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <span className="loading loading-spinner loading-sm mr-2"></span>
+                  Creating...
+                </>
+              ) : (
+                'Create Organization'
+              )}
+            </button>
+          </div>
+        </form>
       </div>
+      
+      {/* Modal backdrop */}
+      <div className="modal-backdrop bg-black/50" onClick={onClose}></div>
     </div>
   );
 };
