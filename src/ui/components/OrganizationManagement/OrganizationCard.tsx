@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Organization, ORGANIZATION_TYPES } from '../../typings';
-import { useGetOrganizationStatsQuery } from '../../store/api/organizationApi';
+import { useGetOrganizationStatsQuery, useUpdateOrganizationMutation } from '../../store/api/organizationApi';
 import { SuperUserGuard } from '../PermissionGuard';
+import { EditOrganizationModal } from './EditOrganizationModal';
+import { useNotification } from '../../hooks/useNotification';
 
 interface OrganizationCardProps {
   organization: Organization;
@@ -13,10 +15,27 @@ export const OrganizationCard: React.FC<OrganizationCardProps> = ({
   onDelete
 }) => {
   const { data: stats, isLoading: statsLoading } = useGetOrganizationStatsQuery(organization.id);
+  const [updateOrganization] = useUpdateOrganizationMutation();
+  const { showSuccess, showError } = useNotification();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const organizationType = ORGANIZATION_TYPES[organization.type];
 
+  const handleEdit = async (formData: any) => {
+    try {
+      await updateOrganization({
+        id: organization.id,
+        ...formData
+      }).unwrap();
+      showSuccess('Organization updated successfully');
+      setIsEditModalOpen(false);
+    } catch (error: any) {
+      showError(error?.message || 'Failed to update organization');
+    }
+  };
+
   return (
+    <>
     <div className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow">
       <div className="p-6">
         {/* Header */}
@@ -33,7 +52,7 @@ export const OrganizationCard: React.FC<OrganizationCardProps> = ({
           <SuperUserGuard>
             <div className="flex space-x-2">
               <button
-                onClick={() => {/* TODO: Edit functionality */}}
+                onClick={() => setIsEditModalOpen(true)}
                 className="text-base-content/40 hover:text-base-content/60"
                 title="Edit organization"
               >
@@ -139,5 +158,16 @@ export const OrganizationCard: React.FC<OrganizationCardProps> = ({
         </div>
       </div>
     </div>
+
+    {/* Edit Modal */}
+    {isEditModalOpen && (
+      <EditOrganizationModal
+        organization={organization}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleEdit}
+      />
+    )}
+    </>
   );
 };
