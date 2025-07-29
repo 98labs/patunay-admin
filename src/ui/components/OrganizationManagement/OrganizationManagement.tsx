@@ -5,10 +5,17 @@ import { Organization, OrganizationType, ORGANIZATION_TYPES } from '../../typing
 import { SuperUserGuard } from '../PermissionGuard';
 import { OrganizationCard } from './OrganizationCard';
 import { CreateOrganizationModal } from './CreateOrganizationModal';
+import ConfirmationModal from '../ConfirmationModal';
+import { useNotification } from '../../hooks/useNotification';
 
 export const OrganizationManagement: React.FC = () => {
   const { canManageOrganizations } = usePermissions();
+  const { showSuccess, showError } = useNotification();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; organizationId: string | null }>({
+    isOpen: false,
+    organizationId: null
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<OrganizationType | ''>('');
   const [page, setPage] = useState(1);
@@ -29,26 +36,35 @@ export const OrganizationManagement: React.FC = () => {
 
 
   const [createOrganization, { isLoading: isCreating }] = useCreateOrganizationMutation();
-  const [deleteOrganization] = useDeleteOrganizationMutation();
+  const [deleteOrganization, { isLoading: isDeleting }] = useDeleteOrganizationMutation();
 
   const handleCreateOrganization = async (organizationData: any) => {
     try {
       await createOrganization(organizationData).unwrap();
       setShowCreateModal(false);
+      showSuccess('Organization created successfully');
       refetch();
     } catch (error) {
+      showError('Failed to create organization');
       console.error('Failed to create organization:', error instanceof Error ? error.message : String(error));
     }
   };
 
-  const handleDeleteOrganization = async (organizationId: string) => {
-    if (window.confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
-      try {
-        await deleteOrganization(organizationId).unwrap();
-        refetch();
-      } catch (error) {
-        console.error('Failed to delete organization:', error instanceof Error ? error.message : String(error));
-      }
+  const handleDeleteOrganization = (organizationId: string) => {
+    setDeleteConfirmation({ isOpen: true, organizationId });
+  };
+
+  const confirmDeleteOrganization = async () => {
+    if (!deleteConfirmation.organizationId) return;
+
+    try {
+      await deleteOrganization(deleteConfirmation.organizationId).unwrap();
+      showSuccess('Organization deleted successfully');
+      setDeleteConfirmation({ isOpen: false, organizationId: null });
+      refetch();
+    } catch (error) {
+      showError('Failed to delete organization');
+      console.error('Failed to delete organization:', error instanceof Error ? error.message : String(error));
     }
   };
 
@@ -251,6 +267,19 @@ export const OrganizationManagement: React.FC = () => {
           isLoading={isCreating}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ isOpen: false, organizationId: null })}
+        onConfirm={confirmDeleteOrganization}
+        title="Delete Organization"
+        message="Are you sure you want to delete this organization? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        danger
+        isLoading={isDeleting}
+      />
     </div>
   );
 };
