@@ -31,7 +31,7 @@ const UserManagement = () => {
   const [showWorkaroundModal, setShowWorkaroundModal] = useState(false);
 
   const { showSuccess, showError } = useNotification();
-  const { currentOrganization, isSuperUser } = useAuth();
+  const { currentOrganization, isSuperUser, user: currentUser } = useAuth();
 
   // API hooks
   const { 
@@ -45,7 +45,7 @@ const UserManagement = () => {
     sortBy: 'created_at',
     sortOrder: 'desc',
     // Only filter by organization if not super user
-    organizationId: currentOrganization?.id
+    organizationId: !isSuperUser ? currentOrganization?.id : undefined
   });
 
   const { 
