@@ -6,6 +6,7 @@ import { updateArtwork as updateArtworkRpc } from '../../supabase/rpc/updateArtw
 import { upsertAppraisal } from '../../supabase/rpc/upsertAppraisal';
 import type { ArtworkEntity } from '../../typings';
 import supabase from '../../supabase';
+import { store } from '../index';
 
 // Define the API response types
 export interface ArtworkListResponse {
@@ -47,6 +48,7 @@ export interface ArtworkListRequest {
   filters?: ArtworkFilters;
   sortBy?: 'created_at' | 'title' | 'artist' | 'updated_at';
   sortOrder?: 'asc' | 'desc';
+  organizationId: string;
 }
 
 export interface AppraisalRequest {
@@ -65,7 +67,7 @@ export const artworkApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get all artworks with filtering and pagination
     getArtworks: builder.query<ArtworkListResponse, ArtworkListRequest>({
-      query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc' }) => ({
+      query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc', organizationId }) => ({
         supabaseOperation: async () => {
           // Build the query with assets joined
           let query = supabase
@@ -73,6 +75,9 @@ export const artworkApi = api.injectEndpoints({
             .select('*, assets(*)', { count: 'exact' })
             .range((page - 1) * pageSize, page * pageSize - 1)
             .order(sortBy, { ascending: sortOrder === 'asc' });
+
+          // Filter by organization_id (required)
+          query = query.eq('organization_id', organizationId);
 
           // Apply filters
           if (filters.search) {
@@ -193,12 +198,19 @@ export const artworkApi = api.injectEndpoints({
       withoutNfc: number;
       byStatus: Record<string, number>;
       byArtist: Record<string, number>;
-    }, void>({
-      query: () => ({
+    }, { organizationId: string }>({
+      query: ({ organizationId }) => ({
         supabaseOperation: async () => {
-          const { data: artworks, error } = await supabase
+          let query = supabase
             .from('artworks')
             .select('status, artist, tag_id');
+
+          // Filter by organization_id if provided
+          if (organizationId) {
+            query = query.eq('organization_id', organizationId);
+          }
+
+          const { data: artworks, error } = await query;
 
           if (error) throw error;
 
@@ -227,14 +239,21 @@ export const artworkApi = api.injectEndpoints({
     }),
 
     // Search artworks
-    searchArtworks: builder.query<ArtworkEntity[], string>({
-      query: (searchTerm) => ({
+    searchArtworks: builder.query<ArtworkEntity[], { searchTerm: string; organizationId: string }>({
+      query: ({ searchTerm, organizationId }) => ({
         supabaseOperation: async () => {
-          const { data, error } = await supabase
+          let query = supabase
             .from('artworks')
             .select('*')
             .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,artist.ilike.%${searchTerm}%`)
             .limit(20);
+
+          // Filter by organization_id if provided
+          if (organizationId) {
+            query = query.eq('organization_id', organizationId);
+          }
+
+          const { data, error } = await query;
 
           if (error) throw error;
           return data || [];

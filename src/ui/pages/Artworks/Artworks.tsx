@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-table";
 
 import { useGetArtworksQuery } from "../../store/api/artworkApi";
+import { useAuth } from "../../hooks/useAuth";
 
 import UploadButton from "./components/UploadButton";
 import { useArtworkColumns } from "./hooks/useArtworkColumns";
@@ -20,6 +21,7 @@ import { Loading, DetachNFCModal, DeleteArtworkModal } from "@components";
 
 const Artworks = () => {
   const navigate = useNavigate();
+  const { currentOrganization } = useAuth();
   
   // Table state
   const [pagination, setPagination] = useState<PaginationState>({
@@ -67,8 +69,9 @@ const Artworks = () => {
       filters,
       sortBy,
       sortOrder,
+      organizationId: currentOrganization?.id || '',
     };
-  }, [pagination, sorting, columnFilters, globalFilter]);
+  }, [pagination, sorting, columnFilters, globalFilter, currentOrganization?.id]);
 
   // Fetch data using RTK Query
   const {
@@ -77,7 +80,9 @@ const Artworks = () => {
     isError,
     error,
     refetch,
-  } = useGetArtworksQuery(requestParams);
+  } = useGetArtworksQuery(requestParams, {
+    skip: !currentOrganization?.id
+  });
 
   const handleFile = useCallback((file: any) => {
     console.log("Selected file:", file);
