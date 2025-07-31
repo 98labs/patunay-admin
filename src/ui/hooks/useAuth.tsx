@@ -150,6 +150,10 @@ export const useAuth = (): AuthState => {
   const isAppraiser = hasRole('appraiser');
   const isStaff = hasRole('staff');
   const isViewer = hasRole('viewer');
+  
+  // Additional checks for cross-org roles
+  const isPrimaryAppraiser = user?.role === 'appraiser';
+  const isPrimaryIssuer = user?.role === 'issuer';
 
   // Load user organizations when user data is available
   useEffect(() => {
