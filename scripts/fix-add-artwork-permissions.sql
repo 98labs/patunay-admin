@@ -1,4 +1,4 @@
--- First, drop all existing add_artwork functions regardless of their signatures
+-- Drop all existing add_artwork functions
 DO $$ 
 DECLARE
     _sql text;
@@ -14,7 +14,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create the updated function with organization_id parameter
+-- Create the updated function that doesn't access auth.users directly
 CREATE OR REPLACE FUNCTION "public"."add_artwork"(
     "p_idnumber" "text", 
     "p_title" "text", 
@@ -44,9 +44,9 @@ CREATE OR REPLACE FUNCTION "public"."add_artwork"(
     "artist" "text", 
     "year" "text", 
     "medium" "text", 
-    "created_by" "text", 
+    "created_by" "uuid", 
     "tag_id" "text", 
-    "tag_issued_by" "text", 
+    "tag_issued_by" "uuid", 
     "tag_issued_at" timestamp without time zone, 
     "created_at" timestamp without time zone, 
     "assets" "jsonb", 
@@ -56,6 +56,7 @@ CREATE OR REPLACE FUNCTION "public"."add_artwork"(
     "organization_id" "uuid"
 )
     LANGUAGE "plpgsql"
+    SECURITY DEFINER
     AS $$
 DECLARE
     v_artwork_id UUID;
@@ -147,6 +148,7 @@ BEGIN
     END IF;
 
     -- Return the newly created artwork with joined data
+    -- Note: returning UUIDs instead of emails to avoid permission issues
     RETURN QUERY
     SELECT 
         a.id,
@@ -159,9 +161,9 @@ BEGIN
         a.artist,
         a.year,
         a.medium,
-        u.email AS created_by,
+        a.created_by,
         a.tag_id,
-        tu.email AS tag_issued_by,
+        a.tag_issued_by,
         a.tag_issued_at,
         a.created_at,
         COALESCE(
@@ -181,11 +183,12 @@ BEGIN
         a.collectors,
         a.organization_id
     FROM artworks a
-    LEFT JOIN auth.users u ON a.created_by = u.id
-    LEFT JOIN auth.users tu ON a.tag_issued_by = tu.id
     WHERE a.id = v_artwork_id;
 END;
 $$;
 
+-- Grant execute permission to authenticated users
+GRANT EXECUTE ON FUNCTION public.add_artwork TO authenticated;
+
 -- Add comment to document the change
-COMMENT ON FUNCTION public.add_artwork IS 'Adds a new artwork with optional NFC tag and organization association. Updated to include organization_id parameter.';
+COMMENT ON FUNCTION public.add_artwork IS 'Adds a new artwork with optional NFC tag and organization association. Updated to include organization_id parameter and avoid auth.users access.';

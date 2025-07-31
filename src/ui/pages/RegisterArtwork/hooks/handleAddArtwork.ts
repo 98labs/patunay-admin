@@ -41,11 +41,12 @@ export const handleAddArtwork = async ({ data, tagId, organizationId }: Props) =
     collectors: result.collectors || [],
     assets: result.assets
       ? result.assets.map((asset: any) => ({
-          fileName: asset.filename ?? "",
+          fileName: asset.fileName ?? "",
           url: asset.url,
-          sortOrder: asset.sort_order,
+          sortOrder: asset.sortOrder,
         }))
       : null,
+    organization_id: result.organization_id,
   };
 
   return parsedRes;

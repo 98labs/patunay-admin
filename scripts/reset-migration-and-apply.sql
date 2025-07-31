@@ -1,4 +1,8 @@
--- First, drop all existing add_artwork functions regardless of their signatures
+-- Remove the failed migration from history
+DELETE FROM supabase_migrations.schema_migrations 
+WHERE version = '20250731143655';
+
+-- Drop all existing add_artwork functions
 DO $$ 
 DECLARE
     _sql text;
@@ -189,3 +193,7 @@ $$;
 
 -- Add comment to document the change
 COMMENT ON FUNCTION public.add_artwork IS 'Adds a new artwork with optional NFC tag and organization association. Updated to include organization_id parameter.';
+
+-- Mark the migration as successfully applied
+INSERT INTO supabase_migrations.schema_migrations (version, statements, name) 
+VALUES ('20250731143655', NULL, '20250731143655_update_add_artwork_organization.sql');
