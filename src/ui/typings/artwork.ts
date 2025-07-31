@@ -30,4 +30,5 @@ export interface ArtworkEntity {
   collectors?: string[];
   assets?: AssetEntity[] | null;
   tags?: TagEntity | null; // New nested tag data from JOIN
+  organization_id?: string;
 }
