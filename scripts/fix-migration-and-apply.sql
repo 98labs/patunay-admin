@@ -1,18 +1,13 @@
--- First, drop all existing add_artwork functions regardless of their signatures
-DO $$ 
-DECLARE
-    _sql text;
-BEGIN
-    -- Find and drop all functions named add_artwork in the public schema
-    FOR _sql IN 
-        SELECT 'DROP FUNCTION IF EXISTS ' || oid::regprocedure || ' CASCADE;' 
-        FROM pg_proc 
-        WHERE proname = 'add_artwork' 
-        AND pronamespace = 'public'::regnamespace
-    LOOP
-        EXECUTE _sql;
-    END LOOP;
-END $$;
+-- First, mark the problematic migration as already applied
+INSERT INTO supabase_migrations.schema_migrations (version, statements, name) 
+VALUES ('20250708083611', NULL, '20250708083611_remote_schema.sql')
+ON CONFLICT (version) DO NOTHING;
+
+-- Now apply the add_artwork update
+-- Drop the existing function if it exists
+DROP FUNCTION IF EXISTS public.add_artwork(
+    text, text, text, double precision, double precision, text, text, text, text, text, date, bigint, jsonb, text, jsonb, jsonb
+);
 
 -- Create the updated function with organization_id parameter
 CREATE OR REPLACE FUNCTION "public"."add_artwork"(
@@ -189,3 +184,8 @@ $$;
 
 -- Add comment to document the change
 COMMENT ON FUNCTION public.add_artwork IS 'Adds a new artwork with optional NFC tag and organization association. Updated to include organization_id parameter.';
+
+-- Mark this migration as applied
+INSERT INTO supabase_migrations.schema_migrations (version, statements, name) 
+VALUES ('20250731143655', NULL, '20250731143655_update_add_artwork_organization.sql')
+ON CONFLICT (version) DO NOTHING;
