@@ -125,18 +125,9 @@ export const userManagementApi = api.injectEndpoints({
               
               let query = client.from('profiles');
               
-              // If organizationId is provided, join with organization_users to filter
-              if (organizationId) {
-                query = query.select(`
-                  *,
-                  organization_users!inner(
-                    organization_id
-                  )
-                `, { count: 'exact' })
-                .eq('organization_users.organization_id', organizationId);
-              } else {
-                query = query.select('*', { count: 'exact' });
-              }
+              // For organization filtering, we'll filter client-side after fetching
+              // This avoids complex permission issues
+              query = query.select('*', { count: 'exact' });
               
               const result = await query
                 .order(sortBy, { ascending: sortOrder === 'asc' })
@@ -163,13 +154,22 @@ export const userManagementApi = api.injectEndpoints({
                 let simpleQuery = client.from('profiles');
                 
                 if (organizationId) {
-                  simpleQuery = simpleQuery.select(`
-                    *,
-                    organization_users!inner(
-                      organization_id
-                    )
-                  `)
-                  .eq('organization_users.organization_id', organizationId);
+                  try {
+                    // Use RPC function for organization filtering
+                    const { data: orgUsers, error: rpcError } = await client
+                      .rpc('get_organization_users_secure', { p_organization_id: organizationId });
+                    
+                    if (!rpcError && orgUsers) {
+                      const userIds = orgUsers.map(u => u.user_id);
+                      simpleQuery = simpleQuery.select('*')
+                        .in('id', userIds);
+                    } else {
+                      simpleQuery = simpleQuery.select('*');
+                    }
+                  } catch (error) {
+                    console.error('[UserManagementAPI] Simple query RPC error:', error);
+                    simpleQuery = simpleQuery.select('*');
+                  }
                 } else {
                   simpleQuery = simpleQuery.select('*');
                 }
@@ -255,30 +255,50 @@ export const userManagementApi = api.injectEndpoints({
 
             // Combine profiles with auth data
             const combinedUsers = profilesData?.map(profile => {
-              // Remove organization_users data if it exists from the join
-              const cleanProfile = { ...profile };
-              delete cleanProfile.organization_users;
-              
-              const authUser = authUsersMap.get(cleanProfile.id);
+              const authUser = authUsersMap.get(profile.id);
               return {
-                id: cleanProfile.id,
-                email: authUser?.email || cleanProfile.email || currentUser.user?.email || '',
-                first_name: cleanProfile.first_name || '',
-                last_name: cleanProfile.last_name || '',
-                role: cleanProfile.role || 'staff',
-                is_active: cleanProfile.is_active ?? true,
-                phone: cleanProfile.phone,
-                avatar_url: cleanProfile.avatar_url,
-                created_at: cleanProfile.created_at,
-                updated_at: cleanProfile.updated_at,
-                last_login_at: cleanProfile.last_login_at || authUser?.last_sign_in_at,
+                id: profile.id,
+                email: authUser?.email || profile.email || currentUser.user?.email || '',
+                first_name: profile.first_name || '',
+                last_name: profile.last_name || '',
+                role: profile.role || 'staff',
+                is_active: profile.is_active ?? true,
+                phone: profile.phone,
+                avatar_url: profile.avatar_url,
+                created_at: profile.created_at,
+                updated_at: profile.updated_at,
+                last_login_at: profile.last_login_at || authUser?.last_sign_in_at,
                 email_confirmed_at: authUser?.email_confirmed_at,
-                permissions: cleanProfile.permissions || [],
+                permissions: profile.permissions || [],
               };
             }) || [];
 
-            // Apply filters
+            // Apply organization filter if provided
             let filteredUsers = combinedUsers;
+            
+            if (organizationId) {
+              // Fetch organization memberships
+              const { data: orgMemberships, error: orgError } = await client
+                .from('organization_users')
+                .select('user_id')
+                .eq('organization_id', organizationId)
+                .eq('is_active', true);
+              
+              if (!orgError && orgMemberships) {
+                const orgUserIds = new Set(orgMemberships.map(m => m.user_id));
+                filteredUsers = filteredUsers.filter(user => orgUserIds.has(user.id));
+              } else {
+                console.warn('[UserManagementAPI] Could not fetch organization memberships:', orgError);
+                // If we can't fetch memberships, check if current user is super_user
+                const currentUserProfile = combinedUsers.find(u => u.id === currentUser.user.id);
+                if (currentUserProfile?.role !== 'super_user') {
+                  // Non-super users should only see themselves if org filtering fails
+                  filteredUsers = filteredUsers.filter(user => user.id === currentUser.user.id);
+                }
+              }
+            }
+            
+            // Apply other filters
             if (filters.role) {
               filteredUsers = filteredUsers.filter(user => user.role === filters.role);
             }

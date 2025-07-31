@@ -45,7 +45,7 @@ const UserManagement = () => {
     sortBy: 'created_at',
     sortOrder: 'desc',
     // Only filter by organization if not super user
-    organizationId: !isSuperUser ? currentOrganization?.id : undefined
+    organizationId: currentOrganization?.id
   });
 
   const { 
