@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { handleAddArtwork } from "../../hooks/handleAddArtwork";
 import { useState } from "react";
 import ImageSlider from "../ImageSlider";
+import { useAuth } from "../../../../hooks/useAuth";
 
 interface Props {
   artwork: ArtworkEntity;
@@ -39,6 +40,7 @@ const ReviewArtwork = ({
   } = artwork;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { currentOrganization } = useAuth();
 
   const details: Detail[] = [
     {
@@ -70,10 +72,18 @@ const ReviewArtwork = ({
   const handleSubmitArtwork = async () => {
     if (isSubmitting) return;
 
+    if (!currentOrganization?.id) {
+      console.error("No organization selected");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const res = await handleAddArtwork({ data: artwork });
+      const res = await handleAddArtwork({ 
+        data: artwork,
+        organizationId: currentOrganization.id 
+      });
 
       onAddArtwork({ ...res, assets: assets });
 

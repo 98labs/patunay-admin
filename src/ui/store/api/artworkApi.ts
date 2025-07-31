@@ -22,6 +22,7 @@ export interface ArtworkResponse {
 
 export interface CreateArtworkRequest {
   artwork: Partial<ArtworkEntity>;
+  organizationId: string;
 }
 
 export interface UpdateArtworkRequest {
@@ -137,9 +138,14 @@ export const artworkApi = api.injectEndpoints({
 
     // Create new artwork
     createArtwork: builder.mutation<ArtworkResponse, CreateArtworkRequest>({
-      query: ({ artwork }) => ({
+      query: ({ artwork, organizationId }) => ({
         supabaseOperation: async () => {
-          const result = await addArtworkRpc(artwork);
+          // Add organization_id to the artwork object
+          const artworkWithOrg = {
+            ...artwork,
+            organization_id: organizationId
+          };
+          const result = await addArtworkRpc(artworkWithOrg);
           return { data: result };
         }
       }),

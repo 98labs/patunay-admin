@@ -4,9 +4,10 @@ import { addArtwork } from "../../../supabase/rpc/addArtwork";
 interface Props {
   data: ArtworkEntity;
   tagId?: string;
+  organizationId: string;
 }
 
-export const handleAddArtwork = async ({ data, tagId }: Props) => {
+export const handleAddArtwork = async ({ data, tagId, organizationId }: Props) => {
   const artwork: ArtworkEntity = {
     id_number: data.id_number,
     title: data.title,
@@ -25,6 +26,7 @@ export const handleAddArtwork = async ({ data, tagId }: Props) => {
     collectors: data.collectors,
     assets:
       typeof data.assets === "string" ? JSON.parse(data.assets) : data.assets,
+    organization_id: organizationId,
   };
 
   const result = (await addArtwork(artwork))[0];
@@ -39,11 +41,12 @@ export const handleAddArtwork = async ({ data, tagId }: Props) => {
     collectors: result.collectors || [],
     assets: result.assets
       ? result.assets.map((asset: any) => ({
-          fileName: asset.filename ?? "",
+          fileName: asset.fileName ?? "",
           url: asset.url,
-          sortOrder: asset.sort_order,
+          sortOrder: asset.sortOrder,
         }))
       : null,
+    organization_id: result.organization_id,
   };
 
   return parsedRes;

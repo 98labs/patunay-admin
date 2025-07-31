@@ -41,7 +41,6 @@ const FormField = ({
   disabled = false,
   listButtonDisabled = false,
   isListItem = false,
-  rows = 3,
   onChange,
   onListItemClick,
   value,
@@ -74,16 +73,6 @@ const FormField = ({
           items={items}
           value={value}
           onChange={onInputChange}
-        />
-      ) : fieldType === 'textarea' ? (
-        <textarea
-          name={name}
-          className="textarea textarea-bordered w-full transition-all focus:outline-none focus:border-primary dark:focus:border-primary focus:ring-2 focus:ring-primary/20 dark:focus:ring-primary/30 bg-base-100 dark:bg-base-200 text-base-content dark:text-base-content border-2 border-base-content/20 dark:border-base-content/30 hover:border-base-content/30 dark:hover:border-base-content/40 placeholder:text-base-content/50 dark:placeholder:text-base-content/60 disabled:opacity-50 disabled:cursor-not-allowed"
-          value={value}
-          placeholder={placeholder || (isHintVisible ? hint : "")}
-          onChange={handleChange}
-          disabled={disabled}
-          rows={rows}
         />
       ) : (
         <div className="flex gap-2">

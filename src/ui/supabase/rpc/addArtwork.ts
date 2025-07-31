@@ -19,6 +19,7 @@ export const addArtwork = async (artwork: ArtworkEntity) => {
     p_provenance: artwork.provenance,
     p_bibliography: artwork.bibliography || [],
     p_collectors: artwork.collectors || [],
+    p_organization_id: artwork.organization_id,
   });
 
   if (error) throw error;
