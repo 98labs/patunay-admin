@@ -17,6 +17,7 @@ import {
 } from '../../store/api/userManagementApi';
 import { User, CreateUserData, UpdateUserData } from '../../typings';
 import { useNotification } from '../../hooks/useNotification';
+import { useAuth } from '../../hooks/useAuth';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
@@ -30,6 +31,7 @@ const UserManagement = () => {
   const [showWorkaroundModal, setShowWorkaroundModal] = useState(false);
 
   const { showSuccess, showError } = useNotification();
+  const { currentOrganization, isSuperUser } = useAuth();
 
   // API hooks
   const { 
@@ -41,7 +43,9 @@ const UserManagement = () => {
     page: 1,
     pageSize: 50,
     sortBy: 'created_at',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
+    // Only filter by organization if not super user
+    organizationId: !isSuperUser ? currentOrganization?.id : undefined
   });
 
   const { 
@@ -151,7 +155,12 @@ const UserManagement = () => {
 
   const handleFormSubmit = useCallback((data: any) => {
     if (viewMode === 'create') {
-      handleCreateUser(data);
+      // Add current organization_id for non-super users
+      const createData = {
+        ...data,
+        organization_id: !isSuperUser && currentOrganization?.id ? currentOrganization.id : data.organization_id
+      };
+      handleCreateUser(createData);
     } else if (viewMode === 'edit' && detailedUser) {
       const { avatar_file, ...updateData } = data;
       handleUpdateUser({
@@ -160,7 +169,7 @@ const UserManagement = () => {
         avatar_file: avatar_file,
       });
     }
-  }, [viewMode, detailedUser, handleCreateUser, handleUpdateUser]);
+  }, [viewMode, detailedUser, handleCreateUser, handleUpdateUser, isSuperUser, currentOrganization]);
 
   // Loading state
   if (isLoadingUsers && !usersResponse) {

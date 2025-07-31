@@ -86,6 +86,7 @@ export interface UserListRequest {
   filters?: UserFilters;
   sortBy?: 'created_at' | 'first_name' | 'last_name' | 'email' | 'last_login_at';
   sortOrder?: 'asc' | 'desc';
+  organizationId?: string;
 }
 
 // Inject user management endpoints
@@ -93,7 +94,7 @@ export const userManagementApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get all users with roles and permissions
     getUsers: builder.query<UserListResponse, UserListRequest>({
-      query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc' }) => ({
+      query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc', organizationId }) => ({
         supabaseOperation: async () => {
           console.log('[UserManagementAPI] Starting getUsers query', { page, pageSize, sortBy, sortOrder });
           
@@ -120,10 +121,24 @@ export const userManagementApi = api.injectEndpoints({
             
             try {
               // First try with the full query
-              console.log('[UserManagementAPI] Attempting full query with pagination...');
-              const result = await client
-                .from('profiles')
-                .select('*', { count: 'exact' })
+              console.log('[UserManagementAPI] Attempting full query with pagination...', { organizationId });
+              
+              let query = client.from('profiles');
+              
+              // If organizationId is provided, join with organization_users to filter
+              if (organizationId) {
+                query = query.select(`
+                  *,
+                  organization_users!inner(
+                    organization_id
+                  )
+                `, { count: 'exact' })
+                .eq('organization_users.organization_id', organizationId);
+              } else {
+                query = query.select('*', { count: 'exact' });
+              }
+              
+              const result = await query
                 .order(sortBy, { ascending: sortOrder === 'asc' })
                 .range((page - 1) * pageSize, page * pageSize - 1);
               
@@ -145,10 +160,21 @@ export const userManagementApi = api.injectEndpoints({
                 console.warn('[UserManagementAPI] Got 500 error, trying simpler query...');
                 
                 // Try without count and pagination
-                const simpleResult = await client
-                  .from('profiles')
-                  .select('*')
-                  .limit(pageSize);
+                let simpleQuery = client.from('profiles');
+                
+                if (organizationId) {
+                  simpleQuery = simpleQuery.select(`
+                    *,
+                    organization_users!inner(
+                      organization_id
+                    )
+                  `)
+                  .eq('organization_users.organization_id', organizationId);
+                } else {
+                  simpleQuery = simpleQuery.select('*');
+                }
+                
+                const simpleResult = await simpleQuery.limit(pageSize);
                 
                 console.log('[UserManagementAPI] Simple query result:', {
                   hasData: !!simpleResult.data,
@@ -229,21 +255,25 @@ export const userManagementApi = api.injectEndpoints({
 
             // Combine profiles with auth data
             const combinedUsers = profilesData?.map(profile => {
-              const authUser = authUsersMap.get(profile.id);
+              // Remove organization_users data if it exists from the join
+              const cleanProfile = { ...profile };
+              delete cleanProfile.organization_users;
+              
+              const authUser = authUsersMap.get(cleanProfile.id);
               return {
-                id: profile.id,
-                email: authUser?.email || profile.email || currentUser.user?.email || '',
-                first_name: profile.first_name || '',
-                last_name: profile.last_name || '',
-                role: profile.role || 'staff',
-                is_active: profile.is_active ?? true,
-                phone: profile.phone,
-                avatar_url: profile.avatar_url,
-                created_at: profile.created_at,
-                updated_at: profile.updated_at,
-                last_login_at: profile.last_login_at || authUser?.last_sign_in_at,
+                id: cleanProfile.id,
+                email: authUser?.email || cleanProfile.email || currentUser.user?.email || '',
+                first_name: cleanProfile.first_name || '',
+                last_name: cleanProfile.last_name || '',
+                role: cleanProfile.role || 'staff',
+                is_active: cleanProfile.is_active ?? true,
+                phone: cleanProfile.phone,
+                avatar_url: cleanProfile.avatar_url,
+                created_at: cleanProfile.created_at,
+                updated_at: cleanProfile.updated_at,
+                last_login_at: cleanProfile.last_login_at || authUser?.last_sign_in_at,
                 email_confirmed_at: authUser?.email_confirmed_at,
-                permissions: profile.permissions || [],
+                permissions: cleanProfile.permissions || [],
               };
             }) || [];
 
