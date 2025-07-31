@@ -163,62 +163,6 @@ export const userApi = api.injectEndpoints({
       providesTags: [{ type: 'User', id: 'CURRENT' }],
     }),
 
-    // User management endpoints
-    getUsers: builder.query<{
-      data: User[];
-      count: number;
-    }, UserListRequest>({
-      query: ({ page = 1, pageSize = 10, role, isActive, search }) => ({
-        supabaseOperation: async () => {
-          let query = supabase
-            .from('profiles_view')
-            .select('*', { count: 'exact' })
-            .range((page - 1) * pageSize, page * pageSize - 1)
-            .order('created_at', { ascending: false });
-
-          if (role) {
-            query = query.eq('role', role);
-          }
-
-          if (isActive !== undefined) {
-            query = query.eq('is_active', isActive);
-          }
-
-          if (search) {
-            query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%`);
-          }
-
-          const { data, error, count } = await query;
-          if (error) throw error;
-
-          return { data: data || [], count: count || 0 };
-        }
-      }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map(({ id }) => ({ type: 'User' as const, id })),
-              { type: 'User', id: 'LIST' },
-            ]
-          : [{ type: 'User', id: 'LIST' }],
-    }),
-
-    getUser: builder.query<User, string>({
-      query: (id) => ({
-        supabaseOperation: async () => {
-          const { data, error } = await supabase
-            .from('profiles_view')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-          if (error) throw error;
-
-          return data;
-        }
-      }),
-      providesTags: (result, error, id) => [{ type: 'User', id }],
-    }),
 
     // updateUser: builder.mutation<User, UpdateUserRequest>({
     //   query: ({ id, updates }) => ({
@@ -322,8 +266,6 @@ export const {
   useLogoutMutation,
   useSignupMutation,
   useGetCurrentUserQuery,
-  useGetUsersQuery,
-  useGetUserQuery,
   // useUpdateUserMutation,
   useGetUserProfileQuery,
   useUpdateUserProfileMutation,
