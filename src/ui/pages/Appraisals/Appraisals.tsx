@@ -7,6 +7,8 @@ import {
 import AppraisalTable from './components/AppraisalTable';
 import AppraisalForm from './components/AppraisalForm';
 import { useNotification } from '../../hooks/useNotification';
+import { usePermissions } from '../../hooks/usePermissions';
+import { Navigate } from 'react-router-dom';
 import supabase from '../../supabase';
 import { format } from 'date-fns';
 
@@ -63,6 +65,15 @@ const Appraisals = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { showSuccess, showError } = useNotification();
+  const { canCreateAppraisals, canManageAppraisals, canManageOrgAppraisals, canManageAllAppraisals } = usePermissions();
+
+  // Check if user has any appraisal permissions
+  const hasAppraisalAccess = canCreateAppraisals || canManageAppraisals || canManageOrgAppraisals || canManageAllAppraisals;
+
+  // Redirect if no access
+  if (!hasAppraisalAccess) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   // Fetch all appraisals
   const fetchAppraisals = useCallback(async () => {
