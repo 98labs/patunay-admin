@@ -72,7 +72,7 @@ const Sidebar = ({
     canManageOrgSettings,
   } = usePermissions();
 
-  const { isSuperUser, currentOrganization, user, organizations } = useAuth();
+  const { isSuperUser, isAdmin, currentOrganization, user, organizations } = useAuth();
 
 
   const links: Links[] = useMemo(() => {
@@ -160,8 +160,8 @@ const Sidebar = ({
       }
     }
 
-    // Organization Management - visible only to super users
-    if (isSuperUser && currentOrganization && (canManageOrgUsers || canViewOrgStatistics || canManageOrgSettings)) {
+    // Organization Management - visible to organization admins and super users
+    if (currentOrganization && (isAdmin || isSuperUser) && (canManageOrgUsers || canViewOrgStatistics || canManageOrgSettings)) {
       const orgChildren: Links[] = [];
       
       if (canManageOrgUsers) {
@@ -205,6 +205,7 @@ const Sidebar = ({
     canCreateAppraisals,
     canManageOrgSettings,
     isSuperUser,
+    isAdmin,
     currentOrganization,
   ]);
 
