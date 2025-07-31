@@ -68,14 +68,14 @@ const OrganizationStatisticsPage: React.FC = () => {
   } = useGetArtworksQuery({
     page: 1,
     pageSize: 1000, // Get all for statistics
-    filters: { organization_id: organizationId }
+    organizationId: organizationId
   }, {
     skip: !organizationId || !canViewOrgStatistics
   });
 
   // Calculate time-based statistics
   const timeBasedStats = useMemo(() => {
-    if (!artworksResponse?.artworks || !members) {
+    if (!artworksResponse?.data || !members) {
       return {
         newArtworks: 0,
         newMembers: 0,
@@ -105,7 +105,7 @@ const OrganizationStatisticsPage: React.FC = () => {
         cutoffDate = new Date(0);
     }
 
-    const newArtworks = artworksResponse.artworks.filter(
+    const newArtworks = artworksResponse.data.filter(
       a => new Date(a.created_at) >= cutoffDate
     ).length;
 
@@ -118,7 +118,7 @@ const OrganizationStatisticsPage: React.FC = () => {
     ).length;
 
     // Calculate growth percentages (simplified)
-    const totalArtworks = artworksResponse.artworks.length;
+    const totalArtworks = artworksResponse.data.length;
     const totalMembers = members.length;
     
     const artworkGrowth = totalArtworks > 0 ? (newArtworks / totalArtworks) * 100 : 0;
@@ -151,7 +151,7 @@ const OrganizationStatisticsPage: React.FC = () => {
   }, [members]);
 
   const artworksByStatusData = useMemo(() => {
-    if (!artworksResponse?.artworks) return [];
+    if (!artworksResponse?.data) return [];
 
     const statusCount = {
       active: 0,
@@ -160,7 +160,7 @@ const OrganizationStatisticsPage: React.FC = () => {
       loaned: 0
     };
 
-    artworksResponse.artworks.forEach(artwork => {
+    artworksResponse.data.forEach(artwork => {
       // Simplified status detection
       if (artwork.deleted_at) {
         statusCount.archived++;
@@ -635,7 +635,7 @@ const OrganizationStatisticsPage: React.FC = () => {
               <h3 className="card-title text-lg mb-4">Recent Artworks</h3>
               <DataTable
                 columns={artworkColumns}
-                data={artworksResponse?.artworks ? artworksResponse.artworks.slice(0, 10) : []}
+                data={artworksResponse?.data ? artworksResponse.data.slice(0, 10) : []}
                 enablePagination={false}
                 isLoading={isLoadingArtworks}
                 emptyMessage="No artworks found"
