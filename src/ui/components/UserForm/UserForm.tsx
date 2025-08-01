@@ -21,6 +21,7 @@ interface UserFormProps {
   onSubmit: (data: UserFormData) => void;
   onCancel: () => void;
   mode: 'create' | 'edit';
+  currentUserRole?: UserRole;
 }
 
 const UserForm: React.FC<UserFormProps> = ({
@@ -29,6 +30,7 @@ const UserForm: React.FC<UserFormProps> = ({
   onSubmit,
   onCancel,
   mode,
+  currentUserRole,
 }) => {
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -384,11 +386,19 @@ const UserForm: React.FC<UserFormProps> = ({
               disabled={isLoading}
               {...register('role', { required: 'Role is required' })}
             >
-              {Object.entries(USER_ROLES).map(([value, { label, description }]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
+              {Object.entries(USER_ROLES)
+                .filter(([value]) => {
+                  // Only show super_user option if current user is a super_user
+                  if (value === 'super_user' && currentUserRole !== 'super_user') {
+                    return false;
+                  }
+                  return true;
+                })
+                .map(([value, { label, description }]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
             </select>
             {errors.role && (
               <label className="block text-sm font-medium mb-1">

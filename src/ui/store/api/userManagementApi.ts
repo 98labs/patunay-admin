@@ -403,6 +403,27 @@ export const userManagementApi = api.injectEndpoints({
               throw new Error('Service role key not configured. Please add VITE_SUPABASE_SERVICE_ROLE_KEY environment variable.');
             }
 
+            // Check if current user is trying to create a super_user
+            if (userData.role === 'super_user') {
+              const currentUser = (await supabase.auth.getUser()).data.user;
+              if (!currentUser) throw new Error('Not authenticated');
+              
+              // Get current user's profile to check their role
+              const { data: currentUserProfile, error: profileError } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', currentUser.id)
+                .single();
+              
+              if (profileError || !currentUserProfile) {
+                throw new Error('Failed to verify current user permissions');
+              }
+              
+              if (currentUserProfile.role !== 'super_user') {
+                throw new Error('Only super users can create other super users');
+              }
+            }
+
             // First, try to create user with minimal data
             let authData;
             let authError;
