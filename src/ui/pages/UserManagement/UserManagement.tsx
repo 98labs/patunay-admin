@@ -276,6 +276,7 @@ const UserManagement = () => {
           isLoading={isCreatingUser || isUpdatingUser || isLoadingSelectedUser}
           onSubmit={handleFormSubmit}
           onCancel={handleCancelForm}
+          currentUserRole={currentUser?.role}
         />
       )}
 
