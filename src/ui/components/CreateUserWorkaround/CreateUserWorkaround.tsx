@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal } from '@components';
 import supabase from '../../supabase';
+import { useAuth } from '../../hooks/useAuth';
 
 interface CreateUserWorkaroundProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export const CreateUserWorkaround: React.FC<CreateUserWorkaroundProps> = ({
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { currentOrganization, isSuperUser } = useAuth();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,19 +66,40 @@ export const CreateUserWorkaround: React.FC<CreateUserWorkaroundProps> = ({
 
     try {
       // Manually insert profile
+      const userRole = formData.get('role') as string || 'staff';
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
           id: userId,
           first_name: formData.get('firstName') as string,
           last_name: formData.get('lastName') as string,
-          role: formData.get('role') as string || 'staff',
+          role: userRole,
           phone: formData.get('phone') as string,
           is_active: true,
           created_at: new Date().toISOString()
         });
 
       if (profileError) throw profileError;
+
+      // Add user to organization if not super user
+      if (!isSuperUser && currentOrganization?.id) {
+        try {
+          const { error: orgError } = await supabase
+            .rpc('add_user_to_organization', {
+              p_user_id: userId,
+              p_organization_id: currentOrganization.id,
+              p_role: userRole,
+              p_permissions: [],
+              p_is_primary: true
+            });
+          
+          if (orgError) {
+            console.error('Failed to add user to organization:', orgError);
+          }
+        } catch (error) {
+          console.error('Error adding user to organization:', error);
+        }
+      }
 
       onSuccess();
       handleClose();

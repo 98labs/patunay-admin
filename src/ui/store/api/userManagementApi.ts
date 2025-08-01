@@ -29,6 +29,7 @@ export interface CreateUserRequest {
   phone?: string;
   permissions?: string[];
   avatar_file?: File;
+  organization_id?: string;
 }
 
 export interface UpdateUserRequest {
@@ -402,7 +403,6 @@ export const userManagementApi = api.injectEndpoints({
             if (!supabaseAdmin) {
               throw new Error('Service role key not configured. Please add VITE_SUPABASE_SERVICE_ROLE_KEY environment variable.');
             }
-
             // Check if current user is trying to create a super_user
             if (userData.role === 'super_user') {
               const currentUser = (await supabase.auth.getUser()).data.user;
@@ -492,8 +492,8 @@ export const userManagementApi = api.injectEndpoints({
               }
             }
 
-            // Wait a moment for the trigger to create the profile
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Wait a bit longer for the trigger to create the profile
+            await new Promise(resolve => setTimeout(resolve, 1000));
             
             // Check if profile was created by trigger
             const { data: existingProfile, error: checkError } = await supabaseAdmin
@@ -543,6 +543,32 @@ export const userManagementApi = api.injectEndpoints({
                 throw new Error(`Failed to update user profile: ${profileError.message}`);
               }
             }
+            // Create organization_users connection if organization_id is provided
+            let organizationAssociationFailed = false;
+            if (userData.organization_id) {
+              try {
+                // Use the new function to add user to organization
+                const { data: orgUserData, error: orgUserError } = await supabase
+                  .rpc('add_user_to_organization', {
+                    p_user_id: authData.user.id,
+                    p_organization_id: userData.organization_id,
+                    p_role: userData.role || 'staff',
+                    p_permissions: userData.permissions || [],
+                    p_is_primary: true
+                  });
+                
+                if (orgUserError) {
+                  organizationAssociationFailed = true;
+                  console.error('Failed to add user to organization:', orgUserError);
+                  // Don't fail the entire user creation, but log the warning
+                  console.warn(`User ${authData.user.id} created but not associated with organization ${userData.organization_id}`);
+                }
+              } catch (error) {
+                organizationAssociationFailed = true;
+                console.error('Error creating organization association:', error);
+                // Continue with user creation even if organization association fails
+              }
+            }
 
             // Grant permissions if specified
             if (userData.permissions && userData.permissions.length > 0) {
@@ -583,6 +609,8 @@ export const userManagementApi = api.injectEndpoints({
               last_login_at: profile?.last_login_at,
               email_confirmed_at: authData.user.email_confirmed_at,
               permissions: profile?.permissions || [],
+              // Add a flag if organization association failed
+              _organizationAssociationPending: userData.organization_id && organizationAssociationFailed,
             };
 
             return { data: createdUser };
