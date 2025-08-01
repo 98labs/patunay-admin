@@ -7,6 +7,9 @@ import {
 import AppraisalTable from './components/AppraisalTable';
 import AppraisalForm from './components/AppraisalForm';
 import { useNotification } from '../../hooks/useNotification';
+import { usePermissions } from '../../hooks/usePermissions';
+import { useAuth } from '../../hooks/useAuth';
+import { Navigate } from 'react-router-dom';
 import supabase from '../../supabase';
 import { format } from 'date-fns';
 
@@ -63,6 +66,8 @@ const Appraisals = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { showSuccess, showError } = useNotification();
+  const { canCreateAppraisals, canManageAppraisals, canManageOrgAppraisals, canManageAllAppraisals, canUpdateAppraisals, canViewAppraisalDetails, hasRole, hasPermission } = usePermissions();
+  const { user, currentOrganization, organizations, isAppraiser, isLoading: isAuthLoading } = useAuth();
 
   // Fetch all appraisals
   const fetchAppraisals = useCallback(async () => {
@@ -319,6 +324,32 @@ const Appraisals = () => {
       });
     }
   }, [viewMode, selectedAppraisal, handleCreateAppraisal, handleUpdateAppraisal]);
+
+  // Fetch appraisals on mount
+  useEffect(() => {
+    fetchAppraisals();
+  }, [fetchAppraisals]);
+
+  // Check if user is appraiser in primary role or any organization
+  const isPrimaryAppraiser = user?.role === 'appraiser';
+  const isOrgAppraiser = organizations.some(org => org.role === 'appraiser');
+  
+  // Check if user has any appraisal permissions or is an appraiser
+  const hasAppraisalAccess = isPrimaryAppraiser || isOrgAppraiser || isAppraiser || canCreateAppraisals || canManageAppraisals || canManageOrgAppraisals || canManageAllAppraisals || canUpdateAppraisals || canViewAppraisalDetails;
+
+  // Show loading while auth is still loading or organization is not set
+  if (isAuthLoading || currentOrganization === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
+
+  // Redirect if no access
+  if (!hasAppraisalAccess) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   // Loading state
   if (isLoading && appraisals.length === 0) {

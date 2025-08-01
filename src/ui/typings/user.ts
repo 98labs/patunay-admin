@@ -286,7 +286,6 @@ export const DEFAULT_PERMISSIONS = {
   staff: [
     'manage_artworks',
     'view_artworks',
-    'manage_appraisals',
     'view_statistics',
   ],
   viewer: [

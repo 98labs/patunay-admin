@@ -72,7 +72,7 @@ const Sidebar = ({
     canManageOrgSettings,
   } = usePermissions();
 
-  const { isSuperUser, currentOrganization, user, organizations } = useAuth();
+  const { isSuperUser, isAdmin, isAppraiser, currentOrganization, user, organizations } = useAuth();
 
 
   const links: Links[] = useMemo(() => {
@@ -100,7 +100,12 @@ const Sidebar = ({
     }
 
     // Appraisals section - visible to appraisers and those who can manage appraisals
-    if (canCreateAppraisals) {
+    // Check if user is appraiser in primary role or any organization
+    const isPrimaryAppraiser = user?.role === 'appraiser';
+    const isOrgAppraiser = organizations.some(org => org.role === 'appraiser');
+    const hasAppraiserAccess = isPrimaryAppraiser || isOrgAppraiser || isAppraiser || canCreateAppraisals;
+    
+    if (hasAppraiserAccess) {
       navigationLinks.push({
         name: "Appraisals",
         path: "/dashboard/appraisals",
@@ -160,8 +165,8 @@ const Sidebar = ({
       }
     }
 
-    // Organization Management - visible only to super users
-    if (isSuperUser && currentOrganization && (canManageOrgUsers || canViewOrgStatistics || canManageOrgSettings)) {
+    // Organization Management - visible to organization admins and super users
+    if (currentOrganization && (isAdmin || isSuperUser) && (canManageOrgUsers || canViewOrgStatistics || canManageOrgSettings)) {
       const orgChildren: Links[] = [];
       
       if (canManageOrgUsers) {
@@ -205,6 +210,8 @@ const Sidebar = ({
     canCreateAppraisals,
     canManageOrgSettings,
     isSuperUser,
+    isAdmin,
+    isAppraiser,
     currentOrganization,
   ]);
 

@@ -78,10 +78,10 @@ export const SuperUserRoute: React.FC<{ children: React.ReactNode }> = ({ childr
 
 export const UserManagementRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { canManageOrgUsers, canManageAllUsers } = usePermissions();
-  const { isLoading } = useAuth();
+  const { isLoading, currentOrganization } = useAuth();
   
   // Show loading while user data is being fetched
-  if (isLoading) {
+  if (isLoading || currentOrganization === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <span className="loading loading-spinner loading-lg"></span>
@@ -128,10 +128,10 @@ export const ArtworkManagementRoute: React.FC<{ children: React.ReactNode }> = (
 
 export const NfcManagementRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { hasPermission } = usePermissions();
-  const { isLoading, user, hasRole } = useAuth();
+  const { isLoading, user, hasRole, currentOrganization } = useAuth();
   
   // Show loading while user data is being fetched
-  if (isLoading) {
+  if (isLoading || currentOrganization === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <span className="loading loading-spinner loading-lg"></span>
@@ -141,7 +141,7 @@ export const NfcManagementRoute: React.FC<{ children: React.ReactNode }> = ({ ch
   
   // Special handling for issuer role - they should always have access to NFC management
   const isIssuerRole = hasRole('issuer');
-  
+
   // Check for issuer-specific permissions or general NFC management permissions
   const canAccess = isIssuerRole || // Issuer role always gets access
                    hasPermission('manage_nfc_tags') || 

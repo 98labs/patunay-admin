@@ -86,6 +86,7 @@ export interface UserListRequest {
   filters?: UserFilters;
   sortBy?: 'created_at' | 'first_name' | 'last_name' | 'email' | 'last_login_at';
   sortOrder?: 'asc' | 'desc';
+  organizationId?: string;
 }
 
 // Inject user management endpoints
@@ -93,25 +94,18 @@ export const userManagementApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get all users with roles and permissions
     getUsers: builder.query<UserListResponse, UserListRequest>({
-      query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc' }) => ({
+      query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc', organizationId }) => ({
         supabaseOperation: async () => {
-          console.log('[UserManagementAPI] Starting getUsers query', { page, pageSize, sortBy, sortOrder });
-          
           try {
             // Check if we have proper access
             const { data: currentUser, error: authError } = await supabase.auth.getUser();
-            console.log('[UserManagementAPI] Auth check result:', { 
-              hasUser: !!currentUser?.user, 
-              userId: currentUser?.user?.id,
-              authError 
-            });
             if (!currentUser?.user) {
               throw new Error('Not authenticated');
             }
             
             // For user management, we need either service role or admin privileges
+            // Use supabaseAdmin if available for organization_users access
             const client = supabaseAdmin || supabase;
-            console.log('[UserManagementAPI] Using client:', supabaseAdmin ? 'supabaseAdmin' : 'supabase');
             
             // Fetch profiles
             let profilesData = null;
@@ -120,41 +114,104 @@ export const userManagementApi = api.injectEndpoints({
             
             try {
               // First try with the full query
-              console.log('[UserManagementAPI] Attempting full query with pagination...');
-              const result = await client
-                .from('profiles')
-                .select('*', { count: 'exact' })
-                .order(sortBy, { ascending: sortOrder === 'asc' })
-                .range((page - 1) * pageSize, page * pageSize - 1);
+              let query;
+              let result;
               
-              profilesData = result.data;
-              profilesError = result.error;
-              count = result.count || 0;
+              // If organizationId is provided and we need to filter by organization
+              if (organizationId) {
+                // Use regular supabase client since it works with proper permissions
+                // First get the user IDs from organization_users
+                const { data: orgUsers, error: orgError } = await supabase
+                    .from('organization_users')
+                    .select('user_id, role, permissions')
+                    .eq('organization_id', organizationId)
+                    .eq('is_active', true);
+                  
+                  if (orgError) {
+                    // Fall back to getting all profiles without org filtering
+                    query = client.from('profiles').select('*', { count: 'exact' });
+                    result = await query
+                      .order(sortBy, { ascending: sortOrder === 'asc' })
+                      .range((page - 1) * pageSize, page * pageSize - 1);
+                    
+                    profilesData = result.data;
+                    profilesError = result.error;
+                    count = result.count || 0;
+                  } else if (orgUsers && orgUsers.length > 0) {
+                    // Create a map of user_id to org data for easy lookup
+                    const orgUserMap = new Map(orgUsers.map(ou => [ou.user_id, ou]));
+                    const userIds = orgUsers.map(ou => ou.user_id);
+                    
+                    // Now get the profiles for these users
+                    const profilesQuery = client
+                      .from('profiles')
+                      .select('*', { count: 'exact' })
+                      .in('id', userIds)
+                      .order(sortBy, { ascending: sortOrder === 'asc' })
+                      .range((page - 1) * pageSize, page * pageSize - 1);
+                    
+                    result = await profilesQuery;
+                    
+                    // Add organization data to profiles
+                    if (result.data) {
+                      profilesData = result.data.map(profile => ({
+                        ...profile,
+                        organization_users: [{
+                          role: orgUserMap.get(profile.id)?.role,
+                          permissions: orgUserMap.get(profile.id)?.permissions
+                        }]
+                      }));
+                    } else {
+                      profilesData = result.data;
+                    }
+                    profilesError = result.error;
+                    count = result.count || 0;
+                  } else {
+                    // No users in this organization
+                    profilesData = [];
+                    profilesError = null;
+                    count = 0;
+                  }
+              } else {
+                // For no organization filter, just get all profiles
+                query = client.from('profiles').select('*', { count: 'exact' });
+                result = await query
+                  .order(sortBy, { ascending: sortOrder === 'asc' })
+                  .range((page - 1) * pageSize, page * pageSize - 1);
+                
+                profilesData = result.data;
+                profilesError = result.error;
+                count = result.count || 0;
+              }
               
-              console.log('[UserManagementAPI] Query result:', {
-                status: result.status,
-                hasData: !!profilesData,
-                dataLength: profilesData?.length,
-                hasError: !!profilesError,
-                errorCode: profilesError?.code,
-                errorMessage: profilesError?.message
-              });
               
               // If we get a 500 error, try a simpler query
-              if (result.status === 500 || (profilesError && profilesError.message?.includes('500'))) {
-                console.warn('[UserManagementAPI] Got 500 error, trying simpler query...');
+              if (result?.status === 500 || (profilesError && profilesError.message?.includes('500'))) {
                 
                 // Try without count and pagination
-                const simpleResult = await client
-                  .from('profiles')
-                  .select('*')
-                  .limit(pageSize);
+                let simpleQuery = client.from('profiles');
                 
-                console.log('[UserManagementAPI] Simple query result:', {
-                  hasData: !!simpleResult.data,
-                  dataLength: simpleResult.data?.length,
-                  hasError: !!simpleResult.error
-                });
+                if (organizationId) {
+                  try {
+                    // Use RPC function for organization filtering
+                    const { data: orgUsers, error: rpcError } = await client
+                      .rpc('get_organization_users_secure', { p_organization_id: organizationId });
+                    
+                    if (!rpcError && orgUsers) {
+                      const userIds = orgUsers.map(u => u.user_id);
+                      simpleQuery = simpleQuery.select('*')
+                        .in('id', userIds);
+                    } else {
+                      simpleQuery = simpleQuery.select('*');
+                    }
+                  } catch (error) {
+                    simpleQuery = simpleQuery.select('*');
+                  }
+                } else {
+                  simpleQuery = simpleQuery.select('*');
+                }
+                
+                const simpleResult = await simpleQuery.limit(pageSize);
                 
                 if (!simpleResult.error) {
                   profilesData = simpleResult.data;
@@ -163,17 +220,10 @@ export const userManagementApi = api.injectEndpoints({
                 }
               }
             } catch (error) {
-              console.error('[UserManagementAPI] Error querying profiles:', error);
               profilesError = error;
             }
 
             if (profilesError) {
-              console.error('[UserManagementAPI] Profiles query error details:', {
-                code: profilesError.code,
-                message: profilesError.message,
-                details: profilesError.details,
-                hint: profilesError.hint
-              });
               
               // Check for common error codes
               if (profilesError.code === 'PGRST116') {
@@ -196,13 +246,12 @@ export const userManagementApi = api.injectEndpoints({
                   authData?.users?.map(user => [user.id, user]) || []
                 );
               } catch (error) {
-                console.warn('Could not fetch auth users:', error);
+                // Could not fetch auth users
               }
             }
 
             // If no profiles data, try to at least show current user
             if (!profilesData || profilesData.length === 0) {
-              console.warn('No profiles data available, showing current user only');
               
               // Create a minimal profile for the current user
               const minimalProfile = {
@@ -230,12 +279,18 @@ export const userManagementApi = api.injectEndpoints({
             // Combine profiles with auth data
             const combinedUsers = profilesData?.map(profile => {
               const authUser = authUsersMap.get(profile.id);
+              
+              // If we have organization_users data from the join, use it
+              const orgUser = profile.organization_users?.[0];
+              const permissions = orgUser?.permissions || profile.permissions || [];
+              const role = orgUser?.role || profile.role || 'staff';
+              
               return {
                 id: profile.id,
                 email: authUser?.email || profile.email || currentUser.user?.email || '',
                 first_name: profile.first_name || '',
                 last_name: profile.last_name || '',
-                role: profile.role || 'staff',
+                role: role,
                 is_active: profile.is_active ?? true,
                 phone: profile.phone,
                 avatar_url: profile.avatar_url,
@@ -243,12 +298,14 @@ export const userManagementApi = api.injectEndpoints({
                 updated_at: profile.updated_at,
                 last_login_at: profile.last_login_at || authUser?.last_sign_in_at,
                 email_confirmed_at: authUser?.email_confirmed_at,
-                permissions: profile.permissions || [],
+                permissions: permissions,
               };
             }) || [];
 
-            // Apply filters
+            // Organization filtering is now handled at the database level through the join
             let filteredUsers = combinedUsers;
+            
+            // Apply other filters
             if (filters.role) {
               filteredUsers = filteredUsers.filter(user => user.role === filters.role);
             }
@@ -302,13 +359,11 @@ export const userManagementApi = api.injectEndpoints({
             if (supabaseAdmin) {
               try {
                 const { data, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
-                if (authError) {
-                  console.error('Error fetching auth user:', authError);
-                } else {
+                if (!authError) {
                   authUser = data;
                 }
               } catch (error) {
-                console.error('Failed to fetch auth user:', error);
+                // Failed to fetch auth user
               }
             }
 
@@ -346,6 +401,27 @@ export const userManagementApi = api.injectEndpoints({
           try {
             if (!supabaseAdmin) {
               throw new Error('Service role key not configured. Please add VITE_SUPABASE_SERVICE_ROLE_KEY environment variable.');
+            }
+
+            // Check if current user is trying to create a super_user
+            if (userData.role === 'super_user') {
+              const currentUser = (await supabase.auth.getUser()).data.user;
+              if (!currentUser) throw new Error('Not authenticated');
+              
+              // Get current user's profile to check their role
+              const { data: currentUserProfile, error: profileError } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', currentUser.id)
+                .single();
+              
+              if (profileError || !currentUserProfile) {
+                throw new Error('Failed to verify current user permissions');
+              }
+              
+              if (currentUserProfile.role !== 'super_user') {
+                throw new Error('Only super users can create other super users');
+              }
             }
 
             // First, try to create user with minimal data
@@ -428,7 +504,6 @@ export const userManagementApi = api.injectEndpoints({
             
             if (checkError && checkError.code === 'PGRST116') {
               // Profile doesn't exist, create it manually
-              console.warn('Profile not created by trigger, creating manually...');
               
               const { error: insertError } = await supabaseAdmin
                 .from('profiles')
@@ -445,9 +520,8 @@ export const userManagementApi = api.injectEndpoints({
                 });
               
               if (insertError) {
-                console.error('Profile insert error:', insertError);
                 // Try to clean up the auth user
-                await supabaseAdmin.auth.admin.deleteUser(authData.user.id).catch(console.error);
+                await supabaseAdmin.auth.admin.deleteUser(authData.user.id).catch(() => {});
                 throw new Error(`Failed to create user profile: ${insertError.message}`);
               }
             } else {
@@ -551,7 +625,6 @@ export const userManagementApi = api.injectEndpoints({
                   });
 
                 if (uploadError) {
-                  console.error('Error uploading avatar:', uploadError);
                   throw uploadError;
                 } else {
                   const { data } = supabase.storage
@@ -560,7 +633,6 @@ export const userManagementApi = api.injectEndpoints({
                   avatarUrl = data.publicUrl;
                 }
               } catch (avatarError) {
-                console.error('Avatar upload failed:', avatarError);
                 throw new Error('Failed to upload avatar');
               }
             }
