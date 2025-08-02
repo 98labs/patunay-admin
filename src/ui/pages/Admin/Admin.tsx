@@ -69,25 +69,31 @@ const Admin: React.FC = () => {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
-      // Get NFC tag stats
-      const { count: totalTags } = await supabase
-        .from('nfc_tags')
-        .select('*', { count: 'exact', head: true });
+      // Get NFC tag stats - Tables don't exist yet
+      // const { count: totalTags } = await supabase
+      //   .from('nfc_tags')
+      //   .select('*', { count: 'exact', head: true });
       
-      const { count: attachedTags } = await supabase
-        .from('nfc_tags')
-        .select('*', { count: 'exact', head: true })
-        .not('artwork_id', 'is', null);
+      // const { count: attachedTags } = await supabase
+      //   .from('nfc_tags')
+      //   .select('*', { count: 'exact', head: true })
+      //   .not('artwork_id', 'is', null);
 
-      // Get device stats
-      const { count: totalDevices } = await supabase
-        .from('devices')
-        .select('*', { count: 'exact', head: true });
+      // Get device stats - Tables don't exist yet
+      // const { count: totalDevices } = await supabase
+      //   .from('devices')
+      //   .select('*', { count: 'exact', head: true });
       
-      const { count: activeDevices } = await supabase
-        .from('devices')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_active', true);
+      // const { count: activeDevices } = await supabase
+      //   .from('devices')
+      //   .select('*', { count: 'exact', head: true })
+      //   .eq('is_active', true);
+      
+      // Set default values for now
+      const totalTags = 0;
+      const attachedTags = 0;
+      const totalDevices = 0;
+      const activeDevices = 0;
 
       // Get organization stats (only for super users)
       let orgStats = { total: 0, active: 0 };

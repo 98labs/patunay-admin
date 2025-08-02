@@ -26,7 +26,10 @@ class NetworkStatusManager {
     window.addEventListener('offline', this.handleOffline);
     
     // Check network status periodically
-    setInterval(() => this.checkNetworkStatus(), 30000); // Every 30 seconds
+    const intervalMs = parseInt(import.meta.env.VITE_NETWORK_TEST_INTERVAL || '30000', 10);
+    if (intervalMs > 0) {
+      setInterval(() => this.checkNetworkStatus(), intervalMs);
+    }
   }
   
   private handleOnline = () => {
@@ -55,14 +58,36 @@ class NetworkStatusManager {
   
   private async checkNetworkStatus() {
     try {
-      // Ping Supabase to check real connectivity
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`, {
+      // Use environment variable for connectivity test endpoint
+      const testEndpoint = import.meta.env.VITE_NETWORK_TEST_ENDPOINT || 'https://www.google.com/favicon.ico';
+      const corsMode = import.meta.env.VITE_NETWORK_TEST_CORS_MODE || 'no-cors';
+      const useAuth = import.meta.env.VITE_NETWORK_TEST_USE_AUTH === 'true';
+      
+      // Build request options
+      const requestOptions: RequestInit = {
         method: 'HEAD',
-        mode: 'no-cors'
-      });
+        mode: corsMode as RequestMode
+      };
+      
+      // Add authentication headers if using Supabase endpoint
+      if (useAuth && testEndpoint.includes(import.meta.env.VITE_SUPABASE_URL)) {
+        const session = await supabase.auth.getSession();
+        if (session.data.session?.access_token) {
+          requestOptions.headers = {
+            'Authorization': `Bearer ${session.data.session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          };
+        }
+      }
+      
+      const response = await fetch(testEndpoint, requestOptions);
+      
+      // Consider it online if we get any response (including 401)
+      // 401 means the server is reachable but auth failed
       this.setOnlineStatus(true);
     } catch {
-      this.setOnlineStatus(false);
+      // If the fetch fails completely, check navigator.onLine as fallback
+      this.setOnlineStatus(navigator.onLine);
     }
   }
   
@@ -261,5 +286,4 @@ export function useNetworkStatus() {
 export function setupSupabaseInterceptor() {
   // Unfortunately, Supabase client doesn't support global interceptors
   // We'll need to wrap individual calls or use the RPC wrapper
-  console.log('Network error handling configured');
 }
