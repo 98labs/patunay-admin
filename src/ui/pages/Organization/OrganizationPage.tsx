@@ -529,15 +529,15 @@ const OrganizationPage: React.FC = () => {
                 <div key={member.user_id} className="flex items-center space-x-3 p-3 bg-base-200 rounded-lg">
                   <UserAvatar
                     user={{
-                      first_name: member.user?.first_name,
-                      last_name: member.user?.last_name,
-                      avatar_url: member.user?.avatar_url
+                      first_name: member.profiles?.first_name,
+                      last_name: member.profiles?.last_name,
+                      avatar_url: member.profiles?.avatar_url
                     }}
                     size="sm"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">
-                      {member.user?.first_name} {member.user?.last_name}
+                      {member.profiles?.first_name} {member.profiles?.last_name}
                     </p>
                     <p className="text-xs text-base-content/60">
                       <span className="badge badge-xs badge-primary">{member.role}</span>
