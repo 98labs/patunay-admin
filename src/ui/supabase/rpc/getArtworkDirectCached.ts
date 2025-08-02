@@ -1,16 +1,6 @@
 import supabase from "../index";
 
-// Cache to store artwork data and prevent multiple simultaneous fetches
-const artworkCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 5000; // 5 seconds
-
 export const getArtworkDirectCached = async (uuid: string) => {
-  // Check cache first
-  const cached = artworkCache.get(uuid);
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.data;
-  }
-
   try {
     // First, get the artwork basic data
     const { data: artwork, error: artworkError } = await supabase
@@ -50,9 +40,6 @@ export const getArtworkDirectCached = async (uuid: string) => {
     };
 
     const finalResult = [result]; // Return as array to match expected format
-    
-    // Cache the result
-    artworkCache.set(uuid, { data: finalResult, timestamp: Date.now() });
     
     return finalResult;
   } catch (error) {
