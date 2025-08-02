@@ -1,7 +1,6 @@
 import supabase from "../index";
 
 export const verifyArtworkAccess = async (artworkId: string) => {
-  console.log('🔍 Verifying artwork access for:', artworkId);
   
   // First check if we can read the artwork
   const { data: readData, error: readError } = await supabase
@@ -15,8 +14,6 @@ export const verifyArtworkAccess = async (artworkId: string) => {
     return { canRead: false, canUpdate: false, error: readError };
   }
   
-  console.log('🔍 Can read artwork:', readData);
-  
   // Try a dummy update to check write permissions
   const testData = { updated_at: new Date().toISOString() };
   const { error: updateError } = await supabase
@@ -28,7 +25,5 @@ export const verifyArtworkAccess = async (artworkId: string) => {
     console.error('🔍 Cannot update artwork:', updateError);
     return { canRead: true, canUpdate: false, error: updateError, artwork: readData };
   }
-  
-  console.log('🔍 Can update artwork');
   return { canRead: true, canUpdate: true, artwork: readData };
 };

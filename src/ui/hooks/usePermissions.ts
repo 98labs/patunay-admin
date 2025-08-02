@@ -102,11 +102,6 @@ export const usePermissions = (organizationId?: string) => {
 
     // Test specific permissions for super_user
     const canManageOrgsResult = hasPermission('manage_organizations');
-    console.log('🔍 Testing manage_organizations permission:', {
-      result: canManageOrgsResult,
-      userRole: user?.role,
-      isSuperUser: isSuperUser,
-    });
 
     return {
       // Organization management

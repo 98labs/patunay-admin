@@ -25,7 +25,6 @@ import {
   SuperAdmin,
   SuperAdminDashboard,
   SystemStatistics,
-  DebugPermissions,
   LocationsPage,
   LocationUsersPage
 } from "./LazyComponents";
@@ -195,14 +194,6 @@ const router = createBrowserRouter([
                   <SystemStatistics />
                 </SuspenseWrapper>
               </SuperUserRoute>
-            ),
-          },
-          {
-            path: "/dashboard/debug-permissions",
-            element: (
-              <SuspenseWrapper>
-                <DebugPermissions />
-              </SuspenseWrapper>
             ),
           },
           {

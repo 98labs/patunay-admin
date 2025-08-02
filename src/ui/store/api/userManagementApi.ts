@@ -791,15 +791,8 @@ export const userManagementApi = api.injectEndpoints({
     getCurrentUser: builder.query<UserResponse, void>({
       query: () => ({
         supabaseOperation: async () => {
-          console.log('[UserManagementAPI] Getting current user...');
-          
           try {
             const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
-            console.log('[UserManagementAPI] Current auth user:', { 
-              id: currentUser?.id, 
-              email: currentUser?.email,
-              authError 
-            });
             
             if (authError) throw authError;
             if (!currentUser) return { data: null };
@@ -811,13 +804,6 @@ export const userManagementApi = api.injectEndpoints({
               const { data: userWithRole, error: rpcError } = await supabase
                 .rpc('get_user_with_role', { user_id: currentUser.id })
                 .single();
-              
-              console.log('[UserManagementAPI] get_user_with_role result:', {
-                hasData: !!userWithRole,
-                role: userWithRole?.role,
-                permissions: userWithRole?.permissions,
-                rpcError
-              });
               
               if (!rpcError && userWithRole) {
                 userData = userWithRole;
