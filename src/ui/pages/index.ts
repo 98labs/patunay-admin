@@ -15,4 +15,3 @@ export { default as SettingsPage } from './Settings';
 export { default as StatisticsPage } from './Statistics';
 export { default as SuperAdmin } from "./SuperAdmin";
 export { default as Devices } from "./Devices";
-export { default as HomePage } from "./HomePage";

@@ -22,6 +22,7 @@ export { default as NfcWarningBanner } from "./NfcWarningBanner";
 export { default as NfcSearchProvider } from "./NfcSearchProvider";
 export { default as ConfirmationModal } from "./ConfirmationModal";
 export { default as NotificationMessage } from "./NotificationMessage";
+export { NetworkStatus, NetworkStatusBanner } from "./NetworkStatus";
 export { default as PageHeader } from "./PageHeader";
 export { default as RadioButton } from "./RadioButton";
 export { default as Sidebar } from "./Sidebar";

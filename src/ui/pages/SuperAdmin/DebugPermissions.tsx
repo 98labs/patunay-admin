@@ -1,6 +1,6 @@
 import React from "react";
 import { PageHeader } from "@components";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import { usePermissions } from "../../hooks/usePermissions";
 import { useNavigate } from "react-router-dom";
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { PageHeader, Loading, SimpleChart, DataTable } from "@components";
 import { ColumnDef } from '@tanstack/react-table';
-import { useAuth } from "../../hooks/useAuth";
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import { useNavigate } from "react-router-dom";
 import supabase from "../../supabase";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";

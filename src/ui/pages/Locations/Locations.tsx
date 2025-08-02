@@ -5,7 +5,7 @@ import { PageHeader, Loading, DeleteConfirmationModal } from '@components';
 import { LocationForm } from '../../components/locations/LocationForm';
 import { getLocations, createLocation, updateLocation, deleteLocation, LocationWithManager, getFullName } from '../../lib/api/locations';
 import { CreateLocationData, UpdateLocationData } from '../../typings';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import { useNotification } from '../../hooks/useNotification';
 import { usePermissions } from '../../hooks/usePermissions';
 

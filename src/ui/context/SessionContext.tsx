@@ -21,6 +21,8 @@ type Props = { children: React.ReactNode };
 export const SessionProvider = ({ children }: Props) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  console.log('SessionProvider: Initializing');
 
   useEffect(() => {
     // Initialize theme from localStorage or default to light
@@ -36,6 +38,17 @@ export const SessionProvider = ({ children }: Props) => {
   }, []);
 
   useEffect(() => {
+    console.log('SessionProvider: Getting initial session');
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('SessionProvider: Session loaded', session ? 'Authenticated' : 'Not authenticated');
+      setSession(session);
+      setIsLoading(false);
+    }).catch(error => {
+      console.error('SessionProvider: Error getting session', error);
+      setIsLoading(false);
+    });
+
     const authStateListener = supabase.auth.onAuthStateChange(
       async (_, session) => {
         setSession(session);
@@ -46,7 +59,7 @@ export const SessionProvider = ({ children }: Props) => {
     return () => {
       authStateListener.data.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
   const contextValue = useMemo(() => ({ session }), [session]);
 

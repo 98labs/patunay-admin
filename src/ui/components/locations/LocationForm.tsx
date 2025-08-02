@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FormField } from '@components';
 import { Location, CreateLocationData, UpdateLocationData } from '../../typings';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import supabase from '../../supabase';
 
 interface LocationFormProps {

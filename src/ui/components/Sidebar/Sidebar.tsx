@@ -2,7 +2,7 @@ import { UserProfile, NfcStatusIndicator, OrganizationSwitcher } from "@componen
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../../store/api/userApi";
 import { usePermissions } from "../../hooks/usePermissions";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import { Links, NavbarItemProps } from "./types";
 import { useMemo, useCallback } from "react";
 
