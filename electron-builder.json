@@ -2,7 +2,7 @@
     "appId": "com.patunay",
     "files": ["dist-electron", "dist-react"],
     "extraResources": ["dist-electron/preload.js"],
-    "icon": "./src/ui/assets/logo/patunay-256x256.png",
+    "icon": "./src/assets/logo/patunay-256x256.png",
     "mac": {
         "target": "dmg"
     },
