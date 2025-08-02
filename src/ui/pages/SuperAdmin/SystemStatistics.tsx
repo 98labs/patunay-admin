@@ -123,7 +123,7 @@ const SystemStatistics = () => {
 
         // Fetch appraisals count
         const { count: appraisalCount, error: appraisalError } = await supabase
-          .from('artwork_appraisal')
+          .from('artwork_appraisals')
           .select('*', { count: 'exact', head: true });
 
         if (appraisalError) throw appraisalError;
