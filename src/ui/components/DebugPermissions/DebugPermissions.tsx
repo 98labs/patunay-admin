@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePermissions } from '../../hooks/usePermissions';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 
 export const DebugPermissions: React.FC = () => {
   const permissions = usePermissions();

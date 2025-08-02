@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import { Organization } from '../../typings';
 
 interface OrganizationSwitcherProps {

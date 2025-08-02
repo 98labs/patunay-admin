@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { PageHeader, Loading, UserAvatar } from "@components";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import { useNavigate } from "react-router-dom";
 import supabase from "../../supabase";
 import { format } from "date-fns";

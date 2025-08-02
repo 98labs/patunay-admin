@@ -25,8 +25,6 @@ import {
   SuperAdmin,
   SuperAdminDashboard,
   SystemStatistics,
-  SuperAdminTest,
-  SuperAdminSimple,
   DebugPermissions,
   LocationsPage,
   LocationUsersPage
@@ -34,6 +32,8 @@ import {
 
 // Layout components are loaded separately for better optimization
 const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
+
+console.log('Router: Creating browser router');
 
 const router = createBrowserRouter([
   // I recommend you reflect the routes here in the pages folder
@@ -44,7 +44,10 @@ const router = createBrowserRouter([
       // Public routes
       {
         path: "/",
-        element: <Navigate to="/login" />,
+        element: (() => {
+          console.log('Router: Rendering root path redirect');
+          return <Navigate to="/login" />;
+        })(),
       },
       {
         path: "/login",

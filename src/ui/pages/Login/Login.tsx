@@ -12,6 +12,7 @@ import { useSupabaseDiagnostic } from "../../hooks/useSupabaseDiagnostic";
 import logo from "@/assets/logo/patunay-logo.png";
 
 const Login = () => {
+  console.log('Login component rendered');
   const dispatch = useDispatch();
   const { session } = useSession();
   const [login, { isLoading }] = useLoginMutation();

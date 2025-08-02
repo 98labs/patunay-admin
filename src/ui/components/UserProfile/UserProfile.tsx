@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 
 import { selectUser } from '../../store/features/auth';
 import { UserAvatar } from '@components';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import { USER_ROLES } from '../../typings';
 
 const UserProfile = () => {

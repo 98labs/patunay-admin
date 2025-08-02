@@ -1,5 +1,6 @@
 import { api } from './baseApi';
-import supabase, { supabaseAdmin } from '../../supabase';
+import supabase from '../../supabase';
+import { softDeleteUser as rpcSoftDeleteUser } from '../../supabase/rpc';
 
 // Soft delete user (safer alternative to hard delete)
 export const softDeleteUser = api.injectEndpoints({
@@ -9,47 +10,14 @@ export const softDeleteUser = api.injectEndpoints({
       query: (userId) => ({
         supabaseOperation: async () => {
           try {
-            if (!supabaseAdmin) {
-              throw new Error('Service role key not configured. Cannot perform admin operations.');
-            }
-
-            const currentUser = (await supabase.auth.getUser()).data.user;
-            if (!currentUser) throw new Error('Not authenticated');
-
             console.log('Soft deleting user:', userId);
 
-            // Mark user as deleted and inactive
-            const { error: updateError } = await supabaseAdmin
-              .from('profiles')
-              .update({
-                is_active: false,
-                deleted_at: new Date().toISOString(),
-                deleted_by: currentUser.id,
-                updated_by: currentUser.id,
-                updated_at: new Date().toISOString(),
-                // Optionally anonymize email for privacy
-                email_backup: null, // Store original email if needed
-              })
-              .eq('id', userId);
-
-            if (updateError) {
-              console.error('Error soft deleting user:', updateError);
-              throw updateError;
-            }
-
-            // Optionally disable the user in auth (prevents login but keeps record)
-            try {
-              const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-                ban_duration: 'none', // Permanently ban
-                email_confirm: false,
-              });
-
-              if (authError) {
-                console.warn('Could not disable user in auth:', authError);
-                // Don't fail the operation if this doesn't work
-              }
-            } catch (authError) {
-              console.warn('Auth disable failed:', authError);
+            // Use the secure RPC function to soft delete user
+            const { data, error } = await rpcSoftDeleteUser(userId);
+            
+            if (error) {
+              console.error('Error soft deleting user:', error);
+              throw new Error(error.message);
             }
 
             console.log('User soft deletion completed successfully');
@@ -71,17 +39,13 @@ export const softDeleteUser = api.injectEndpoints({
       query: (userId) => ({
         supabaseOperation: async () => {
           try {
-            if (!supabaseAdmin) {
-              throw new Error('Service role key not configured. Cannot perform admin operations.');
-            }
-
             const currentUser = (await supabase.auth.getUser()).data.user;
             if (!currentUser) throw new Error('Not authenticated');
 
             console.log('Restoring user:', userId);
 
-            // Remove deletion markers
-            const { error: updateError } = await supabaseAdmin
+            // Use regular client with proper permissions to restore user
+            const { error: updateError } = await supabase
               .from('profiles')
               .update({
                 is_active: true,

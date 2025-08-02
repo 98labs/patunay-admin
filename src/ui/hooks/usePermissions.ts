@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAuth } from './useAuth';
+import { useAuthV2 as useAuth } from './useAuthV2';
 import { UserRole } from '../typings';
 
 export interface PermissionCapabilities {

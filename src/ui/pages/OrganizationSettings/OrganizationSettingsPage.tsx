@@ -10,7 +10,7 @@ import {
   useUpdateOrganizationSettingsMutation,
   useUpdateOrganizationMutation
 } from '../../store/api/organizationApi';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useNotification } from '../../hooks/useNotification';
 import { OrganizationType } from '../../typings';
