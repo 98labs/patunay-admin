@@ -4,7 +4,7 @@ import { FormField, UserAvatar } from '@components';
 import { addUserToLocation } from '../../lib/api/locations';
 import supabase from '../../supabase';
 
-interface AddUserToLocationDialogProps {
+interface AddUserToLocationModalProps {
   open: boolean;
   onClose: () => void;
   locationId: string;
@@ -21,13 +21,13 @@ interface AvailableUser {
   org_role: string;
 }
 
-export function AddUserToLocationDialog({
+export function AddUserToLocationModal({
   open,
   onClose,
   locationId,
   organizationId,
   onSuccess
-}: AddUserToLocationDialogProps) {
+}: AddUserToLocationModalProps) {
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

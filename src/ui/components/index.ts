@@ -34,7 +34,7 @@ export { default as UserProfile } from "./UserProfile";
 export { default as UserTable } from "./UserTable";
 export { default as UserActionMenu } from "./UserActionMenu";
 export { UserAvatar } from "./UserAvatar";
-export { CreateUserWorkaround } from "./CreateUserWorkaround";
+export { CreateUserModal } from "./CreateUserModal";
 export { SupabaseDiagnostic } from "./SupabaseDiagnostic";
 export { default as NfcTagsTable } from "./NfcTagsTable";
 export { DataTable } from "./DataTable";

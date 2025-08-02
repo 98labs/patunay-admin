@@ -3,19 +3,19 @@ import { FormField } from '@components';
 import { updateLocationUser, LocationUserWithDetails, getFullName } from '../../lib/api/locations';
 import { format } from 'date-fns';
 
-interface EditLocationUserDialogProps {
+interface EditLocationUserModalProps {
   open: boolean;
   onClose: () => void;
   locationUser: LocationUserWithDetails;
   onSuccess: () => void;
 }
 
-export function EditLocationUserDialog({
+export function EditLocationUserModal({
   open,
   onClose,
   locationUser,
   onSuccess
-}: EditLocationUserDialogProps) {
+}: EditLocationUserModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   

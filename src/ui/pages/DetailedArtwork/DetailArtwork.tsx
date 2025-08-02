@@ -16,7 +16,7 @@ import { usePermissions } from "../../hooks/usePermissions";
 
 import { updateArtworkDirect } from "../../supabase/rpc/updateArtworkDirect";
 import { detachNfcTag } from "../../supabase/rpc/detachNfcTag";
-import { getArtworkDirectCached } from "../../supabase/rpc/getArtworkDirectCached";
+import { getArtworkDirect } from "../../supabase/rpc/getArtworkDirect";
 import { getAppraisals } from "../../supabase/rpc/getAppraisals";
 
 import { safeJsonParse } from "../Artworks/components/utils";
@@ -50,7 +50,7 @@ const DetailArtwork = () => {
     
     // Refresh the artwork data to show the attached tag
     try {
-      const freshData = await getArtworkDirectCached(artwork!.id);
+      const freshData = await getArtworkDirect(artwork!.id);
       if (freshData && freshData.length > 0) {
         setArtwork({
           ...freshData[0],
@@ -159,7 +159,7 @@ const DetailArtwork = () => {
         console.log('📝 Successfully updated artwork:', result[0]);
         
         // Fetch fresh data from the database to ensure all fields are up to date
-        const freshData = await getArtworkDirectCached(artwork.id);
+        const freshData = await getArtworkDirect(artwork.id);
         
         if (freshData && freshData.length > 0) {
           setArtwork({
@@ -200,7 +200,7 @@ const DetailArtwork = () => {
   useEffect(() => {
     const fetchArtwork = async () => {
       try {
-        const data = await getArtworkDirectCached(id);
+        const data = await getArtworkDirect(id);
         
         if (!data || data.length === 0) {
           console.error("Artwork not found");

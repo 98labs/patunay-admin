@@ -25,37 +25,23 @@ export const getArtworkDirect = async (uuid: string) => {
       .eq('artwork_id', uuid)
       .order('sort_order');
 
-    if (assetsError) console.warn('Error fetching assets:', assetsError);
-
-    // Get appraisals separately (if table exists)
-    let appraisals = [];
-    try {
-      const { data, error } = await supabase
-        .from('appraisals')
-        .select('*')
-        .eq('artwork_id', uuid);
-      
-      if (error && error.code !== '42P01') { // 42P01 = table does not exist
-        console.warn('Error fetching appraisals:', error);
-      } else if (data) {
-        appraisals = data;
-      }
-    } catch (e) {
-      // Table might not exist, continue without appraisals
-      console.warn('Appraisals table might not exist');
+    if (assetsError && assetsError.code !== '42P01') {
+      console.warn('Error fetching assets:', assetsError);
     }
 
-    // Combine all data
+    // Combine all data without appraisals for now
     const result = {
       ...artwork,
       active: artwork.tags?.active ?? true,
       assets: assets || [],
-      artwork_appraisals: appraisals,
+      artwork_appraisals: [], // Always return empty array for now
       // For created_by and tag_issued_by, we'll just use the UUIDs
       // to avoid the profiles table recursion issue
     };
 
-    return [result]; // Return as array to match expected format
+    const finalResult = [result]; // Return as array to match expected format
+    
+    return finalResult;
   } catch (error) {
     console.error('Error in getArtworkDirect:', error);
     throw error;
