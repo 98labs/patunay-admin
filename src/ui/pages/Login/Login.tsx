@@ -8,7 +8,7 @@ import { InputType } from "@typings";
 import { useLoginMutation } from "../../store/api/userApi";
 import { showNotification } from "../../components/NotificationMessage/slice";
 import { useSupabaseDiagnostic } from "../../hooks/useSupabaseDiagnostic";
-import { initializeAuth } from "../../store/features/auth/authSliceV2";
+import { initializeAuth } from "../../store/features/auth/authSlice";
 import { AppDispatch } from "../../store/store";
 
 import logo from "@/assets/logo/patunay-logo.png";

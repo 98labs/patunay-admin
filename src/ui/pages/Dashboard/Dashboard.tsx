@@ -11,7 +11,7 @@ import {
   useGetDashboardStatsQuery, 
   useGetActivityLogQuery 
 } from '../../store/api/statisticsApi';
-import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
+import { useAuth } from '../../hooks/useAuth';
 
 const Dashboard = () => {
   const { isSuperUser } = useAuth();

@@ -1,5 +1,5 @@
 import { PageHeader, Loading } from "@components";
-import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
+import { useAuth } from '../../hooks/useAuth';
 
 const Devices = () => {
   const { isAdmin, isLoading: isAuthLoading } = useAuth();

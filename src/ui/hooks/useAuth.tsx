@@ -1,22 +1,44 @@
-import React, { useEffect, useState } from 'react';
-import { useGetCurrentUserQuery } from '../store/api/userApi';
-import { User, UserRole, Organization, OrganizationUser, DEFAULT_PERMISSIONS } from '../typings';
+import { useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { 
+  selectAuth,
+  selectUser,
+  selectIsAuthenticated,
+  selectCurrentOrganization,
+  selectOrganizations,
+  selectIsLoading,
+  selectHasRole,
+  selectIsSuperUser,
+  selectIsAdmin,
+  selectIsIssuer,
+  selectIsAppraiser,
+  selectIsStaff,
+  selectIsViewer,
+  initializeAuth,
+  loadUserOrganizations,
+  switchOrganization as switchOrganizationAction,
+  setSession,
+  clearAuth,
+  refreshUserData
+} from '../store/features/auth/authSlice';
+import { UserRole, DEFAULT_PERMISSIONS } from '../typings';
 import supabase from '../supabase';
 
 export interface AuthState {
-  user: User | null;
+  user: ReturnType<typeof selectUser>;
   isLoading: boolean;
   isAuthenticated: boolean;
-  currentOrganization: Organization | null;
-  organizations: OrganizationUser[];
+  currentOrganization: ReturnType<typeof selectCurrentOrganization>;
+  organizations: ReturnType<typeof selectOrganizations>;
   hasRole: (role: UserRole, organizationId?: string) => boolean;
   hasPermission: (permission: string, organizationId?: string) => boolean;
   canPerform: (action: string, organizationId?: string) => boolean;
-  switchOrganization: (organizationId: string) => void;
-  // Legacy role checks for backward compatibility
+  switchOrganization: (organizationId: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
+  logout: () => Promise<void>;
+  // Role checks
   isAdmin: boolean;
   isStaff: boolean;
-  // New role checks
   isSuperUser: boolean;
   isIssuer: boolean;
   isAppraiser: boolean;
@@ -24,70 +46,74 @@ export interface AuthState {
 }
 
 export const useAuth = (): AuthState => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [currentOrganizationId, setCurrentOrganizationId] = useState<string | null>(null);
-  const [organizations, setOrganizations] = useState<OrganizationUser[]>([]);
+  const dispatch = useAppDispatch();
+  const auth = useAppSelector(selectAuth);
+  const user = useAppSelector(selectUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const currentOrganization = useAppSelector(selectCurrentOrganization);
+  const organizations = useAppSelector(selectOrganizations);
+  const isLoading = useAppSelector(selectIsLoading);
+  
+  // Role selectors
+  const isSuperUser = useAppSelector(selectIsSuperUser);
+  const isAdmin = useAppSelector(selectIsAdmin);
+  const isIssuer = useAppSelector(selectIsIssuer);
+  const isAppraiser = useAppSelector(selectIsAppraiser);
+  const isStaff = useAppSelector(selectIsStaff);
+  const isViewer = useAppSelector(selectIsViewer);
 
-  const { 
-    data: userResponse, 
-    isLoading: isLoadingUser, 
-    refetch 
-  } = useGetCurrentUserQuery(undefined, {
-    skip: !isAuthenticated,
-    refetchOnMountOrArgChange: true, // Always refetch on mount
-  });
-
-  const user = userResponse?.user || null;
-
+  // Initialize auth on mount
   useEffect(() => {
-    // Check initial auth state
-    const checkAuthState = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setUserId(session?.user?.id || null);
-        setIsAuthenticated(!!session);
-      } catch (error) {
-        console.error('Error checking auth state:', error);
-        setIsAuthenticated(false);
-      } finally {
-        setIsInitialized(true);
-      }
-    };
+    if (!auth.isInitialized) {
+      dispatch(initializeAuth());
+    }
+  }, [dispatch, auth.isInitialized]);
 
-    checkAuthState();
+  // Load organizations when user is available
+  useEffect(() => {
+    if (auth.userId && organizations.length === 0 && !auth.isLoadingOrganizations) {
+      dispatch(loadUserOrganizations(auth.userId));
+    }
+  }, [dispatch, auth.userId, organizations.length, auth.isLoadingOrganizations]);
 
-    // Listen for auth changes
+  // Listen for auth state changes
+  useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setIsAuthenticated(!!session);
-        
         if (event === 'SIGNED_IN' && session) {
-          // Refetch user data when signed in
-          refetch();
+          dispatch(setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            expires_at: session.expires_at || 0
+          }));
+          
+          // Reinitialize to get fresh user data
+          dispatch(initializeAuth());
+        } else if (event === 'SIGNED_OUT') {
+          dispatch(clearAuth());
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          dispatch(setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            expires_at: session.expires_at || 0
+          }));
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [refetch]);
+  }, [dispatch]);
 
-  // Get current organization context
-  const currentOrganization = organizations.find(
-    org => org.organization_id === currentOrganizationId
-  )?.organization || null;
-
-  // Role checking with organization context
+  // Role checking function
   const hasRole = (role: UserRole, organizationId?: string): boolean => {
-    const targetOrgId = organizationId || currentOrganizationId;
+    const targetOrgId = organizationId || auth.currentOrganizationId;
     
     // If checking for super_user specifically, only check the actual role
     if (role === 'super_user') {
       return user?.role === 'super_user';
     }
     
-    // Super users have all OTHER roles everywhere (but we already handled super_user above)
+    // Super users have all OTHER roles everywhere
     if (user?.role === 'super_user') return true;
     
     // Check role in specific organization
@@ -100,9 +126,9 @@ export const useAuth = (): AuthState => {
     return user?.role === role;
   };
 
-  // Permission checking with organization context
+  // Permission checking function
   const hasPermission = (permission: string, organizationId?: string): boolean => {
-    const targetOrgId = organizationId || currentOrganizationId;
+    const targetOrgId = organizationId || auth.currentOrganizationId;
     
     // Super users have all permissions
     if (user?.role === 'super_user') {
@@ -121,7 +147,7 @@ export const useAuth = (): AuthState => {
       }
     }
     
-    // Fallback to user's primary role permissions if no organization context
+    // Fallback to user's primary role permissions
     const primaryRolePermission = user?.role ? DEFAULT_PERMISSIONS[user.role]?.includes(permission) : false;
     const userPermission = user?.permissions?.includes(permission) || false;
     
@@ -134,72 +160,24 @@ export const useAuth = (): AuthState => {
   };
 
   // Organization switching
-  const switchOrganization = (organizationId: string) => {
-    const orgExists = organizations.some(org => org.organization_id === organizationId);
-    if (orgExists) {
-      setCurrentOrganizationId(organizationId);
-      // Store in localStorage for persistence
-      localStorage.setItem('currentOrganizationId', organizationId);
-    }
+  const switchOrganization = async (organizationId: string) => {
+    await dispatch(switchOrganizationAction(organizationId)).unwrap();
   };
 
-  // Role checks
-  const isSuperUser = hasRole('super_user');
-  const isAdmin = hasRole('admin');
-  const isIssuer = hasRole('issuer');
-  const isAppraiser = hasRole('appraiser');
-  const isStaff = hasRole('staff');
-  const isViewer = hasRole('viewer');
-  
-  // Additional checks for cross-org roles
-  const isPrimaryAppraiser = user?.role === 'appraiser';
-  const isPrimaryIssuer = user?.role === 'issuer';
+  // Refresh user data
+  const refreshUser = async () => {
+    await dispatch(refreshUserData()).unwrap();
+  };
 
-  // Load user organizations when user data is available
-  useEffect(() => {
-    const loadUserOrganizations = async () => {
-      if (!user?.id) return;
-      
-      try {
-        const { data: userOrgs, error } = await supabase
-          .from('organization_users')
-          .select(`
-            *,
-            organization:organizations(*)
-          `)
-          .eq('user_id', user.id)
-          .eq('is_active', true);
-        
-        if (error) {
-          console.error('Error loading user organizations:', error);
-          return;
-        }
-        
-        setOrganizations(userOrgs || []);
-        
-        // Set current organization
-        if (userOrgs && userOrgs.length > 0) {
-          // Try to use stored organization or primary organization
-          const storedOrgId = localStorage.getItem('currentOrganizationId');
-          const primaryOrg = userOrgs.find(org => org.is_primary);
-          const targetOrg = userOrgs.find(org => org.organization_id === storedOrgId) || primaryOrg || userOrgs[0];
-          
-          if (targetOrg) {
-            setCurrentOrganizationId(targetOrg.organization_id);
-          }
-        }
-      } catch (error) {
-        console.error('Error in loadUserOrganizations:', error);
-      }
-    };
-    
-    loadUserOrganizations();
-  }, [user?.id]);
-
+  // Logout
+  const logout = async () => {
+    await supabase.auth.signOut();
+    dispatch(clearAuth());
+  };
 
   return {
     user,
-    isLoading: !isInitialized || (isAuthenticated && isLoadingUser),
+    isLoading,
     isAuthenticated,
     currentOrganization,
     organizations,
@@ -207,10 +185,11 @@ export const useAuth = (): AuthState => {
     hasPermission,
     canPerform,
     switchOrganization,
-    // Legacy role checks
+    refreshUser,
+    logout,
+    // Role checks
     isAdmin,
     isStaff,
-    // New role checks
     isSuperUser,
     isIssuer,
     isAppraiser,
@@ -225,7 +204,7 @@ export const withRoleAccess = <P extends object>(
   requiredPermission?: string
 ) => {
   return (props: P) => {
-    const { hasRole, hasPermission, isLoading, user } = useAuth();
+    const { hasRole, hasPermission, isLoading } = useAuth();
 
     if (isLoading) {
       return (
@@ -270,29 +249,5 @@ export const withRoleAccess = <P extends object>(
     }
 
     return <Component {...props} />;
-  };
-};
-
-// Hook for checking if current user can perform an action
-export const useCanPerform = () => {
-  const { hasRole, hasPermission, isAdmin } = useAuth();
-
-  const canManageUsers = isAdmin || hasPermission('manage_users');
-  const canManageArtworks = hasPermission('manage_artworks');
-  const canManageNFC = hasPermission('manage_nfc_tags');
-  const canViewStatistics = hasPermission('view_statistics');
-  const canManageSystem = isAdmin || hasPermission('manage_system');
-  const canManageAppraisals = isAdmin || hasPermission('manage_appraisals');
-
-  return {
-    canManageUsers,
-    canManageArtworks,
-    canManageNFC,
-    canViewStatistics,
-    canManageSystem,
-    canManageAppraisals,
-    hasRole,
-    hasPermission,
-    isAdmin,
   };
 };

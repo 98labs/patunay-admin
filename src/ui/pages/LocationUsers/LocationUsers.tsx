@@ -6,7 +6,7 @@ import { AddUserToLocationModal } from '../../components/locations/AddUserToLoca
 import { EditLocationUserModal } from '../../components/locations/EditLocationUserModal';
 import { getLocation, getLocationUsers, removeUserFromLocation, LocationWithManager, LocationUserWithDetails, getFullName } from '../../lib/api/locations';
 import { format } from 'date-fns';
-import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
+import { useAuth } from '../../hooks/useAuth';
 import { useNotification } from '../../hooks/useNotification';
 import { usePermissions } from '../../hooks/usePermissions';
 

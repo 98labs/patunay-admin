@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
+import { useAuth } from '../../hooks/useAuth';
 
 export const RefreshUserData: React.FC = () => {
   const { user } = useAuth();

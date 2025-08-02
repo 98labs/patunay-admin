@@ -4,7 +4,7 @@ import {
   selectAuth,
   selectOrganizations,
   loadUserOrganizations 
-} from '../store/features/auth/authSliceV2';
+} from '../store/features/auth/authSlice';
 
 // Custom hook to handle organization loading with deduplication
 export const useOrganizationLoader = () => {

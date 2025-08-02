@@ -11,7 +11,6 @@ import { selectNotif } from "../../components/NotificationMessage/selector";
 import { useSelector, useDispatch } from "react-redux";
 import AppraisalInfo from "./components/AppraisalInfo";
 import { showNotification } from "../../components/NotificationMessage/slice";
-import { useCanPerform } from "../../hooks/useAuth";
 import { usePermissions } from "../../hooks/usePermissions";
 
 import { updateArtworkDirect } from "../../supabase/rpc/updateArtworkDirect";
@@ -25,8 +24,8 @@ const DetailArtwork = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { canManageAppraisals } = useCanPerform();
-  const { canViewAppraisalDetails, canCreateAppraisals } = usePermissions();
+  const { canViewAppraisalDetails, canCreateAppraisals, canManageOrgAppraisals, canManageAllAppraisals } = usePermissions();
+  const canManageAppraisals = canManageOrgAppraisals || canManageAllAppraisals;
   const [artwork, setArtwork] = useState<ArtworkType | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
