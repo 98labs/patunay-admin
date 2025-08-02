@@ -4,6 +4,7 @@ import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import { useNavigate } from "react-router-dom";
 import supabase from "../../supabase";
 import { format } from "date-fns";
+import { useToast, ToastContainer } from "../../components/Toast/Toast";
 
 const SuperAdmin = () => {
   const navigate = useNavigate();
@@ -18,6 +19,9 @@ const SuperAdmin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
+  
+  // Toast system
+  const { toasts, showToast, removeToast } = useToast();
 
   // Fetch users directly with Supabase
   useEffect(() => {
@@ -300,12 +304,7 @@ const SuperAdmin = () => {
                           <li>
                             <a onClick={() => {
                               navigator.clipboard.writeText(user.id);
-                              // Show toast
-                              const toast = document.createElement('div');
-                              toast.className = 'toast toast-top toast-end';
-                              toast.innerHTML = '<div class="alert alert-success"><span>User ID copied!</span></div>';
-                              document.body.appendChild(toast);
-                              setTimeout(() => toast.remove(), 2000);
+                              showToast({ message: 'User ID copied!', type: 'success' });
                             }}>
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -429,11 +428,7 @@ const SuperAdmin = () => {
                       className="btn btn-xs btn-ghost"
                       onClick={() => {
                         navigator.clipboard.writeText(selectedUser.id);
-                        const toast = document.createElement('div');
-                        toast.className = 'toast toast-top toast-end';
-                        toast.innerHTML = '<div class="alert alert-success"><span>Copied!</span></div>';
-                        document.body.appendChild(toast);
-                        setTimeout(() => toast.remove(), 2000);
+                        showToast({ message: 'Copied!', type: 'success' });
                       }}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -513,6 +508,9 @@ const SuperAdmin = () => {
           ></div>
         </div>
       )}
+      
+      {/* Toast notifications */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 };

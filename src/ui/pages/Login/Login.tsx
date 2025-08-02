@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 
@@ -8,12 +8,14 @@ import { InputType } from "@typings";
 import { useLoginMutation } from "../../store/api/userApi";
 import { showNotification } from "../../components/NotificationMessage/slice";
 import { useSupabaseDiagnostic } from "../../hooks/useSupabaseDiagnostic";
+import { initializeAuth } from "../../store/features/auth/authSliceV2";
+import { AppDispatch } from "../../store/store";
 
 import logo from "@/assets/logo/patunay-logo.png";
 
 const Login = () => {
   console.log('Login component rendered');
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { session } = useSession();
   const [login, { isLoading }] = useLoginMutation();
   const { runDiagnostic, isRunning: isDiagnosticRunning } = useSupabaseDiagnostic();
@@ -32,7 +34,7 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      await login({
+      const result = await login({
         email: formValues.email,
         password: formValues.password,
       }).unwrap();
@@ -41,6 +43,25 @@ const Login = () => {
         message: "Successfully Login",
         status: "success",
       }));
+      
+      // Initialize auth state after successful login
+      if (result.session) {
+        console.log('Login: Session received, waiting for propagation');
+        
+        // Wait a bit longer for the auth state to fully propagate
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        console.log('Login: Initializing auth state');
+        // Initialize auth state
+        try {
+          const authResult = await dispatch(initializeAuth()).unwrap();
+          console.log('Login: Auth initialized successfully', authResult ? 'with user' : 'no user');
+        } catch (authError) {
+          console.error('Login: Failed to initialize auth', authError);
+        }
+        
+        // The SessionContext will handle the redirect once it detects the session
+      }
     } catch (error: any) {
       dispatch(showNotification({
         message: error.message || "Login failed",

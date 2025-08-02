@@ -78,9 +78,52 @@ export const userApi = api.injectEndpoints({
 
           if (error) throw error;
 
+          // Wait a bit for the session to be properly stored
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Verify the session was stored
+          const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+          
+          if (!verifiedSession) {
+            console.error('Login mutation: Session not found after login');
+            throw new Error('Session not found after login');
+          }
+
+          // After successful login, fetch the user profile data
+          if (verifiedSession.user) {
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', verifiedSession.user.id)
+              .single();
+
+            if (!profileError && profile) {
+              return {
+                user: {
+                  ...profile,
+                  email: verifiedSession.user.email || profile.email || '',
+                },
+                session: verifiedSession,
+              };
+            }
+            
+            // Fallback if profile fetch fails
+            return {
+              user: {
+                id: verifiedSession.user.id,
+                email: verifiedSession.user.email || '',
+                role: 'viewer' as const,
+                is_active: true,
+                created_at: verifiedSession.user.created_at || new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              session: verifiedSession,
+            };
+          }
+
           return {
-            user: data.user,
-            session: data.session,
+            user: null,
+            session: verifiedSession,
           };
         }
       }),
@@ -132,20 +175,40 @@ export const userApi = api.injectEndpoints({
             return { user: null, session: null };
           }
 
-          // Get profile data with the current_user_profile view
+          // Get profile data from the profiles table
           const { data: profile, error: profileError } = await supabase
-            .from('current_user_profile')
+            .from('profiles')
             .select('*')
+            .eq('id', session.user.id)
             .single();
 
           if (profileError) {
             console.error('Error fetching user profile:', profileError);
+            // Try the current_user_profile view as fallback
+            const { data: viewProfile, error: viewError } = await supabase
+              .from('current_user_profile')
+              .select('*')
+              .single();
+            
+            if (!viewError && viewProfile) {
+              return {
+                user: {
+                  ...viewProfile,
+                  email: session.user.email || viewProfile.email || '',
+                },
+                session,
+              };
+            }
+            
             // Return auth user without profile data if profile fetch fails
             return {
               user: {
-                ...session.user,
+                id: session.user.id,
+                email: session.user.email || '',
                 role: 'viewer', // fallback role
                 is_active: true,
+                created_at: session.user.created_at || new Date().toISOString(),
+                updated_at: new Date().toISOString(),
               },
               session,
             };
@@ -153,8 +216,8 @@ export const userApi = api.injectEndpoints({
 
           return {
             user: {
-              ...session.user,
               ...profile,
+              email: session.user.email || profile.email || '',
             },
             session,
           };
