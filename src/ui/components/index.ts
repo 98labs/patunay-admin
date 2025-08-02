@@ -38,6 +38,7 @@ export { CreateUserWorkaround } from "./CreateUserWorkaround";
 export { SupabaseDiagnostic } from "./SupabaseDiagnostic";
 export { default as NfcTagsTable } from "./NfcTagsTable";
 export { DataTable } from "./DataTable";
+export { Toast, useToast, ToastContainer } from "./Toast/Toast";
 
 // Multi-tenant RBAC components
 export { OrganizationSwitcher } from "./OrganizationSwitcher";

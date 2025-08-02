@@ -58,22 +58,73 @@ const pendingRequests = new Map<string, Promise<any>>();
 export const initializeAuth = createAsyncThunk(
   'auth/initialize',
   async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return null;
+    console.log('AuthSlice: Initializing auth');
+    
+    // Try to get session with retry logic
+    let session = null;
+    let retries = 3;
+    
+    while (retries > 0) {
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('AuthSlice: Error getting session:', sessionError);
+        throw sessionError;
+      }
+      
+      if (currentSession) {
+        session = currentSession;
+        break;
+      }
+      
+      if (retries > 1) {
+        console.log(`AuthSlice: No session found, retrying... (${retries - 1} retries left)`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      retries--;
+    }
+    
+    if (!session) {
+      console.log('AuthSlice: No session found after retries');
+      return null;
+    }
+    
+    console.log('AuthSlice: Session found, fetching profile for user:', session.user.id);
     
     // Get user profile
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', session.user.id)
       .single();
       
+    if (profileError) {
+      console.error('AuthSlice: Error fetching profile:', profileError);
+      // Don't throw here, just log and continue with basic user data
+    }
+    
+    const userData = profile ? {
+      ...profile,
+      email: session.user.email || profile.email || ''
+    } : {
+      id: session.user.id,
+      email: session.user.email || '',
+      role: 'viewer' as const,
+      is_active: true,
+      created_at: session.user.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log('AuthSlice: User data prepared:', userData);
+      
     return {
-      session,
-      user: profile ? {
-        ...profile,
-        email: session.user.email || ''
-      } : null
+      session: {
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        expires_at: session.expires_at || 0
+      },
+      user: userData
     };
   }
 );
@@ -216,16 +267,19 @@ const authSliceV2 = createSlice({
         state.error = null;
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
+        console.log('AuthSlice: initializeAuth fulfilled with payload:', action.payload);
         state.isLoading = false;
         state.isInitialized = true;
         
         if (action.payload) {
           state.session = action.payload.session;
           state.user = action.payload.user;
-          state.userId = action.payload.session.user.id;
+          state.userId = action.payload.user.id;
           state.isAuthenticated = true;
+          console.log('AuthSlice: Auth state updated - user:', state.user?.email, 'role:', state.user?.role);
         } else {
           state.isAuthenticated = false;
+          console.log('AuthSlice: No auth payload, user logged out');
         }
       })
       .addCase(initializeAuth.rejected, (state, action) => {
