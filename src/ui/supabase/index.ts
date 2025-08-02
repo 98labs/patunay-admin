@@ -24,12 +24,35 @@ let supabaseInstance: ReturnType<typeof createClient> | null = null;
 
 // Default client for regular operations
 if (!supabaseInstance) {
+  console.log('Supabase: Creating client instance');
   supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: true,
+      storage: window.localStorage,
+      storageKey: 'supabase.auth.token',
+      flowType: 'pkce',
+      // Add debug mode for better logging
+      debug: true
+    },
+    // Add global options
+    global: {
+      headers: {
+        'X-Client-Info': 'patunay-admin'
+      }
     }
+  });
+  
+  // Add auth state change listener for debugging with more details
+  supabaseInstance.auth.onAuthStateChange((event, session) => {
+    console.log('Supabase: Auth state changed:', {
+      event,
+      hasSession: !!session,
+      userId: session?.user?.id,
+      expiresAt: session?.expires_at,
+      timestamp: new Date().toISOString()
+    });
   });
 }
 

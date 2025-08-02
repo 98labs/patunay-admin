@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   PageHeader, 
   Loading,
@@ -64,6 +64,10 @@ const OrganizationSettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'general' | 'notifications' | 'security' | 'features' | 'branding'>('general');
   const [hasChanges, setHasChanges] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  
+  // Refs for input fields
+  const ipInputRef = useRef<HTMLInputElement>(null);
+  const domainInputRef = useRef<HTMLInputElement>(null);
   const [settings, setSettings] = useState<SettingsState>({
     general: {
       dateFormat: 'MM/DD/YYYY',
@@ -591,6 +595,7 @@ const OrganizationSettingsPage: React.FC = () => {
                   ))}
                   <div className="flex gap-2">
                     <input
+                      ref={ipInputRef}
                       type="text"
                       placeholder="Add IP address (e.g., 192.168.1.1)"
                       className="input input-bordered input-sm flex-1"
@@ -604,10 +609,9 @@ const OrganizationSettingsPage: React.FC = () => {
                     <button
                       className="btn btn-primary btn-sm"
                       onClick={() => {
-                        const input = document.querySelector('input[placeholder*="Add IP"]') as HTMLInputElement;
-                        if (input && input.value) {
-                          handleAddToList('security', 'ipWhitelist', input.value);
-                          input.value = '';
+                        if (ipInputRef.current && ipInputRef.current.value) {
+                          handleAddToList('security', 'ipWhitelist', ipInputRef.current.value);
+                          ipInputRef.current.value = '';
                         }
                       }}
                     >
@@ -641,6 +645,7 @@ const OrganizationSettingsPage: React.FC = () => {
                   ))}
                   <div className="flex gap-2">
                     <input
+                      ref={domainInputRef}
                       type="text"
                       placeholder="Add domain (e.g., company.com)"
                       className="input input-bordered input-sm flex-1"
@@ -654,10 +659,9 @@ const OrganizationSettingsPage: React.FC = () => {
                     <button
                       className="btn btn-primary btn-sm"
                       onClick={() => {
-                        const input = document.querySelector('input[placeholder*="Add domain"]') as HTMLInputElement;
-                        if (input && input.value) {
-                          handleAddToList('security', 'allowedDomains', input.value);
-                          input.value = '';
+                        if (domainInputRef.current && domainInputRef.current.value) {
+                          handleAddToList('security', 'allowedDomains', domainInputRef.current.value);
+                          domainInputRef.current.value = '';
                         }
                       }}
                     >

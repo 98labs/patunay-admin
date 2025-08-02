@@ -1,7 +1,10 @@
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
+import { useDispatch } from "react-redux";
 import supabase from "../supabase";
 import { Loading } from "@components";
 import { Session } from "@supabase/supabase-js";
+import { initializeAuth } from "../store/features/auth/authSliceV2";
+import { AppDispatch } from "../store/store";
 
 const SessionContext = createContext<{
   session: Session | null;
@@ -21,6 +24,7 @@ type Props = { children: React.ReactNode };
 export const SessionProvider = ({ children }: Props) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch<AppDispatch>();
   
   console.log('SessionProvider: Initializing');
 
@@ -39,27 +43,45 @@ export const SessionProvider = ({ children }: Props) => {
 
   useEffect(() => {
     console.log('SessionProvider: Getting initial session');
+    
+    // Add auth state listener first to catch any auth events
+    const authStateListener = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('SessionProvider: Auth state change event:', event, session ? 'Has session' : 'No session');
+        setSession(session);
+        setIsLoading(false);
+        
+        // Update Redux auth state on auth changes
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session) {
+          console.log('SessionProvider: Initializing Redux auth state for event:', event);
+          dispatch(initializeAuth());
+        } else if (event === 'SIGNED_OUT') {
+          console.log('SessionProvider: User signed out, clearing auth state');
+          // The auth slice will handle clearing on initializeAuth returning null
+        }
+      }
+    );
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('SessionProvider: Session loaded', session ? 'Authenticated' : 'Not authenticated');
+      console.log('SessionProvider: Initial session loaded', session ? 'Authenticated' : 'Not authenticated');
       setSession(session);
       setIsLoading(false);
+      
+      // Initialize Redux auth state if session exists
+      if (session) {
+        console.log('SessionProvider: Initializing Redux auth state for existing session');
+        dispatch(initializeAuth());
+      }
     }).catch(error => {
       console.error('SessionProvider: Error getting session', error);
       setIsLoading(false);
     });
 
-    const authStateListener = supabase.auth.onAuthStateChange(
-      async (_, session) => {
-        setSession(session);
-        setIsLoading(false);
-      }
-    );
-
     return () => {
       authStateListener.data.subscription.unsubscribe();
     };
-  }, []);
+  }, [dispatch]);
 
   const contextValue = useMemo(() => ({ session }), [session]);
 
