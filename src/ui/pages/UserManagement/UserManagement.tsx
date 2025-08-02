@@ -6,7 +6,7 @@ import {
   Loading,
   ConfirmationModal,
   UserAvatar,
-  CreateUserWorkaround
+  CreateUserModal
 } from '@components';
 import { 
   useGetUsersQuery,
@@ -431,7 +431,7 @@ const UserManagement = () => {
       />
 
       {/* Create User Workaround Modal */}
-      <CreateUserWorkaround
+      <CreateUserModal
         isOpen={showWorkaroundModal}
         onClose={() => setShowWorkaroundModal(false)}
         onSuccess={() => {

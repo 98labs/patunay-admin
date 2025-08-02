@@ -7,7 +7,6 @@ export * from './detachNfcTag';
 export * from './getAppraisals';
 export * from './getArtwork';
 export * from './getArtworkDirect';
-export * from './getArtworkDirectCached';
 export * from './getTags';
 export * from './registerTag';
 export * from './updateArtwork';
