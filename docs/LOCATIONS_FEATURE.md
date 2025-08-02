@@ -228,7 +228,7 @@ const hasAccess = await checkLocationAccess(userId, locationId);
 
 ### Adding Locations to Existing System
 
-1. Run the migration: `20250105_locations_and_location_users.sql`
+1. Run the migration: `20250627_locations_and_location_users.sql` (in supabase/migrations_backup/)
 2. Create initial locations for existing organizations
 3. Assign existing users to appropriate locations
 4. Update artworks with location assignments if needed

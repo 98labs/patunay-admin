@@ -26,7 +26,7 @@ This document outlines the implementation strategy for transitioning the Patunay
 **Status**: ✅ Complete - Migration file created
 
 **Tasks**:
-1. ✅ Run the migration: `20250626_multi_tenant_rbac_schema.sql`
+1. ✅ Run the migration: `20250626_multi_tenant_rbac_final.sql` (in supabase/migrations/)
 2. ✅ Verify all new tables are created
 3. ✅ Test new enums and constraints
 4. ✅ Migrate existing data to new structure

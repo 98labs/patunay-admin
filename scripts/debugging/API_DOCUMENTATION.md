@@ -438,31 +438,50 @@ const relative = getRelativeTime(createdAt); // "2 hours ago"
 ### Auth Store
 
 ```typescript
-interface AuthState {
+interface AuthStateV2 {
   user: User | null;
-  isAuthenticated: boolean;
+  userId: string | null;
+  session: {
+    access_token: string;
+    refresh_token: string;
+    expires_at: number;
+  } | null;
+  organizations: OrganizationUser[];
+  currentOrganizationId: string | null;
+  currentOrganization: Organization | null;
   isLoading: boolean;
+  isInitialized: boolean;
+  isLoadingOrganizations: boolean;
+  isAuthenticated: boolean;
   error: string | null;
 }
 
-// Actions
-export const authSlice = createSlice({
+// Actions and Thunks
+export const authSliceV2 = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    loginStart: (state) => { /* ... */ },
-    loginSuccess: (state, action) => { /* ... */ },
-    loginFailure: (state, action) => { /* ... */ },
-    logout: (state) => { /* ... */ },
-    clearError: (state) => { /* ... */ }
+    setSession: (state, action) => { /* ... */ },
+    setError: (state, action) => { /* ... */ },
+    clearAuth: (state) => { /* ... */ },
+    updateUser: (state, action) => { /* ... */ }
+  },
+  extraReducers: (builder) => {
+    // Handles async thunks like initializeAuth, loadUserOrganizations, etc.
   }
 });
 
+// Async Thunks
+export const initializeAuth = createAsyncThunk('auth/initialize', async () => { /* ... */ });
+export const loadUserOrganizations = createAsyncThunk('auth/loadOrganizations', async (userId: string) => { /* ... */ });
+export const switchOrganization = createAsyncThunk('auth/switchOrganization', async (organizationId: string) => { /* ... */ });
+
 // Selectors
+export const selectAuth = (state: RootState) => state.auth;
 export const selectUser = (state: RootState) => state.auth.user;
 export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
-export const selectAuthLoading = (state: RootState) => state.auth.isLoading;
-export const selectAuthError = (state: RootState) => state.auth.error;
+export const selectCurrentOrganization = (state: RootState) => state.auth.currentOrganization;
+export const selectOrganizations = (state: RootState) => state.auth.organizations;
 ```
 
 ### Artwork Store

@@ -14,7 +14,7 @@ Run the following SQL script in your Supabase SQL editor:
 
 ```bash
 # The script is located at:
-docs/create-profiles-table.sql
+scripts/debugging/create-profiles-table.sql
 ```
 
 This script will:
@@ -39,8 +39,9 @@ Ensure you have the following environment variables set:
 ```env
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_anon_key
-VITE_SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
+
+Note: Service role key is no longer used in the client application for security reasons. User creation is now handled through Supabase Edge Functions.
 
 ### 4. Test the Setup
 After running the migrations:
@@ -58,9 +59,9 @@ After running the migrations:
 - Check that RLS policies are properly configured
 
 ### "Permission denied" errors
-- Verify your service role key is correctly set
 - Ensure the authenticated user has admin role
 - Check RLS policies are active
+- Verify the Edge Function is deployed for user creation
 
 ### Console errors about undefined supabase
 - This has been fixed in the latest code
