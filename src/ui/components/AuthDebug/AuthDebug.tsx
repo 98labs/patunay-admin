@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
+import { useAuth } from '../../hooks/useAuth';
 import supabase from '../../supabase';
 
 export const AuthDebug = () => {

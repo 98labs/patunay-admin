@@ -4,7 +4,7 @@ import supabase from '../../../supabase';
 import type { RootState } from '../../store';
 
 // Unified auth state interface
-export interface AuthStateV2 {
+export interface AuthState {
   // User data
   user: User | null;
   userId: string | null;
@@ -37,7 +37,7 @@ export interface AuthStateV2 {
   lastRefreshAt?: string;
 }
 
-const initialState: AuthStateV2 = {
+const initialState: AuthState = {
   user: null,
   userId: null,
   session: null,
@@ -218,12 +218,12 @@ export const refreshUserData = createAsyncThunk(
 );
 
 // Create the slice
-const authSliceV2 = createSlice({
+const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
     // Manual state updates
-    setSession: (state, action: PayloadAction<AuthStateV2['session']>) => {
+    setSession: (state, action: PayloadAction<AuthState['session']>) => {
       state.session = action.payload;
       state.isAuthenticated = !!action.payload;
       if (!action.payload) {
@@ -328,7 +328,7 @@ const authSliceV2 = createSlice({
 });
 
 // Export actions
-export const { setSession, setError, clearAuth, updateUser } = authSliceV2.actions;
+export const { setSession, setError, clearAuth, updateUser } = authSlice.actions;
 
 // Selectors
 export const selectAuth = (state: RootState) => state.auth;
@@ -364,4 +364,4 @@ export const selectIsAppraiser = (state: RootState) => selectHasRole('appraiser'
 export const selectIsStaff = (state: RootState) => selectHasRole('staff')(state);
 export const selectIsViewer = (state: RootState) => selectHasRole('viewer')(state);
 
-export default authSliceV2.reducer;
+export default authSlice.reducer;

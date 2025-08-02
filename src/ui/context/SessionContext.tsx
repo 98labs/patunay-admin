@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import supabase from "../supabase";
 import { Loading } from "@components";
 import { Session } from "@supabase/supabase-js";
-import { initializeAuth } from "../store/features/auth/authSliceV2";
+import { initializeAuth } from "../store/features/auth/authSlice";
 import { AppDispatch } from "../store/store";
 
 const SessionContext = createContext<{
