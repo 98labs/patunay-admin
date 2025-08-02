@@ -5,80 +5,208 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Development Mode
-- `npm run dev` - Start both React dev server and Electron in parallel (DevTools enabled by default)
-- `npm run dev:devtools` - Explicitly enable DevTools (same as dev but clearer intent)
+- `npm run dev` - Start both React dev server and Electron in parallel
+- `npm run dev:devtools` - Start with DevTools explicitly enabled
 - `npm run dev:react` - Start only the React dev server (Vite on port 5173)
 - `npm run dev:electron` - Start only Electron (requires transpiled code)
-- `npm run devmac:electron` - macOS-specific Electron dev command
+- `npm run dev:electron:devtools` - Start Electron with DevTools enabled
 
 **DevTools Control:**
 - DevTools open automatically in development mode
 - To disable: `DISABLE_DEVTOOLS=true npm run dev`
-- To force enable: `ENABLE_DEVTOOLS=true npm run dev` (or use `npm run dev:devtools`)
+- To force enable: `ENABLE_DEVTOOLS=true npm run dev`
 
 ### Building
-- `npm run build` - Full production build (clean + transpile + build React + Electron builder)
+- `npm run build` - Full production build (clean + build React & Electron + package)
+- `npm run build:validate` - Run validation checks before building
 - `npm run build:react` - Build only the React frontend
-- `npm run build:electron` - Build only Electron (transpile + electron-builder)
-- `npm run transpile:electron` - Compile TypeScript for Electron main process
+- `npm run build:electron` - Build only Electron (TypeScript compilation)
 
 ### Distribution
 - `npm run dist:mac` - Build and package for macOS ARM64
 - `npm run dist:win` - Build and package for Windows x64
 - `npm run dist:linux` - Build and package for Linux x64
 
+### Testing
+- `npm run test` - Run tests in watch mode
+- `npm run test:ui` - Run tests with UI
+- `npm run test:run` - Run tests once
+- `npm run test:coverage` - Run tests with coverage report
+- `npm run test:e2e` - Run Playwright E2E tests
+- `npm run test:e2e:ui` - Run E2E tests with UI
+
 ### Code Quality
 - `npm run lint` - Run ESLint
+- `npm run lint:fix` - Run ESLint with auto-fix
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
+- `npm run type-check` - Run TypeScript type checking
+- `npm run validate` - Run all validation checks (lint, type-check, tests)
 - `npm run clean` - Remove all build artifacts
 
 ## Architecture Overview
 
 ### Application Structure
-This is an Electron-based desktop application for artwork management and NFC tag functionality. The app uses a dual-process architecture:
+This is an Electron-based desktop application for artwork management with NFC tag integration. The app uses a dual-process architecture:
 
 **Main Process (Electron):**
 - Entry point: `src/electron/main.ts`
 - Handles NFC communication via `nfc-pcsc` library
 - Manages system resources and statistics
-- Auto-updater functionality
-- Window creation and lifecycle
+- Auto-updater functionality via electron-updater
+- Window creation and lifecycle management
+- IPC communication with renderer process
 
 **Renderer Process (React):**
 - Entry point: `src/ui/main.tsx`
 - React 19 + TypeScript + Vite
-- Router: React Router with HashRouter (App.tsx) and createBrowserRouter (router/index.tsx)
-- State management: Redux Toolkit
+- State management: Redux Toolkit with RTK Query
 - UI Framework: Tailwind CSS + DaisyUI
+- Router: React Router with createBrowserRouter
+- Component structure: Atomic design pattern
 
-### Key Components
+### Key Dependencies
+- **@supabase/supabase-js**: Database and authentication
+- **nfc-pcsc**: NFC tag communication
+- **@reduxjs/toolkit**: State management
+- **react-router-dom**: Client-side routing
+- **react-hook-form**: Form handling
+- **@tanstack/react-table**: Data tables
+- **date-fns**: Date manipulation
+- **lucide-react**: Icon library
 
-**NFC Integration:**
-- `src/electron/nfc/nfcService.ts` - Core NFC read/write functionality
-- Supports both read and write modes for NFC tags
-- Communicates with renderer via IPC
-
-**Database:**
-- Supabase client configured in `src/ui/supabase/index.ts`
+### Database & Authentication
+- **Supabase** for PostgreSQL database with Row Level Security (RLS)
 - Environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-- RPC functions in `src/ui/supabase/rpc/` for data operations
+- RPC functions wrapped in `src/ui/supabase/rpc/`
+- Multi-tenant architecture with organization-based access control
 
-**Page Structure:**
-- Authentication: Login page
-- Dashboard with nested routes:
-  - `/dashboard` - Main dashboard
-  - `/dashboard/artworks` - Artwork management and registration
-  - `/dashboard/admin` - Admin functions (NFC tags, team, devices)
+### Multi-Tenant RBAC System
+**User Roles (Hierarchical):**
+1. `super_user` - System-wide admin access
+2. `admin` - Organization admin
+3. `issuer` - Can issue artworks and manage NFC tags
+4. `appraiser` - Can create and manage appraisals
+5. `staff` - General staff access
+6. `viewer` - Read-only access
 
-**State Management:**
-- Redux store in `src/ui/lib/store.ts`
-- Feature-specific slices in page directories
-- Local storage keys defined in `src/ui/content/LocalStorageKeys.ts`
+**Key Features:**
+- Organization-based multi-tenancy
+- Location/branch-based access control
+- Cross-organizational permissions
+- Permission guards on UI components
 
-### Development Environment Setup
-The application loads from `http://localhost:5173/login` in development mode, with the React dev server running on Vite. The Electron main process must be transpiled from TypeScript before running.
+### State Management Architecture
+- **Redux Toolkit** store in `src/ui/store/`
+- **RTK Query** APIs in `src/ui/store/api/`
+- Feature slices use Redux Toolkit's createSlice
+- Middleware for logging and error handling
 
-### Build Process
-1. TypeScript compilation for Electron main process
-2. React build via Vite
-3. Electron Builder packages the application
-4. Assets from `src/assets` are included as extra resources
+### Component Architecture
+**Directory Structure:**
+```
+src/ui/
+├── components/      # Reusable UI components
+├── pages/          # Route-based page components
+├── layouts/        # Layout components
+├── hooks/          # Custom React hooks
+├── context/        # React contexts
+├── store/          # Redux store and slices
+├── supabase/       # Database operations
+└── utils/          # Utility functions
+```
+
+**Component Patterns:**
+- Each component in its own folder with `ComponentName.tsx` and `index.ts`
+- Lazy loading for route-based code splitting
+- Error boundaries for graceful error handling
+- Suspense wrappers for loading states
+
+### NFC Integration
+**Main Process:**
+- `src/electron/nfc/nfcService.ts` - Core NFC service
+- Supports read/write operations
+- Real-time status monitoring
+- Error handling and recovery
+
+**Renderer Process:**
+- `NfcStatusContext` for global NFC state
+- `useNfc` hook for NFC operations
+- Real-time status updates via IPC
+
+### Key Application Routes
+- `/login` - Authentication
+- `/dashboard` - Main dashboard
+- `/dashboard/artworks` - Artwork management
+- `/dashboard/register-artwork` - Multi-step artwork registration
+- `/dashboard/search-artwork` - Search with NFC support
+- `/dashboard/admin` - Admin functions
+- `/dashboard/nfc-tags` - NFC tag management
+- `/dashboard/user-management` - User and role management
+- `/dashboard/organizations` - Organization management
+- `/dashboard/locations` - Location management
+- `/dashboard/super-admin` - Super admin panel
+
+### Build & Deployment
+**Build Output:**
+- `dist-react/` - Built React application
+- `dist-electron/` - Compiled Electron code
+- `dist/` - Packaged applications
+
+**Auto-Update:**
+- Uses electron-updater for automatic updates
+- Update configuration in `electron-builder.json`
+
+### Development Best Practices
+1. **TypeScript:** Use strict type checking
+2. **Components:** Follow atomic design principles
+3. **State:** Use RTK Query for server state, Redux for client state
+4. **Errors:** Implement proper error boundaries
+5. **Logging:** Use structured logging with categories
+6. **Security:** Follow RLS patterns, sanitize inputs
+7. **Performance:** Lazy load routes, memoize expensive operations
+
+### Common Tasks
+
+**Adding a New Page:**
+1. Create component in `src/ui/pages/YourPage/`
+2. Add to `LazyComponents.tsx`
+3. Add route in `router/index.tsx`
+4. Add navigation item if needed
+
+**Adding an API Endpoint:**
+1. Add RPC function in `src/ui/supabase/rpc/`
+2. Create RTK Query endpoint in appropriate API file
+3. Use in components with generated hooks
+
+**Managing State:**
+1. Server state: Use RTK Query
+2. UI state: Use component state or Redux slice
+3. Global UI state: Create Redux slice in `store/features/`
+
+### Environment Variables
+**Required:**
+- `VITE_SUPABASE_URL` - Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
+
+**Optional:**
+- `NODE_ENV` - development/production
+- `DISABLE_DEVTOOLS` - Disable DevTools in development
+- `ENABLE_DEVTOOLS` - Force enable DevTools
+
+### Debugging Tips
+1. Check browser DevTools console for React errors
+2. Check Electron main process console for system errors
+3. Redux DevTools for state debugging
+4. Network tab for API calls
+5. Application logs in:
+   - macOS: `~/Library/Logs/patunay-app/`
+   - Windows: `%USERPROFILE%\AppData\Roaming\patunay-app\logs\`
+   - Linux: `~/.config/patunay-app/logs/`
+
+### Testing Strategy
+- Unit tests with Vitest
+- Component tests with React Testing Library
+- E2E tests with Playwright
+- Mock Supabase calls in tests
+- Test utilities in `src/ui/test/`

@@ -33,7 +33,7 @@ Patunay Admin is a desktop application designed for art galleries, museums, and 
 - Organization and location-based access control
 - Cross-organizational permissions
 - User authentication via Supabase
-- Profile management
+- Profile management with avatar support
 
 ### 🏢 Organization Management
 - Multi-organization support
@@ -55,13 +55,14 @@ Patunay Admin is a desktop application designed for art galleries, museums, and 
 - **React 19** with TypeScript
 - **Vite** for development and building
 - **Redux Toolkit** for state management
+- **RTK Query** for API data fetching
 - **Tailwind CSS** + **DaisyUI** for styling
 - **React Router** for navigation
 
 ### Desktop Framework
 - **Electron** for cross-platform desktop app
 - **NFC-PCSC** for NFC tag communication
-- Auto-updater functionality
+- **electron-updater** for auto-updates
 
 ### Backend & Database
 - **Supabase** for authentication and database
@@ -125,19 +126,31 @@ This will start both the React dev server (port 5173) and Electron application.
 - `npm run dev` - Start both React and Electron in development mode
 - `npm run dev:react` - Start only React dev server
 - `npm run dev:electron` - Start only Electron (requires transpiled code)
+- `npm run dev:devtools` - Start with DevTools explicitly enabled
 
 ### Building
 - `npm run build` - Full production build
 - `npm run build:react` - Build React frontend only
 - `npm run build:electron` - Build Electron app only
+- `npm run build:validate` - Run validation before building
 
 ### Distribution
 - `npm run dist:mac` - Package for macOS ARM64
 - `npm run dist:win` - Package for Windows x64
 - `npm run dist:linux` - Package for Linux x64
 
+### Testing
+- `npm run test` - Run tests in watch mode
+- `npm run test:run` - Run tests once
+- `npm run test:coverage` - Generate coverage report
+- `npm run test:e2e` - Run E2E tests with Playwright
+
 ### Code Quality
 - `npm run lint` - Run ESLint
+- `npm run lint:fix` - Fix linting issues
+- `npm run format` - Format with Prettier
+- `npm run type-check` - TypeScript type checking
+- `npm run validate` - Run all checks
 - `npm run clean` - Remove build artifacts
 
 ## Environment Configuration
@@ -150,6 +163,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ### Optional Configuration
 ```env
+NODE_ENV=development|production
 DISABLE_DEVTOOLS=true    # Disable DevTools in development
 ENABLE_DEVTOOLS=true     # Force enable DevTools
 ```
@@ -162,6 +176,7 @@ ENABLE_DEVTOOLS=true     # Force enable DevTools
 
 ### Key Design Patterns
 - **Redux Toolkit** for predictable state management
+- **RTK Query** for efficient data fetching and caching
 - **Component composition** with reusable UI components
 - **Hook-based architecture** for logic reuse
 - **RPC pattern** for Supabase database operations
@@ -186,6 +201,7 @@ ENABLE_DEVTOOLS=true     # Force enable DevTools
 ### Security Features
 - Row Level Security (RLS) in Supabase
 - Role-based access control
+- Organization-scoped data access
 - Secure file upload handling
 - Data sanitization and validation
 
@@ -199,12 +215,40 @@ ENABLE_DEVTOOLS=true     # Force enable DevTools
 
 ## Documentation
 
+- [CLAUDE.md](CLAUDE.md) - Development guide for Claude Code
 - [Build Process](BUILD_PROCESS.md)
-- [Development Guide](CLAUDE.md)
 - [Logging Best Practices](LOGGING_BEST_PRACTICES.md)
 - [Multi-Tenant RBAC Implementation](MULTI_TENANT_RBAC_IMPLEMENTATION_STRATEGY.md)
 - [Locations Feature](LOCATIONS_FEATURE.md)
+- [Edge Function Setup](EDGE_FUNCTION_SETUP.md)
+- [RBAC Test Scenarios](RBAC_TEST_SCENARIOS.md)
 - [Security Review](../review/SECURITY-REVIEW.md)
+
+## Troubleshooting
+
+### Common Issues
+
+1. **NFC Reader Not Detected**
+   - Ensure NFC reader is properly connected
+   - Check system permissions for USB devices
+   - Restart the application
+
+2. **Login Issues**
+   - Verify Supabase credentials
+   - Check network connectivity
+   - Clear local storage and try again
+
+3. **Build Failures**
+   - Run `npm run clean` and rebuild
+   - Ensure all dependencies are installed
+   - Check Node.js version compatibility
+
+### Debug Locations
+
+Application logs can be found in:
+- macOS: `~/Library/Logs/patunay-app/`
+- Windows: `%USERPROFILE%\AppData\Roaming\patunay-app\logs\`
+- Linux: `~/.config/patunay-app/logs/`
 
 ## License
 
