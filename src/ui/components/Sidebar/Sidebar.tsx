@@ -72,8 +72,32 @@ const Sidebar = ({
     canManageOrgSettings,
   } = usePermissions();
 
-  const { isSuperUser, isAdmin, isAppraiser, currentOrganization, user, organizations } = useAuth();
+  const { isSuperUser, isAdmin, isAppraiser, currentOrganization, user, organizations, isLoading } = useAuth();
 
+  // Debug logging for authentication issues
+  console.log('🔍 Sidebar Debug:', {
+    isLoading: isLoading,
+    user: user,
+    userRole: user?.role,
+    isSuperUser: isSuperUser,
+    isAdmin: isAdmin,
+    currentOrganization: currentOrganization,
+    organizations: organizations,
+    permissions: {
+      canViewArtworks,
+      canCreateArtworks,
+      canManageOrgUsers,
+      canManageAllUsers,
+      canManageOrgNfcTags,
+      canManageAllNfcTags,
+      canManageOrganizations,
+      canViewOrgStatistics,
+      canViewAllStatistics,
+      canAttachNfcTags,
+      canCreateAppraisals,
+      canManageOrgSettings,
+    }
+  });
 
   const links: Links[] = useMemo(() => {
     const navigationLinks: Links[] = [];
@@ -82,13 +106,14 @@ const Sidebar = ({
     navigationLinks.push({ name: "Dashboard", path: "/dashboard" });
 
     // Artworks section - visible if user can view or manage artworks
-    if (canViewArtworks || canCreateArtworks) {
+    // For super users, always show artworks section
+    if (canViewArtworks || canCreateArtworks || user?.role === 'super_user') {
       const artworkChildren: Links[] = [];
-      if (canCreateArtworks || canAttachNfcTags) {
+      if (canCreateArtworks || canAttachNfcTags || user?.role === 'super_user') {
         artworkChildren.push({ name: "Register Artwork", path: "/dashboard/artworks/register" });
       }
       
-      if (canViewArtworks) {
+      if (canViewArtworks || user?.role === 'super_user') {
         artworkChildren.push({ name: "Search", path: "/dashboard/artworks/search" });
       }
 
@@ -116,15 +141,15 @@ const Sidebar = ({
     const managementChildren: Links[] = [];
     
     // User Management - based on permissions only
-    if (canManageOrgUsers || canManageAllUsers) {
+    if (canManageOrgUsers || canManageAllUsers || user?.role === 'super_user') {
       managementChildren.push({ name: "User Management", path: "/dashboard/admin/users" });
     }
     
-    if (canManageOrgNfcTags || canManageAllNfcTags) {
+    if (canManageOrgNfcTags || canManageAllNfcTags || user?.role === 'super_user') {
       managementChildren.push({ name: "NFC Tags", path: "/dashboard/admin/nfc-tags" });
     }
     
-    if (canManageOrgNfcTags || canManageAllNfcTags) {
+    if (canManageOrgNfcTags || canManageAllNfcTags || user?.role === 'super_user') {
       managementChildren.push({ name: "Devices", path: "/dashboard/admin/device" });
     }
 
@@ -141,18 +166,19 @@ const Sidebar = ({
     }
 
     // Super User section - only visible to super users
-    if (isSuperUser) {
+    if (isSuperUser || user?.role === 'super_user') {
       const superUserChildren: Links[] = [];
       
-      if (canManageOrganizations) {
+      // For super users, always show these options even if permissions aren't loaded yet
+      if (canManageOrganizations || user?.role === 'super_user') {
         superUserChildren.push({ name: "Organizations", path: "/dashboard/super-admin/organizations" });
       }
       
-      if (canManageAllUsers) {
+      if (canManageAllUsers || user?.role === 'super_user') {
         superUserChildren.push({ name: "System Users", path: "/dashboard/super-admin/users" });
       }
       
-      if (canViewAllStatistics) {
+      if (canViewAllStatistics || user?.role === 'super_user') {
         superUserChildren.push({ name: "System Statistics", path: "/dashboard/super-admin/statistics" });
       }
 
@@ -213,6 +239,8 @@ const Sidebar = ({
     isAdmin,
     isAppraiser,
     currentOrganization,
+    user,
+    organizations,
   ]);
 
   const handleLogout = useCallback(async () => {
@@ -228,6 +256,21 @@ const Sidebar = ({
   const handleNavigate = useCallback(() => {
     if (window.innerWidth < 768) setIsOpen(false); // only close on small screens
   }, [setIsOpen]);
+
+  // Show a loading state while auth is initializing
+  if (isLoading) {
+    return (
+      <div
+        className={`fixed z-50 top-0 left-0 h-full w-[300px] bg-base-200 dark:bg-base-200 border-r border-base-300 dark:border-base-300 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } md:relative md:translate-x-0 md:flex`}
+      >
+        <div className="flex items-center justify-center w-full h-full">
+          <span className="loading loading-spinner loading-lg"></span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

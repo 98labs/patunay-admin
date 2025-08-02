@@ -66,6 +66,16 @@ export const usePermissions = (organizationId?: string) => {
   const targetOrgId = organizationId || currentOrganization?.id;
 
   const capabilities: PermissionCapabilities = useMemo(() => {
+    // Debug logging
+    console.log('🔍 usePermissions Debug:', {
+      user: user,
+      userRole: user?.role,
+      isSuperUser: isSuperUser,
+      currentOrganization: currentOrganization,
+      targetOrgId: targetOrgId,
+      hasPermission: hasPermission ? 'function exists' : 'function missing',
+    });
+
     if (!user) {
       return {
         canManageOrganizations: false,
@@ -99,9 +109,17 @@ export const usePermissions = (organizationId?: string) => {
       };
     }
 
+    // Test specific permissions for super_user
+    const canManageOrgsResult = hasPermission('manage_organizations');
+    console.log('🔍 Testing manage_organizations permission:', {
+      result: canManageOrgsResult,
+      userRole: user?.role,
+      isSuperUser: isSuperUser,
+    });
+
     return {
       // Organization management
-      canManageOrganizations: hasPermission('manage_organizations'),
+      canManageOrganizations: canManageOrgsResult,
       canManageOrgUsers: hasPermission('manage_org_users', targetOrgId) || hasPermission('manage_all_users'),
       canManageOrgSettings: hasPermission('manage_org_settings', targetOrgId),
       
