@@ -15,7 +15,7 @@ import {
 import { 
   useGetArtworksQuery 
 } from '../../store/api/artworkApi';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import { usePermissions } from '../../hooks/usePermissions';
 import { format, subDays, startOfWeek, startOfMonth } from 'date-fns';
 import { UserRole } from '../../typings';

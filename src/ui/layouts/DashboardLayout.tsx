@@ -1,27 +1,11 @@
-import { useEffect, useState } from "react";
-import { Sidebar, NotificationMessage, NfcWarningBanner } from "@components";
+import { useState } from "react";
+import { Sidebar, NotificationMessage, NfcWarningBanner, NetworkStatus } from "@components";
 import { Navigate, Outlet } from "react-router-dom";
 import { useSession } from "../context/SessionContext";
-import { useDispatch } from "react-redux";
-import { setUser, setSession } from "../store/features/auth";
 
 const DashboardLayout = () => {
   const { session } = useSession();
-  const dispatch = useDispatch();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  
-  useEffect(() => {
-    if (session?.user) {
-      dispatch(setUser(session.user));
-    }
-    if (session) {
-      dispatch(setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-        expires_at: session.expires_at
-      }));
-    }
-  }, [session, dispatch]);
 
   if (!session) {
     return <Navigate to="/login" />;
@@ -45,6 +29,7 @@ const DashboardLayout = () => {
         <div className="grow">
           <div className="px-4 sm:px-6 lg:px-8 py-4 w-full max-w-9xl mx-auto">
             <div className="text-base-content">
+              <NetworkStatus />
               <NfcWarningBanner className="mb-4" />
               <NotificationMessage />
               <Outlet />

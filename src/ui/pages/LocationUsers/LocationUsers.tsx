@@ -6,7 +6,7 @@ import { AddUserToLocationDialog } from '../../components/locations/AddUserToLoc
 import { EditLocationUserDialog } from '../../components/locations/EditLocationUserDialog';
 import { getLocation, getLocationUsers, removeUserFromLocation, LocationWithManager, LocationUserWithDetails, getFullName } from '../../lib/api/locations';
 import { format } from 'date-fns';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 import { useNotification } from '../../hooks/useNotification';
 import { usePermissions } from '../../hooks/usePermissions';
 

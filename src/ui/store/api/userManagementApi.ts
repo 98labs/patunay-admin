@@ -1,5 +1,6 @@
 import { api } from './baseApi';
-import supabase, { supabaseAdmin } from '../../supabase';
+import supabase from '../../supabase';
+import { createUserWithProfile, updateUserProfile, softDeleteUser, getOrganizationUsers } from '../../supabase/rpc';
 
 // Types for user management
 export type UserRole = 'super_user' | 'admin' | 'issuer' | 'appraiser' | 'staff' | 'viewer';
@@ -104,9 +105,8 @@ export const userManagementApi = api.injectEndpoints({
               throw new Error('Not authenticated');
             }
             
-            // For user management, we need either service role or admin privileges
-            // Use supabaseAdmin if available for organization_users access
-            const client = supabaseAdmin || supabase;
+            // Use regular supabase client with RLS
+            const client = supabase;
             
             // Fetch profiles
             let profilesData = null;
@@ -238,18 +238,8 @@ export const userManagementApi = api.injectEndpoints({
               throw new Error(`Failed to fetch users: ${profilesError.message || 'Unknown error'}`);
             }
 
-            // Get auth users if service role is available
+            // Auth user emails will be handled separately
             let authUsersMap = new Map();
-            if (supabaseAdmin) {
-              try {
-                const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
-                authUsersMap = new Map(
-                  authData?.users?.map(user => [user.id, user]) || []
-                );
-              } catch (error) {
-                // Could not fetch auth users
-              }
-            }
 
             // If no profiles data, try to at least show current user
             if (!profilesData || profilesData.length === 0) {
@@ -355,17 +345,15 @@ export const userManagementApi = api.injectEndpoints({
 
             if (profileError) throw profileError;
 
-            // Get the auth user data for email
+            // Get the auth user data for email if it's the current user
             let authUser = null;
-            if (supabaseAdmin) {
-              try {
-                const { data, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
-                if (!authError) {
-                  authUser = data;
-                }
-              } catch (error) {
-                // Failed to fetch auth user
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user && user.id === userId) {
+                authUser = { user };
               }
+            } catch (error) {
+              // Failed to fetch auth user
             }
 
             // Combine the data
@@ -400,76 +388,65 @@ export const userManagementApi = api.injectEndpoints({
       query: (userData) => ({
         supabaseOperation: async () => {
           try {
-            if (!supabaseAdmin) {
-              throw new Error('Service role key not configured. Please add VITE_SUPABASE_SERVICE_ROLE_KEY environment variable.');
-            }
-            // Check if current user is trying to create a super_user
-            if (userData.role === 'super_user') {
-              const currentUser = (await supabase.auth.getUser()).data.user;
-              if (!currentUser) throw new Error('Not authenticated');
-              
-              // Get current user's profile to check their role
-              const { data: currentUserProfile, error: profileError } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', currentUser.id)
-                .single();
-              
-              if (profileError || !currentUserProfile) {
-                throw new Error('Failed to verify current user permissions');
-              }
-              
-              if (currentUserProfile.role !== 'super_user') {
-                throw new Error('Only super users can create other super users');
-              }
-            }
-
-            // First, try to create user with minimal data
-            let authData;
-            let authError;
+            // Check if we need to use Edge Function for user creation
+            // The RPC function will handle permission checks
+            const useEdgeFunction = import.meta.env.VITE_SUPABASE_EDGE_FUNCTION_URL;
             
-            try {
-              // Try with full metadata
-              const result = await supabaseAdmin.auth.admin.createUser({
-                email: userData.email,
-                password: userData.password,
-                email_confirm: true,
-                user_metadata: {
-                  first_name: userData.first_name,
-                  last_name: userData.last_name,
-                }
+            if (useEdgeFunction) {
+              // Call Edge Function for secure user creation
+              const response = await fetch(`${useEdgeFunction}/create-user`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+                },
+                body: JSON.stringify(userData)
               });
-              authData = result.data;
-              authError = result.error;
-            } catch (error) {
-              console.warn('Full create failed, trying minimal:', error);
               
-              // Try with minimal data if full create fails
-              try {
-                const minimalResult = await supabaseAdmin.auth.admin.createUser({
-                  email: userData.email,
-                  password: userData.password,
-                  email_confirm: true
-                });
-                authData = minimalResult.data;
-                authError = minimalResult.error;
-              } catch (minimalError) {
-                authError = minimalError;
+              if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to create user');
               }
+              
+              const result = await response.json();
+              return { data: result.user };
             }
 
-            if (authError) {
-              console.error('Auth error:', authError);
-              throw new Error(`Failed to create user: ${authError.message}`);
+            // Use the secure RPC function to create user
+            const { data: createResult, error: createError } = await createUserWithProfile({
+              email: userData.email,
+              password: userData.password,
+              first_name: userData.first_name,
+              last_name: userData.last_name,
+              role: userData.role || 'staff',
+              phone: userData.phone,
+              organization_id: userData.organization_id,
+              permissions: userData.permissions || []
+            });
+            
+            if (createError) {
+              console.error('Error creating user:', createError);
+              throw new Error(createError.message);
             }
-            if (!authData.user) throw new Error('Failed to create user - no user data returned');
+            
+            if (!createResult || !createResult.id) {
+              throw new Error('Failed to create user - no user data returned');
+            }
+            
+            // The RPC function returns a flag if auth creation is needed
+            if (createResult.requires_auth_creation) {
+              // This means we need to use Edge Function to create the auth user
+              throw new Error('User profile created but auth user creation requires Edge Function. Please ensure Edge Function is configured.');
+            }
+            
+            const userId = createResult.id;
 
             // Upload avatar if provided
-            let avatarUrl = null;
-            if (userData.avatar_file) {
+            let avatarUrl = createResult.avatar_url;
+            if (userData.avatar_file && userId) {
               try {
                 const fileExt = userData.avatar_file.name.split('.').pop();
-                const fileName = `${authData.user.id}-${Date.now()}.${fileExt}`;
+                const fileName = `${userId}-${Date.now()}.${fileExt}`;
                 const filePath = `avatars/${fileName}`;
 
                 const { error: uploadError } = await supabase.storage
@@ -486,131 +463,38 @@ export const userManagementApi = api.injectEndpoints({
                     .from('user-avatars')
                     .getPublicUrl(filePath);
                   avatarUrl = data.publicUrl;
+                  
+                  // Update user profile with avatar URL
+                  await updateUserProfile({
+                    user_id: userId,
+                    avatar_url: avatarUrl
+                  });
                 }
               } catch (avatarError) {
                 console.error('Avatar upload failed, continuing without avatar:', avatarError);
               }
             }
 
-            // Wait a bit longer for the trigger to create the profile
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Check if profile was created by trigger
-            const { data: existingProfile, error: checkError } = await supabaseAdmin
-              .from('profiles')
-              .select('id')
-              .eq('id', authData.user.id)
-              .single();
-            
-            if (checkError && checkError.code === 'PGRST116') {
-              // Profile doesn't exist, create it manually
-              
-              const { error: insertError } = await supabaseAdmin
-                .from('profiles')
-                .insert({
-                  id: authData.user.id,
-                  first_name: userData.first_name,
-                  last_name: userData.last_name,
-                  role: userData.role || 'staff',
-                  phone: userData.phone,
-                  avatar_url: avatarUrl,
-                  is_active: true,
-                  created_at: new Date().toISOString(),
-                  created_by: (await supabase.auth.getUser()).data.user?.id,
-                });
-              
-              if (insertError) {
-                // Try to clean up the auth user
-                await supabaseAdmin.auth.admin.deleteUser(authData.user.id).catch(() => {});
-                throw new Error(`Failed to create user profile: ${insertError.message}`);
-              }
-            } else {
-              // Profile exists, update it
-              const { error: profileError } = await supabaseAdmin
-                .from('profiles')
-                .update({
-                  first_name: userData.first_name,
-                  last_name: userData.last_name,
-                  role: userData.role || 'staff',
-                  phone: userData.phone,
-                  avatar_url: avatarUrl,
-                  created_by: (await supabase.auth.getUser()).data.user?.id,
-                })
-                .eq('id', authData.user.id);
+            // Profile is already created by the RPC function
+            // Organization association is handled by the RPC function
 
-              if (profileError) {
-                console.error('Profile update error:', profileError);
-                throw new Error(`Failed to update user profile: ${profileError.message}`);
-              }
-            }
-            // Create organization_users connection if organization_id is provided
-            let organizationAssociationFailed = false;
-            if (userData.organization_id) {
-              try {
-                // Use the new function to add user to organization
-                const { data: orgUserData, error: orgUserError } = await supabase
-                  .rpc('add_user_to_organization', {
-                    p_user_id: authData.user.id,
-                    p_organization_id: userData.organization_id,
-                    p_role: userData.role || 'staff',
-                    p_permissions: userData.permissions || [],
-                    p_is_primary: true
-                  });
-                
-                if (orgUserError) {
-                  organizationAssociationFailed = true;
-                  console.error('Failed to add user to organization:', orgUserError);
-                  // Don't fail the entire user creation, but log the warning
-                  console.warn(`User ${authData.user.id} created but not associated with organization ${userData.organization_id}`);
-                }
-              } catch (error) {
-                organizationAssociationFailed = true;
-                console.error('Error creating organization association:', error);
-                // Continue with user creation even if organization association fails
-              }
-            }
+            // Permissions are handled by the RPC function
 
-            // Grant permissions if specified
-            if (userData.permissions && userData.permissions.length > 0) {
-              const currentUser = (await supabase.auth.getUser()).data.user;
-              if (currentUser) {
-                for (const permission of userData.permissions) {
-                  // Use regular client for RPC calls as they should work with user context
-                  await supabase.rpc('grant_user_permission', {
-                    target_user_id: authData.user.id,
-                    permission_name: permission,
-                    granted_by_user_id: currentUser.id,
-                  });
-                }
-              }
-            }
-
-            // Get the created user data by combining profile and auth data
-            const { data: profile, error: fetchError } = await supabaseAdmin
-              .from('profiles')
-              .select('*')
-              .eq('id', authData.user.id)
-              .single();
-
-            if (fetchError) throw fetchError;
-
-            // Combine with auth data
+            // Format the user data from RPC response
             const createdUser = {
-              id: authData.user.id,
-              email: authData.user.email || '',
-              first_name: profile?.first_name || userData.first_name || '',
-              last_name: profile?.last_name || userData.last_name || '',
-              role: profile?.role || userData.role || 'staff',
-              is_active: profile?.is_active ?? true,
-              phone: profile?.phone || userData.phone,
-              avatar_url: profile?.avatar_url,
-              created_at: profile?.created_at || authData.user.created_at,
-              updated_at: profile?.updated_at,
-              last_login_at: profile?.last_login_at,
-              email_confirmed_at: authData.user.email_confirmed_at,
-              permissions: profile?.permissions || [],
-              // Add a flag if organization association failed
-              _organizationAssociationPending: userData.organization_id && organizationAssociationFailed,
+              id: userId,
+              email: createResult.email || userData.email,
+              first_name: createResult.first_name || '',
+              last_name: createResult.last_name || '',
+              role: createResult.role as UserRole,
+              is_active: createResult.is_active ?? true,
+              phone: createResult.phone || '',
+              avatar_url: avatarUrl || createResult.avatar_url,
+              created_at: createResult.created_at,
+              updated_at: createResult.updated_at,
+              last_login_at: null,
+              email_confirmed_at: null,
+              permissions: userData.permissions || [],
             };
 
             return { data: createdUser };
@@ -631,11 +515,7 @@ export const userManagementApi = api.injectEndpoints({
             const currentUser = (await supabase.auth.getUser()).data.user;
             if (!currentUser) throw new Error('Not authenticated');
 
-            // For admin operations (role/status changes), ensure we have service role
-            const needsServiceRole = updateData.role !== undefined || updateData.is_active !== undefined;
-            if (needsServiceRole && !supabaseAdmin) {
-              throw new Error('Service role key not configured. Cannot perform admin operations.');
-            }
+            // Use secure RPC for all user updates
 
             // Upload new avatar if provided
             let avatarUrl = updateData.avatar_url;
@@ -665,46 +545,27 @@ export const userManagementApi = api.injectEndpoints({
               }
             }
 
-            // Prepare profile update data (only include fields that are actually being updated)
-            const profileUpdateData: Record<string, unknown> = {
-              updated_by: currentUser.id,
-              updated_at: new Date().toISOString(),
-            };
-
-            // Only include fields that are provided and not undefined
-            if (updateData.first_name !== undefined) profileUpdateData.first_name = updateData.first_name;
-            if (updateData.last_name !== undefined) profileUpdateData.last_name = updateData.last_name;
-            if (updateData.phone !== undefined) profileUpdateData.phone = updateData.phone;
-            if (avatarUrl !== undefined) profileUpdateData.avatar_url = avatarUrl;
-            if (updateData.role !== undefined) profileUpdateData.role = updateData.role;
-            if (updateData.is_active !== undefined) profileUpdateData.is_active = updateData.is_active;
-
-            // Use service role client for admin operations, regular client otherwise
-            const clientToUse = needsServiceRole ? supabaseAdmin : supabase;
-
-            if (import.meta.env.MODE === 'development') {
-              console.log('Updating user with data:', profileUpdateData);
-              console.log('Using client:', needsServiceRole ? 'supabaseAdmin' : 'supabase');
-            }
-
-            // Update profile fields
-            const { data: updateResult, error: updateError } = await clientToUse!
-              .from('profiles')
-              .update(profileUpdateData)
-              .eq('id', updateData.id)
-              .select();
-
-            if (import.meta.env.MODE === 'development') {
-              console.log('Update result:', updateResult);
-              console.log('Update error:', updateError);
-            }
+            // Use secure RPC function to update user
+            const { data: updateResult, error: updateError } = await updateUserProfile({
+              user_id: updateData.id,
+              first_name: updateData.first_name,
+              last_name: updateData.last_name,
+              role: updateData.role,
+              is_active: updateData.is_active,
+              phone: updateData.phone,
+              avatar_url: avatarUrl
+            });
 
             if (updateError) {
               console.error('Profile update error:', updateError);
-              throw updateError;
+              throw new Error(updateError.message);
             }
 
-            // Get updated user data by combining profile and auth data
+            if (!updateResult) {
+              throw new Error('Failed to update user profile');
+            }
+
+            // Get updated user data
             const { data: profile, error: fetchError } = await supabase
               .from('profiles')
               .select('*')
@@ -713,35 +574,31 @@ export const userManagementApi = api.injectEndpoints({
 
             if (fetchError) throw fetchError;
 
-            // Get auth user data for email
-            let authUser = null;
-            if (supabaseAdmin) {
-              try {
-                const { data, error: authError } = await supabaseAdmin.auth.admin.getUserById(updateData.id);
-                if (authError) {
-                  console.error('Error fetching auth user after update:', authError);
-                } else {
-                  authUser = data;
-                }
-              } catch (error) {
-                console.error('Failed to fetch auth user after update:', error);
+            // Get auth user email
+            let email = '';
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user && user.id === updateData.id) {
+                email = user.email || '';
               }
+            } catch (error) {
+              console.error('Failed to fetch auth user email:', error);
             }
 
-            // Combine the data
+            // Format the response
             const updatedUser = {
               id: profile.id,
-              email: authUser?.user?.email || '',
+              email: email,
               first_name: profile.first_name || '',
               last_name: profile.last_name || '',
-              role: profile.role || 'staff',
+              role: profile.role as UserRole,
               is_active: profile.is_active ?? true,
-              phone: profile.phone,
-              avatar_url: profile.avatar_url,
-              created_at: profile.created_at || authUser?.user?.created_at,
+              phone: profile.phone || '',
+              avatar_url: profile.avatar_url || '',
+              created_at: profile.created_at,
               updated_at: profile.updated_at,
-              last_login_at: profile.last_login_at || authUser?.user?.last_sign_in_at,
-              email_confirmed_at: authUser?.user?.email_confirmed_at,
+              last_login_at: profile.last_login_at,
+              email_confirmed_at: null,
               permissions: profile.permissions || [],
             };
 
@@ -763,18 +620,14 @@ export const userManagementApi = api.injectEndpoints({
       query: (userId) => ({
         supabaseOperation: async () => {
           try {
-            if (!supabaseAdmin) {
-              throw new Error('Service role key not configured. Cannot delete users without admin privileges.');
-            }
-
             if (import.meta.env.MODE === 'development') {
               console.log('Starting user deletion process for userId:', userId);
             }
 
-            // First, get user's profile data including avatar URL
-            const { data: profile, error: profileFetchError } = await supabaseAdmin
+            // First, get user's profile data including avatar URL for cleanup
+            const { data: profile, error: profileFetchError } = await supabase
               .from('profiles')
-              .select('avatar_url, first_name, last_name')
+              .select('avatar_url')
               .eq('id', userId)
               .single();
 
@@ -783,41 +636,15 @@ export const userManagementApi = api.injectEndpoints({
               // Continue with deletion even if profile fetch fails
             }
 
-            if (import.meta.env.MODE === 'development') {
-              console.log('User profile data:', profile);
-            }
-
-            // Clean up related data first to avoid foreign key constraints
+            // Use secure RPC function to soft delete user
+            const { data: deleteResult, error: deleteError } = await softDeleteUser(userId);
             
-            // 1. Delete user permissions
-            try {
-              const { error: permissionsError } = await supabaseAdmin
-                .from('user_permissions')
-                .delete()
-                .eq('user_id', userId);
-              
-              if (permissionsError) {
-                console.warn('Error deleting user permissions:', permissionsError);
-              }
-            } catch (permError) {
-              console.warn('User permissions cleanup failed:', permError);
+            if (deleteError) {
+              console.error('Error deleting user:', deleteError);
+              throw new Error(deleteError.message);
             }
-
-            // 2. Delete user sessions  
-            try {
-              const { error: sessionsError } = await supabaseAdmin
-                .from('user_sessions')
-                .delete()
-                .eq('user_id', userId);
-              
-              if (sessionsError) {
-                console.warn('Error deleting user sessions:', sessionsError);
-              }
-            } catch (sessError) {
-              console.warn('User sessions cleanup failed:', sessError);
-            }
-
-            // 3. Delete avatar from storage if it exists
+            
+            // Delete avatar from storage if it exists
             if (profile?.avatar_url) {
               try {
                 // Extract the file path from the URL more reliably
@@ -839,59 +666,6 @@ export const userManagementApi = api.injectEndpoints({
               } catch (storageError) {
                 console.warn('Avatar cleanup failed:', storageError);
               }
-            }
-
-            // 4. Delete the profile record manually first
-            try {
-              const { error: profileDeleteError } = await supabaseAdmin
-                .from('profiles')
-                .delete()
-                .eq('id', userId);
-              
-              if (profileDeleteError) {
-                console.warn('Error deleting profile manually:', profileDeleteError);
-              }
-            } catch (profileError) {
-              console.warn('Manual profile deletion failed:', profileError);
-            }
-
-            // 5. Finally, delete user from Supabase Auth
-            if (import.meta.env.MODE === 'development') {
-              console.log('Deleting user from auth...');
-            }
-            
-            try {
-              const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-              
-              if (authError) {
-                console.error('Auth user deletion error:', authError);
-                
-                // Check if it's a foreign key constraint error
-                if (authError.message?.includes('foreign key') || authError.message?.includes('violates')) {
-                  throw new Error('Cannot delete user due to database constraints. Please ensure all related data is removed first.');
-                } else if (authError.message?.includes('Database error')) {
-                  throw new Error('Database error: The user might have related data that needs to be removed first. Please run the fix-user-deletion.sql script.');
-                }
-                
-                throw new Error(`Failed to delete user: ${authError.message}`);
-              }
-            } catch (deleteError) {
-              // If the user was already deleted from auth but profile remains, try to clean up
-              if (deleteError instanceof Error && deleteError.message.includes('User not found')) {
-                console.warn('User already deleted from auth, cleaning up profile...');
-                
-                // Try to delete the profile record directly
-                const { error: profileCleanupError } = await supabaseAdmin
-                  .from('profiles')
-                  .delete()
-                  .eq('id', userId);
-                
-                if (!profileCleanupError) {
-                  return { success: true };
-                }
-              }
-              
-              throw deleteError;
             }
 
             if (import.meta.env.MODE === 'development') {

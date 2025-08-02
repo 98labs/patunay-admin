@@ -1,4 +1,4 @@
-import supabase, { supabaseAdmin } from '../supabase';
+import supabase from '../supabase';
 
 export const runProfilesDiagnostic = async () => {
   console.log('=== Running Profiles Table Diagnostic ===');
@@ -52,22 +52,8 @@ export const runProfilesDiagnostic = async () => {
       console.log('✅ Count query succeeded. Total profiles:', count);
     }
     
-    // 5. Try with service role if available
-    if (supabaseAdmin) {
-      console.log('\n--- Testing with service role ---');
-      const { data: adminData, error: adminError } = await supabaseAdmin
-        .from('profiles')
-        .select('*')
-        .limit(5);
-      
-      if (adminError) {
-        console.error('❌ Service role query failed:', adminError);
-      } else {
-        console.log('✅ Service role query succeeded. Found:', adminData?.length || 0);
-      }
-    } else {
-      console.log('\n⚠️  Service role not configured');
-    }
+    // 5. Service role deprecated - use server-side functions instead
+    console.log('\n⚠️  Service role client deprecated - use server-side functions instead');
     
   } catch (error) {
     console.error('❌ Diagnostic failed:', error);
