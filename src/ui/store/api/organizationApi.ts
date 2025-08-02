@@ -262,7 +262,7 @@ export const organizationApi = api.injectEndpoints({
             .from('organization_users')
             .select(`
               *,
-              user:profiles(*)
+              profiles!inner(*)
             `)
             .eq('organization_id', organizationId)
             .eq('is_active', true);
