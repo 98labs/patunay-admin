@@ -2,13 +2,13 @@ import { useState } from "react";
 import { ArtworkImageModalProps } from "./types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import logo from '../../../../assets/logo/patunay-256x256.png'
-import { checkImage } from "./utils";
+import { validateImageUrl } from "./utils";
 
 const ArtworkImageModal = ({ images, title, modalId, onClose }: ArtworkImageModalProps) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [isValidImg, setisValidImg] = useState(false);
   // const modalId = useId();
-  checkImage(images[currentImage])
+  validateImageUrl(images[currentImage])
     .then((isValid) => {
       setisValidImg(isValid as boolean);
       return isValid;

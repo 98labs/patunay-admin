@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Shield, Calendar, Building, User } from 'lucide-react';
 import { PageHeader, Loading, UserAvatar, DeleteConfirmationModal } from '@components';
-import { AddUserToLocationDialog } from '../../components/locations/AddUserToLocationDialog';
-import { EditLocationUserDialog } from '../../components/locations/EditLocationUserDialog';
+import { AddUserToLocationModal } from '../../components/locations/AddUserToLocationModal';
+import { EditLocationUserModal } from '../../components/locations/EditLocationUserModal';
 import { getLocation, getLocationUsers, removeUserFromLocation, LocationWithManager, LocationUserWithDetails, getFullName } from '../../lib/api/locations';
 import { format } from 'date-fns';
 import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
@@ -245,7 +245,7 @@ const LocationUsers: React.FC = () => {
 
       {location && (
         <>
-          <AddUserToLocationDialog
+          <AddUserToLocationModal
             open={addUserOpen}
             onClose={() => setAddUserOpen(false)}
             locationId={locationId}
@@ -254,7 +254,7 @@ const LocationUsers: React.FC = () => {
           />
 
           {selectedUser && (
-            <EditLocationUserDialog
+            <EditLocationUserModal
               open={editUserOpen}
               onClose={() => {
                 setEditUserOpen(false);

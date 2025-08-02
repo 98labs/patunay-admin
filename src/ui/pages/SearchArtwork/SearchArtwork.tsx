@@ -4,7 +4,7 @@ import { PageHeader } from "@components";
 import { Nfc } from "lucide-react";
 import { useNfcStatus } from "../../context/NfcStatusContext";
 import { useNotification } from "../../hooks/useNotification";
-import { getArtworkDirectCached } from "../../supabase/rpc/getArtworkDirectCached";
+import { getArtworkDirect } from "../../supabase/rpc/getArtworkDirect";
 
 /**
  * SearchArtwork Component
@@ -52,7 +52,7 @@ const SearchArtwork = () => {
       console.log('[SearchArtwork] Processing NFC tag:', { tagUid, artworkId });
 
       // Fetch artwork to verify it exists
-      const artworkData = await getArtworkDirectCached(artworkId.trim());
+      const artworkData = await getArtworkDirect(artworkId.trim());
       
       if (!artworkData || artworkData.length === 0) {
         showError('No artwork found for this NFC tag');

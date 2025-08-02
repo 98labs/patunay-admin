@@ -3,13 +3,13 @@ import { Modal } from '@components';
 import supabase from '../../supabase';
 import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
 
-interface CreateUserWorkaroundProps {
+interface CreateUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export const CreateUserWorkaround: React.FC<CreateUserWorkaroundProps> = ({
+export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   isOpen,
   onClose,
   onSuccess
