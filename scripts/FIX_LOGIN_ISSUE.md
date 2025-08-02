@@ -30,14 +30,17 @@ If you need test users for development:
 
 ```bash
 # First, ensure you have the required environment variables set
-# VITE_SUPABASE_URL
-# VITE_SUPABASE_SERVICE_ROLE_KEY
+# SUPABASE_URL
+# SUPABASE_SERVICE_ROLE_KEY
+
+# Note: These environment variables should be set in your shell, 
+# not in the application's .env file, for security reasons.
 
 # Install dependencies if needed
 npm install @supabase/supabase-js dotenv
 
 # Run the script
-node scripts/create-test-users.js
+SUPABASE_URL=your_url SUPABASE_SERVICE_ROLE_KEY=your_key node scripts/create-test-users.js
 ```
 
 This will create:
