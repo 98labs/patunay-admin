@@ -13,7 +13,6 @@ const combinedReducer = {
   [api.reducerPath]: api.reducer,
 };
 
-console.log('Store: Creating Redux store');
 
 const store = configureStore({
   reducer: combinedReducer,
@@ -42,7 +41,6 @@ const store = configureStore({
     .concat(nfcMiddleware),
 });
 
-console.log('Store: Redux store created successfully');
 
 export default store;
 export type RootState = ReturnType<typeof store.getState>;

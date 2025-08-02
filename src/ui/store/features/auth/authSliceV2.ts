@@ -58,7 +58,6 @@ const pendingRequests = new Map<string, Promise<any>>();
 export const initializeAuth = createAsyncThunk(
   'auth/initialize',
   async () => {
-    console.log('AuthSlice: Initializing auth');
     
     // Try to get session with retry logic
     let session = null;
@@ -68,7 +67,7 @@ export const initializeAuth = createAsyncThunk(
       const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
-        console.error('AuthSlice: Error getting session:', sessionError);
+        console.error('Failed to get session:', sessionError);
         throw sessionError;
       }
       
@@ -78,7 +77,6 @@ export const initializeAuth = createAsyncThunk(
       }
       
       if (retries > 1) {
-        console.log(`AuthSlice: No session found, retrying... (${retries - 1} retries left)`);
         await new Promise(resolve => setTimeout(resolve, 500));
       }
       
@@ -86,11 +84,9 @@ export const initializeAuth = createAsyncThunk(
     }
     
     if (!session) {
-      console.log('AuthSlice: No session found after retries');
       return null;
     }
     
-    console.log('AuthSlice: Session found, fetching profile for user:', session.user.id);
     
     // Get user profile
     const { data: profile, error: profileError } = await supabase
@@ -100,7 +96,7 @@ export const initializeAuth = createAsyncThunk(
       .single();
       
     if (profileError) {
-      console.error('AuthSlice: Error fetching profile:', profileError);
+      console.error('Failed to fetch user profile:', profileError);
       // Don't throw here, just log and continue with basic user data
     }
     
@@ -116,7 +112,6 @@ export const initializeAuth = createAsyncThunk(
       updated_at: new Date().toISOString()
     };
     
-    console.log('AuthSlice: User data prepared:', userData);
       
     return {
       session: {
@@ -267,7 +262,6 @@ const authSliceV2 = createSlice({
         state.error = null;
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
-        console.log('AuthSlice: initializeAuth fulfilled with payload:', action.payload);
         state.isLoading = false;
         state.isInitialized = true;
         
@@ -276,10 +270,8 @@ const authSliceV2 = createSlice({
           state.user = action.payload.user;
           state.userId = action.payload.user.id;
           state.isAuthenticated = true;
-          console.log('AuthSlice: Auth state updated - user:', state.user?.email, 'role:', state.user?.role);
         } else {
           state.isAuthenticated = false;
-          console.log('AuthSlice: No auth payload, user logged out');
         }
       })
       .addCase(initializeAuth.rejected, (state, action) => {

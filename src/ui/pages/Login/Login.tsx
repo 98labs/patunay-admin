@@ -14,7 +14,6 @@ import { AppDispatch } from "../../store/store";
 import logo from "@/assets/logo/patunay-logo.png";
 
 const Login = () => {
-  console.log('Login component rendered');
   const dispatch = useDispatch<AppDispatch>();
   const { session } = useSession();
   const [login, { isLoading }] = useLoginMutation();

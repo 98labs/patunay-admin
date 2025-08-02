@@ -66,15 +66,6 @@ export const usePermissions = (organizationId?: string) => {
   const targetOrgId = organizationId || currentOrganization?.id;
 
   const capabilities: PermissionCapabilities = useMemo(() => {
-    // Debug logging
-    console.log('🔍 usePermissions Debug:', {
-      user: user,
-      userRole: user?.role,
-      isSuperUser: isSuperUser,
-      currentOrganization: currentOrganization,
-      targetOrgId: targetOrgId,
-      hasPermission: hasPermission ? 'function exists' : 'function missing',
-    });
 
     if (!user) {
       return {
