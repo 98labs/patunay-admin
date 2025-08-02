@@ -72,7 +72,6 @@ const Loading = ({
   className = '',
   'data-testid': dataTestId
 }: LoadingProps) => {
-  console.log('Loading component rendered', { fullScreen, text });
   const spinnerClass = `loading loading-spinner ${sizeClasses[size]}`;
   const dotsClass = `loading loading-dots ${sizeClasses[size]}`;
 
