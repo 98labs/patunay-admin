@@ -41,8 +41,6 @@ export const NfcWarningBanner: React.FC<NfcWarningBannerProps> = ({ className = 
     }
   };
 
-  // Log current status for debugging
-  console.log('NfcWarningBanner status:', { isNfcAvailable, isLoading, deviceStatus });
 
   // Show banner if:
   // 1. NFC is not available and not dismissed

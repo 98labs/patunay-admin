@@ -85,7 +85,6 @@ export const userApi = api.injectEndpoints({
           const { data: { session: verifiedSession } } = await supabase.auth.getSession();
           
           if (!verifiedSession) {
-            console.error('Login mutation: Session not found after login');
             throw new Error('Session not found after login');
           }
 
@@ -183,7 +182,6 @@ export const userApi = api.injectEndpoints({
             .single();
 
           if (profileError) {
-            console.error('Error fetching user profile:', profileError);
             // Try the current_user_profile view as fallback
             const { data: viewProfile, error: viewError } = await supabase
               .from('current_user_profile')
@@ -230,8 +228,6 @@ export const userApi = api.injectEndpoints({
     // updateUser: builder.mutation<User, UpdateUserRequest>({
     //   query: ({ id, updates }) => ({
     //     supabaseOperation: async () => {
-    //       console.log('id', id)
-    //       console.log('updates', updates)
     //       const { data, error } = await supabase
     //         .from('profiles')
     //         .update(updates)

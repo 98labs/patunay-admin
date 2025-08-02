@@ -1,4 +1,3 @@
-console.log('main.tsx loaded - very first line');
 
 import React, { Suspense } from "react";
 import { Provider } from 'react-redux'
@@ -13,9 +12,6 @@ import store from './store/store.ts'
 import { runInitializationDiagnostic } from './utils/initializationDiagnostic';
 
 // Run diagnostic check in development mode
-if (import.meta.env.DEV) {
-  runInitializationDiagnostic().catch(console.error);
-}
 
 // Error boundary to catch rendering errors
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
@@ -47,15 +43,8 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
-// Add debug logging
-console.log('Main.tsx: Starting app initialization');
-console.log('Environment:', {
-  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Not set',
-  VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Not set'
-});
 
 const rootElement = document.getElementById("root");
-console.log('Root element:', rootElement);
 
 if (!rootElement) {
   console.error('Root element not found!');
@@ -71,9 +60,8 @@ if (!rootElement) {
         </Suspense>
       </ErrorBoundary>
     );
-    console.log('App rendered successfully');
   } catch (error) {
-    console.error('Error rendering app:', error);
+    console.error('Failed to render application:', error);
     rootElement.innerHTML = `<div style="color: red; padding: 20px;">Error rendering app: ${error}</div>`;
   }
 }

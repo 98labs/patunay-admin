@@ -3,7 +3,6 @@ import { SessionProvider } from "./context/SessionContext";
 import { NfcStatusProvider } from "./context/NfcStatusContext";
 
 const Providers = () => {
-  console.log('Providers: Rendering');
   return (
     <SessionProvider>
       <NfcStatusProvider>

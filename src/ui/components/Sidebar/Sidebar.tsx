@@ -74,30 +74,6 @@ const Sidebar = ({
 
   const { isSuperUser, isAdmin, isAppraiser, currentOrganization, user, organizations, isLoading } = useAuth();
 
-  // Debug logging for authentication issues
-  console.log('🔍 Sidebar Debug:', {
-    isLoading: isLoading,
-    user: user,
-    userRole: user?.role,
-    isSuperUser: isSuperUser,
-    isAdmin: isAdmin,
-    currentOrganization: currentOrganization,
-    organizations: organizations,
-    permissions: {
-      canViewArtworks,
-      canCreateArtworks,
-      canManageOrgUsers,
-      canManageAllUsers,
-      canManageOrgNfcTags,
-      canManageAllNfcTags,
-      canManageOrganizations,
-      canViewOrgStatistics,
-      canViewAllStatistics,
-      canAttachNfcTags,
-      canCreateAppraisals,
-      canManageOrgSettings,
-    }
-  });
 
   const links: Links[] = useMemo(() => {
     const navigationLinks: Links[] = [];
@@ -248,7 +224,7 @@ const Sidebar = ({
       await logout().unwrap();
       navigate("/login");
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Logout error:', error);
       navigate("/login");
     }
   }, [logout, navigate]);
