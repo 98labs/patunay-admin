@@ -17,7 +17,7 @@ import {
 } from '../../store/api/userManagementApi';
 import { User, CreateUserData, UpdateUserData } from '../../typings';
 import { useNotification } from '../../hooks/useNotification';
-import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
+import { useAuth } from '../../hooks/useAuth';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 

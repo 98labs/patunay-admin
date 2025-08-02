@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal } from '@components';
 import supabase from '../../supabase';
-import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
+import { useAuth } from '../../hooks/useAuth';
 
 interface CreateUserModalProps {
   isOpen: boolean;

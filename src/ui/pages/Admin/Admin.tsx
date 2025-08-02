@@ -13,7 +13,7 @@ import {
   Settings
 } from 'lucide-react';
 import { PageHeader, Loading } from '@components';
-import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
+import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useNotification } from '../../hooks/useNotification';
 import supabase from '../../supabase';

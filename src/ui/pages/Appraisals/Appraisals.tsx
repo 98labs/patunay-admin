@@ -8,7 +8,7 @@ import AppraisalTable from './components/AppraisalTable';
 import AppraisalForm from './components/AppraisalForm';
 import { useNotification } from '../../hooks/useNotification';
 import { usePermissions } from '../../hooks/usePermissions';
-import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
+import { useAuth } from '../../hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import supabase from '../../supabase';
 import { format } from 'date-fns';

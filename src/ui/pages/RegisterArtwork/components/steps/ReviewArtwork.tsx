@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { handleAddArtwork } from "../../hooks/handleAddArtwork";
 import { useState } from "react";
 import ImageSlider from "../ImageSlider";
-import { useAuthV2 as useAuth } from '../../../../hooks/useAuthV2';
+import { useAuth } from '../../../../hooks/useAuth';
 
 interface Props {
   artwork: ArtworkEntity;

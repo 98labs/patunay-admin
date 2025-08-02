@@ -13,7 +13,7 @@ import {
 } from "@tanstack/react-table";
 
 import { useGetArtworksQuery } from "../../store/api/artworkApi";
-import { useAuthV2 as useAuth } from '../../hooks/useAuthV2';
+import { useAuth } from '../../hooks/useAuth';
 
 import UploadButton from "./components/UploadButton";
 import { useArtworkColumns } from "./hooks/useArtworkColumns";

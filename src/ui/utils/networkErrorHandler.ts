@@ -1,7 +1,7 @@
 import { store } from '../store';
 import { showNotification } from '../components/NotificationMessage/slice';
 import { NotificationStatus } from '../components/types/common';
-import { clearAuth } from '../store/features/auth/authSliceV2';
+import { clearAuth } from '../store/features/auth/authSlice';
 import supabase from '../supabase';
 
 // Network error types
