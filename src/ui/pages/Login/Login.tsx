@@ -90,10 +90,8 @@ const Login = () => {
         <div className="w-full">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm font-medium text-base-content dark:text-base-content mb-2">
-                Email address
-              </label>
               <FormField
+                label="Username"
                 name="email"
                 inputType={InputType.Email}
                 hint="Enter your email"
@@ -104,7 +102,6 @@ const Login = () => {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-base-content dark:text-base-content">
-                  Password
                 </label>
                 <div className="text-sm">
                   <a
@@ -116,6 +113,7 @@ const Login = () => {
                 </div>
               </div>
               <FormField
+                label="Password"
                 name="password"
                 inputType={InputType.Password}
                 hint="Enter your password"
