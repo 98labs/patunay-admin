@@ -37,16 +37,44 @@ export const OrganizationManagement: React.FC = () => {
 
   const [createOrganization, { isLoading: isCreating }] = useCreateOrganizationMutation();
   const [deleteOrganization, { isLoading: isDeleting }] = useDeleteOrganizationMutation();
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const handleCreateOrganization = async (organizationData: any) => {
+    setCreateError(null);
     try {
       await createOrganization(organizationData).unwrap();
       setShowCreateModal(false);
       showSuccess('Organization created successfully');
       refetch();
-    } catch (error) {
-      showError('Failed to create organization');
-      console.error('Failed to create organization:', error instanceof Error ? error.message : String(error));
+    } catch (error: any) {
+      console.error('Failed to create organization - Full error:', error);
+      
+      // Extract meaningful error message
+      let errorMessage = 'Failed to create organization';
+      if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error?.data?.error?.message) {
+        errorMessage = error.data.error.message;
+      } else if (error?.data?.error) {
+        errorMessage = error.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // Check for specific error types
+      if (errorMessage.includes('row-level security') || errorMessage.includes('RLS') || errorMessage.includes('policy')) {
+        errorMessage = 'Permission denied: You need super user permissions to create organizations.';
+      } else if (errorMessage.includes('duplicate') || errorMessage.includes('unique')) {
+        errorMessage = 'An organization with this name already exists.';
+      } else if (errorMessage.includes('constraint') || errorMessage.includes('violates')) {
+        errorMessage = 'Invalid data: Please check all required fields and try again.';
+      } else if (errorMessage.includes('email')) {
+        errorMessage = 'Invalid email format. Please enter a valid email address.';
+      }
+      
+      setCreateError(errorMessage);
+      showError(errorMessage);
+      throw error; // Re-throw to prevent modal from closing
     }
   };
 
@@ -262,9 +290,13 @@ export const OrganizationManagement: React.FC = () => {
       {/* Create Organization Modal */}
       {showCreateModal && (
         <CreateOrganizationModal
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => {
+            setShowCreateModal(false);
+            setCreateError(null);
+          }}
           onSubmit={handleCreateOrganization}
           isLoading={isCreating}
+          error={createError}
         />
       )}
 

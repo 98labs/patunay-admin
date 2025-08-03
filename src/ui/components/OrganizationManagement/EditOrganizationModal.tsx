@@ -6,15 +6,18 @@ interface EditOrganizationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (formData: Partial<Organization>) => Promise<void>;
+  error?: string | null;
 }
 
 export const EditOrganizationModal: React.FC<EditOrganizationModalProps> = ({
   organization,
   isOpen,
   onClose,
-  onSave
+  onSave,
+  error
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: organization.name || '',
     type: organization.type || 'other' as OrganizationType,
@@ -26,14 +29,52 @@ export const EditOrganizationModal: React.FC<EditOrganizationModalProps> = ({
     settings: organization.settings || {}
   });
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Required fields
+    if (!formData.name.trim()) {
+      newErrors.name = 'Organization name is required';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Organization name must be at least 2 characters';
+    } else if (formData.name.trim().length > 100) {
+      newErrors.name = 'Organization name must be less than 100 characters';
+    }
+
+    // Email validation - now required
+    if (!formData.contact_email) {
+      newErrors.contact_email = 'Contact email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.contact_email)) {
+      newErrors.contact_email = 'Please enter a valid email address';
+    }
+
+    // Optional field validations
+    if (formData.website && !/^https?:\/\/.+\..+/.test(formData.website)) {
+      newErrors.website = 'Please enter a valid URL (including http:// or https://)';
+    }
+
+    if (formData.contact_phone && !/^[\d\s\-\+\(\)]+$/.test(formData.contact_phone)) {
+      newErrors.contact_phone = 'Please enter a valid phone number';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
       await onSave(formData);
     } catch (error) {
       // Error handling is done in the parent component
+      console.error('Error saving organization:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -56,6 +97,16 @@ export const EditOrganizationModal: React.FC<EditOrganizationModalProps> = ({
         </div>
         
         <form onSubmit={handleSubmit}>
+          {/* Error Alert */}
+          {error && (
+            <div className="alert alert-error mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
+          
           <div className="space-y-6">
             {/* Basic Information Section */}
             <div className="space-y-4">
@@ -154,11 +205,19 @@ export const EditOrganizationModal: React.FC<EditOrganizationModalProps> = ({
                 </label>
                 <input
                   type="url"
-                  className="input input-bordered w-full"
+                  className={`input input-bordered w-full ${errors.website ? 'input-error' : ''}`}
                   value={formData.website}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, website: e.target.value });
+                    if (errors.website) setErrors({ ...errors, website: '' });
+                  }}
                   placeholder="https://example.com"
                 />
+                {errors.website && (
+                  <label className="label">
+                    <span className="label-text-alt text-error">{errors.website}</span>
+                  </label>
+                )}
               </div>
             </div>
           </div>

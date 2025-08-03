@@ -25,12 +25,36 @@ const enhancedBaseQuery = async (args: any, api: any, extraOptions: any) => {
     try {
       const result = await args.supabaseOperation();
       return { data: result };
-    } catch (error) {
+    } catch (error: any) {
+      // Extract meaningful error information from Supabase errors
+      let errorMessage = 'Unknown error';
+      let errorDetails = error;
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // Handle Supabase-specific error structure
+      if (error?.details) {
+        errorDetails = error.details;
+      }
+      
+      // Log the full error for debugging
+      console.error('Supabase operation error:', {
+        message: errorMessage,
+        details: errorDetails,
+        fullError: error
+      });
+      
       return {
         error: {
-          status: 'CUSTOM_ERROR',
-          data: error instanceof Error ? error.message : 'Unknown error',
-          error: error
+          status: error?.status || 'CUSTOM_ERROR',
+          data: {
+            message: errorMessage,
+            error: errorDetails,
+            hint: error?.hint || null,
+            details: error?.details || null
+          }
         }
       };
     }
@@ -52,7 +76,8 @@ export const api = createApi({
     'Collection',
     'Statistics',
     'NfcTag',
-    'Asset'
+    'Asset',
+    'Organization'
   ],
   endpoints: () => ({}), // Endpoints will be injected by other slices
 });

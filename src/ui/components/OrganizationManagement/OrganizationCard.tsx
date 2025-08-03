@@ -18,10 +18,12 @@ export const OrganizationCard: React.FC<OrganizationCardProps> = ({
   const [updateOrganization] = useUpdateOrganizationMutation();
   const { showSuccess, showError } = useNotification();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const organizationType = ORGANIZATION_TYPES[organization.type];
 
   const handleEdit = async (formData: any) => {
+    setEditError(null);
     try {
       await updateOrganization({
         id: organization.id,
@@ -30,7 +32,30 @@ export const OrganizationCard: React.FC<OrganizationCardProps> = ({
       showSuccess('Organization updated successfully');
       setIsEditModalOpen(false);
     } catch (error: any) {
-      showError(error?.message || 'Failed to update organization');
+      console.error('Failed to update organization:', error);
+      
+      // Extract meaningful error message
+      let errorMessage = 'Failed to update organization';
+      if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error?.data?.error?.message) {
+        errorMessage = error.data.error.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // Check for specific error types
+      if (errorMessage.includes('row-level security') || errorMessage.includes('RLS') || errorMessage.includes('policy')) {
+        errorMessage = 'Permission denied: You do not have permission to update this organization.';
+      } else if (errorMessage.includes('duplicate')) {
+        errorMessage = 'An organization with this name already exists.';
+      } else if (errorMessage.includes('constraint')) {
+        errorMessage = 'Invalid data: Please check all required fields.';
+      }
+      
+      setEditError(errorMessage);
+      showError(errorMessage);
+      throw error; // Re-throw to prevent modal from closing
     }
   };
 
@@ -164,8 +189,12 @@ export const OrganizationCard: React.FC<OrganizationCardProps> = ({
       <EditOrganizationModal
         organization={organization}
         isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditError(null);
+        }}
         onSave={handleEdit}
+        error={editError}
       />
     )}
     </>

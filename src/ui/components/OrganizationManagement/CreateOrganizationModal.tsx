@@ -3,14 +3,16 @@ import { OrganizationType, ORGANIZATION_TYPES, CreateOrganizationData } from '..
 
 interface CreateOrganizationModalProps {
   onClose: () => void;
-  onSubmit: (data: CreateOrganizationData) => void;
+  onSubmit: (data: CreateOrganizationData) => Promise<void>;
   isLoading: boolean;
+  error?: string | null;
 }
 
 export const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
   onClose,
   onSubmit,
-  isLoading
+  isLoading,
+  error
 }) => {
   const [formData, setFormData] = useState<CreateOrganizationData>({
     name: '',
@@ -29,28 +31,45 @@ export const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = (
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Required fields
     if (!formData.name.trim()) {
       newErrors.name = 'Organization name is required';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Organization name must be at least 2 characters';
+    } else if (formData.name.trim().length > 100) {
+      newErrors.name = 'Organization name must be less than 100 characters';
     }
 
-    if (formData.contact_email && !/\S+@\S+\.\S+/.test(formData.contact_email)) {
+    // Email validation - now required
+    if (!formData.contact_email) {
+      newErrors.contact_email = 'Contact email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.contact_email)) {
       newErrors.contact_email = 'Please enter a valid email address';
     }
 
-    if (formData.website && !/^https?:\/\/.+/.test(formData.website)) {
+    // Optional field validations
+    if (formData.website && !/^https?:\/\/.+\..+/.test(formData.website)) {
       newErrors.website = 'Please enter a valid URL (including http:// or https://)';
+    }
+
+    if (formData.contact_phone && !/^[\d\s\-\+\(\)]+$/.test(formData.contact_phone)) {
+      newErrors.contact_phone = 'Please enter a valid phone number';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear previous submit error
+    setSubmitError(null);
     
     if (!validateForm()) {
       return;
@@ -64,7 +83,12 @@ export const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = (
       ),
     };
 
-    onSubmit(cleanedData);
+    try {
+      await onSubmit(cleanedData);
+    } catch (error) {
+      // Error is handled in parent component
+      console.error('Error submitting form:', error);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -104,6 +128,16 @@ export const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = (
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* Error Alert */}
+          {(error || submitError) && (
+            <div className="alert alert-error mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{error || submitError}</span>
+            </div>
+          )}
+          
           <div className="space-y-6">
             {/* Basic Information Section */}
             <div className="space-y-4">
@@ -174,6 +208,7 @@ export const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = (
                 <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Contact Email</span>
+                    <span className="label-text-alt text-error">*</span>
                   </label>
                   <input
                     type="email"
@@ -195,11 +230,16 @@ export const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = (
                   </label>
                   <input
                     type="tel"
-                    className="input input-bordered w-full"
+                    className={`input input-bordered w-full ${errors.contact_phone ? 'input-error' : ''}`}
                     value={formData.contact_phone}
                     onChange={(e) => handleInputChange('contact_phone', e.target.value)}
                     placeholder="+1 (555) 123-4567"
                   />
+                  {errors.contact_phone && (
+                    <label className="label">
+                      <span className="label-text-alt text-error">{errors.contact_phone}</span>
+                    </label>
+                  )}
                 </div>
               </div>
 
