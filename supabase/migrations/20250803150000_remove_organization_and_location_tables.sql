@@ -58,21 +58,8 @@ DROP TYPE IF EXISTS public.organization_role CASCADE;
 DROP TYPE IF EXISTS public.location_role CASCADE;
 
 -- Remove any organization-related RLS policies that might remain
-DO $$ 
-DECLARE
-    pol RECORD;
-BEGIN
-    -- Remove policies that reference organization
-    FOR pol IN 
-        SELECT schemaname, tablename, policyname 
-        FROM pg_policies 
-        WHERE schemaname = 'public' 
-        AND (definition LIKE '%organization%' OR definition LIKE '%location%')
-    LOOP
-        EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', 
-                      pol.policyname, pol.schemaname, pol.tablename);
-    END LOOP;
-END $$;
+-- Note: pg_policies doesn't have a definition column, so we'll just drop known policies
+-- Any remaining policies will be handled by CASCADE drops above
 
 -- Clean up any remaining organization-related functions
 DROP FUNCTION IF EXISTS public.get_user_organization(uuid);
@@ -81,18 +68,7 @@ DROP FUNCTION IF EXISTS public.is_organization_admin(uuid, uuid);
 DROP FUNCTION IF EXISTS public.is_organization_member(uuid, uuid);
 
 -- Remove organization-related audit columns if they exist
-DO $$ 
-BEGIN
-    -- Remove created_by_organization if it exists
-    IF EXISTS (SELECT 1 FROM information_schema.columns 
-               WHERE table_schema = 'public' 
-               AND column_name = 'created_by_organization') THEN
-        EXECUTE 'ALTER TABLE public.' || table_name || ' DROP COLUMN created_by_organization'
-        FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-        AND column_name = 'created_by_organization';
-    END IF;
-END $$;
+-- Note: created_by_organization column was never added in our schema
 
 -- Add comment documenting the single-tenant conversion
 COMMENT ON SCHEMA public IS 'Single-tenant Patunay application schema - organization and location management removed';
