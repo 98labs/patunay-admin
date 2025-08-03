@@ -25,6 +25,7 @@ export const ImageManagementModal = ({
 }: ImageManagementModalProps) => {
   const [assets, setAssets] = useState<AssetEntity[]>(currentAssets || []);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   const { showError, showSuccess } = useNotification();
 
@@ -33,6 +34,7 @@ export const ImageManagementModal = ({
   }, [currentAssets]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    console.log('Files dropped:', acceptedFiles.length);
     if (acceptedFiles.length === 0) return;
 
     setUploading(true);
@@ -40,27 +42,42 @@ export const ImageManagementModal = ({
 
     try {
       for (const file of acceptedFiles) {
-        const fileName = `${Date.now()}-${file.name}`;
+        console.log('Processing file:', file.name, 'Size:', file.size, 'Type:', file.type);
+        
+        // Generate unique filename with timestamp
+        const timestamp = Date.now();
+        const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const fileName = `${timestamp}_${cleanFileName}`;
         const filePath = `artworks/${fileName}`;
 
+        console.log('Uploading to path:', filePath);
+
         // Upload to storage
-        const { error: uploadError } = await supabase.storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
           .from("artifacts")
-          .upload(filePath, file);
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
         if (uploadError) {
+          console.error('Upload error:', uploadError);
           showError(`Failed to upload ${file.name}: ${uploadError.message}`, "Upload Error");
           continue;
         }
 
-        // Get public URL
-        const { data } = supabase.storage
+        console.log('Upload successful:', uploadData);
+
+        // Get public URL since bucket is public
+        const { data: publicUrlData } = supabase.storage
           .from("artifacts")
           .getPublicUrl(filePath);
 
+        console.log('Public URL:', publicUrlData.publicUrl);
+
         newAssets.push({
           filename: file.name,
-          url: data.publicUrl,
+          url: publicUrlData.publicUrl,
           sortOrder: assets.length + newAssets.length
         });
       }
@@ -71,6 +88,7 @@ export const ImageManagementModal = ({
         showSuccess(`${newAssets.length} image(s) uploaded successfully`);
       }
     } catch (error) {
+      console.error('Upload error:', error);
       showError('Failed to upload images', 'Upload Error');
     } finally {
       setUploading(false);
@@ -92,18 +110,31 @@ export const ImageManagementModal = ({
     setDeletingIds(prev => new Set(prev).add(index));
 
     try {
-      // Extract file path from URL
-      const urlParts = assetToDelete.url?.split('/');
-      const fileName = urlParts?.[urlParts.length - 1];
-      
-      if (fileName) {
-        // Delete from storage
-        const { error } = await supabase.storage
-          .from('artifacts')
-          .remove([`artworks/${fileName}`]);
+      // Delete from storage if URL exists
+      if (assetToDelete.url) {
+        try {
+          // Extract the storage path from the URL
+          const url = new URL(assetToDelete.url);
+          const pathMatch = url.pathname.match(/\/storage\/v1\/object\/(?:sign|public)\/artifacts\/(.+)/);
+          
+          if (pathMatch) {
+            const storagePath = decodeURIComponent(pathMatch[1].split('?')[0]);
+            console.log('Deleting from storage:', storagePath);
+            
+            // Delete from storage
+            const { error } = await supabase.storage
+              .from('artifacts')
+              .remove([storagePath]);
 
-        if (error) {
-          console.error('Error deleting from storage:', error);
+            if (error) {
+              console.error('Error deleting from storage:', error);
+              // Don't throw error here, still remove from UI even if storage deletion fails
+            }
+          } else {
+            console.warn('Could not extract storage path from URL:', assetToDelete.url);
+          }
+        } catch (error) {
+          console.error('Error parsing URL for deletion:', error);
         }
       }
 
@@ -142,26 +173,52 @@ export const ImageManagementModal = ({
   };
 
   const handleSave = async () => {
+    setSaving(true);
     try {
-      // Update artwork in database
-      const { error } = await supabase
-        .from('artworks')
-        .update({ assets })
-        .eq('id', artworkId);
+      // Delete all existing assets for this artwork
+      const { error: deleteError } = await supabase
+        .from('assets')
+        .delete()
+        .eq('artwork_id', artworkId);
 
-      if (error) throw error;
+      if (deleteError) {
+        console.error('Error deleting existing assets:', deleteError);
+        throw deleteError;
+      }
+
+      // Insert updated assets
+      if (assets.length > 0) {
+        const assetsToInsert = assets.map((asset, index) => ({
+          artwork_id: artworkId,
+          filename: asset.filename,
+          url: asset.url,
+          sort_order: index
+        }));
+
+        const { error: insertError } = await supabase
+          .from('assets')
+          .insert(assetsToInsert);
+
+        if (insertError) {
+          console.error('Error inserting assets:', insertError);
+          throw insertError;
+        }
+      }
 
       showSuccess('Images updated successfully');
       onUpdate(assets);
       onClose();
     } catch (error) {
+      console.error('Failed to update images:', error);
       showError('Failed to update images', 'Update Error');
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <Modal
-      show={isOpen}
+      isOpen={isOpen}
       onClose={onClose}
       title={`Manage Images - ${artworkTitle}`}
       size="large"
@@ -273,9 +330,9 @@ export const ImageManagementModal = ({
         />
         <Button
           buttonType="primary"
-          buttonLabel="Save Changes"
+          buttonLabel={saving ? "Saving..." : "Save Changes"}
           onClick={handleSave}
-          disabled={uploading}
+          disabled={uploading || saving}
         />
       </div>
     </Modal>

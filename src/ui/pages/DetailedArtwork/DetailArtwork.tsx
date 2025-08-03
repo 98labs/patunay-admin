@@ -7,6 +7,7 @@ import EditArtworkModal from "./components/EditArtworkModal";
 import DetachNFCModal from "./components/DetachNFCModal";
 import { AttachNFCModal } from "./components/AttachNFCModal";
 import { ImageManagementModal } from "./components/ImageManagementModal";
+import { ImageGallery } from "./components/ImageGallery";
 import { Appraisal, ArtworkType } from "./types";
 import { AssetEntity } from "../../typings/asset";
 import { selectNotif } from "../../components/NotificationMessage/selector";
@@ -223,7 +224,7 @@ const DetailArtwork = () => {
 
   if (isLoading) return <Loading fullScreen={false} />;
   if (!artwork) return <div className="p-6">Artwork not found.</div>;
-  const image = artwork.assets?.map((asset) => asset.url) || []
+  
   return (
     <div className="text-base-content">
       <div className="flex justify-between items-center">
@@ -249,7 +250,11 @@ const DetailArtwork = () => {
               buttonType="secondary"
               buttonLabel="Manage Images"
               className="btn-sm rounded-lg"
-              onClick={() => setShowImageManagementModal(true)}
+              onClick={() => {
+                console.log('Manage Images clicked, artwork:', artwork);
+                console.log('showImageManagementModal will be set to true');
+                setShowImageManagementModal(true);
+              }}
             />
             {artwork.tag_id ? (
               <Button
@@ -278,30 +283,12 @@ const DetailArtwork = () => {
       <section className="hero text-base-content">
         <div className="hero-content flex-col lg:flex-row">
           <div className="lg:w-1/3">
-            {!artwork.assets || artwork.assets.length === 0 ? (
-              <div className="bg-base-200 border border-dashed border-base-300 rounded-2xl text-base-content/90 text-center p-4 flex flex-col gap-2">
-                <p className="text-sm font-semibold">
-                  No images uploaded yet
-                </p>
-                <span className="text-sm">Click below to add images</span>
-                <Button
-                  buttonLabel="Upload images"
-                  className="rounded-lg"
-                  onClick={() => setShowImageManagementModal(true)}
-                />
-              </div>
-            ) : (
-              <>
-                <label htmlFor={modalId} className="cursor-pointer">
-                  <img
-                    src={image[0]}
-                    alt={artwork.title ?? ""}
-                    className="rounded-lg object-cover w-full max-h-[500px]"
-                    onClick={() => setShowImageModal(true)}
-                  />
-                </label>
-              </>
-            )}
+            <ImageGallery
+              images={artwork.assets?.map((asset) => asset.url) || []}
+              title={artwork.title || ""}
+              onImageClick={() => setShowImageModal(true)}
+              onManageClick={() => setShowImageManagementModal(true)}
+            />
           </div>
           <div className="flex-1">
             <ul>
@@ -417,7 +404,7 @@ const DetailArtwork = () => {
           <ImageManagementModal
             isOpen={showImageManagementModal}
             onClose={() => setShowImageManagementModal(false)}
-            artworkId={artwork.id}
+            artworkId={artwork.id || ''}
             artworkTitle={artwork.title || ""}
             currentAssets={artwork.assets || []}
             onUpdate={handleImageUpdate}
