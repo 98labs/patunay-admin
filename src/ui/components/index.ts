@@ -1,11 +1,21 @@
 // Component exports
 export { default as ActivityFeed } from "./ActivityFeed";
+export { default as Alert } from "./Alert";
+export { default as Badge } from "./Badge";
 export { default as Button } from "./Button";
+export { Card, CardHeader, CardContent, CardFooter } from "./Card";
 export { default as Cards } from "./Cards";
+export { default as EmptyState } from "./EmptyState";
 export { default as ErrorBoundary } from "./ErrorBoundary";
+export { default as FileUpload } from "./FileUpload";
 export { default as FormField } from "./FormField";
 export { default as FormStepTitle } from "./FormStepTitle";
+export { default as Input } from "./Input";
 export { default as Loading } from "./Loading";
+export { default as Pagination } from "./Pagination";
+export { default as SearchInput } from "./SearchInput";
+export { default as Select } from "./Select";
+export { default as Table } from "./Table";
 export { 
   Modal, 
   DetachNFCModal, 
@@ -30,7 +40,7 @@ export { default as SimpleChart } from "./SimpleChart";
 export { default as StatsCard } from "./StatsCard";
 export { default as SystemHealth } from "./SystemHealth";
 export { default as UserForm } from "./UserForm";
-export { default as UserProfile } from "./UserProfile";
+export { default as UserProfile, UserProfileDropdown } from "./UserProfile";
 export { default as UserTable } from "./UserTable";
 export { default as UserActionMenu } from "./UserActionMenu";
 export { UserAvatar } from "./UserAvatar";

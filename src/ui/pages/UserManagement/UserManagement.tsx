@@ -1,34 +1,65 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { 
   PageHeader, 
-  UserTable, 
-  UserForm, 
   Loading,
   ConfirmationModal,
-  UserAvatar,
-  CreateUserModal
+  Button,
+  SearchInput,
+  Select,
+  Badge,
+  EmptyState,
+  Pagination
 } from '@components';
 import { 
   useGetUsersQuery,
-  useGetUserQuery,
-  useCreateUserMutation,
-  useUpdateUserMutation,
   useDeleteUserMutation,
-} from '../../store/api/userManagementApi';
-import { User, CreateUserData, UpdateUserData } from '../../typings';
+  useDisableUserMutation,
+  useEnableUserMutation,
+} from '../../store/api/userManagementApiV2';
+import { UserRole } from '../../store/api/userManagementApiV2';
 import { useNotification } from '../../hooks/useNotification';
 import { useAuth } from '../../hooks/useAuth';
+import { UserForm } from './components/UserForm';
+import { PermissionsManager } from './components/PermissionsManager';
+import { UserActionsMenu } from './components/UserActionsMenu';
+import { Plus, Users } from 'lucide-react';
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  createColumnHelper,
+  ColumnDef
+} from '@tanstack/react-table';
 
-type ViewMode = 'list' | 'create' | 'edit' | 'view';
+type ViewMode = 'list' | 'create' | 'edit' | 'permissions';
+
+interface UserData {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  role: UserRole;
+  is_active: boolean;
+  avatar_url?: string;
+  email_confirmed_at?: string;
+  last_sign_in_at?: string;
+  permissions?: string[];
+}
+
+type SelectedUser = UserData;
 
 const UserManagement = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
-  const [actionTargetUser, setActionTargetUser] = useState<User | null>(null);
-  const [showWorkaroundModal, setShowWorkaroundModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  
+  // Pagination and filtering
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   const { showSuccess, showError } = useNotification();
   const { user: currentUser } = useAuth();
@@ -40,401 +71,371 @@ const UserManagement = () => {
     error: usersError,
     refetch: refetchUsers 
   } = useGetUsersQuery({
-    page: 1,
-    pageSize: 50,
+    page: currentPage,
+    pageSize,
+    filters: {
+      role: roleFilter !== 'all' ? roleFilter : undefined,
+      is_active: statusFilter === 'all' ? undefined : statusFilter === 'active',
+      search: searchQuery || undefined
+    },
     sortBy: 'created_at',
     sortOrder: 'desc'
   });
 
-  const { 
-    data: selectedUserResponse, 
-    isLoading: isLoadingSelectedUser 
-  } = useGetUserQuery(selectedUserId!, {
-    skip: !selectedUserId || viewMode === 'list' || viewMode === 'create'
-  });
-
-  const [createUser, { isLoading: isCreatingUser }] = useCreateUserMutation();
-  const [updateUser, { isLoading: isUpdatingUser }] = useUpdateUserMutation();
   const [deleteUser, { isLoading: isDeletingUser }] = useDeleteUserMutation();
+  const [disableUser, { isLoading: isDisablingUser }] = useDisableUserMutation();
+  const [enableUser, { isLoading: isEnablingUser }] = useEnableUserMutation();
 
-  const detailedUser = selectedUserResponse?.data || selectedUser;
+  const isProcessing = isDeletingUser || isDisablingUser || isEnablingUser;
 
   // Handlers
-  const handleCreateUser = useCallback(async (userData: CreateUserData) => {
-    try {
-      await createUser(userData).unwrap();
-      showSuccess('User created successfully');
-      setViewMode('list');
-      refetchUsers();
-    } catch (error: any) {
-      showError(error?.message || 'Failed to create user');
-    }
-  }, [createUser, showSuccess, showError, refetchUsers]);
+  const handleCreateUser = useCallback(() => {
+    setSelectedUser(null);
+    setViewMode('create');
+  }, []);
 
-  const handleUpdateUser = useCallback(async (userData: UpdateUserData) => {
-    try {
-      await updateUser(userData).unwrap();
-      showSuccess('User updated successfully');
-      setViewMode('list');
-      setSelectedUser(null);
-      setSelectedUserId(null);
-      refetchUsers();
-    } catch (error: any) {
-      showError(error?.message || 'Failed to update user');
-    }
-  }, [updateUser, showSuccess, showError, refetchUsers]);
+  const handleEditUser = useCallback((user: SelectedUser) => {
+    setSelectedUser(user);
+    setViewMode('edit');
+  }, []);
 
-  const handleDeleteUser = useCallback((user: User) => {
-    setActionTargetUser(user);
+  const handleManagePermissions = useCallback((user: SelectedUser) => {
+    setSelectedUser(user);
+    setViewMode('permissions');
+  }, []);
+
+  const handleDeleteUser = useCallback((user: SelectedUser) => {
+    setSelectedUser(user);
     setShowDeleteModal(true);
   }, []);
 
+  const handleToggleUserStatus = useCallback((user: SelectedUser) => {
+    setSelectedUser(user);
+    setShowStatusModal(true);
+  }, []);
+
   const confirmDeleteUser = useCallback(async () => {
-    if (!actionTargetUser) return;
+    if (!selectedUser) return;
 
     try {
-      await deleteUser(actionTargetUser.id).unwrap();
+      await deleteUser(selectedUser.id).unwrap();
       showSuccess('User deleted successfully');
       setShowDeleteModal(false);
-      setActionTargetUser(null);
+      setSelectedUser(null);
       refetchUsers();
     } catch (error: any) {
       showError(error?.message || 'Failed to delete user');
     }
-  }, [actionTargetUser, deleteUser, showSuccess, showError, refetchUsers]);
-
-  const handleDeactivateUser = useCallback((user: User) => {
-    setActionTargetUser(user);
-    setShowDeactivateModal(true);
-  }, []);
-
-  const handleActivateUser = useCallback((user: User) => {
-    setActionTargetUser(user);
-    setShowDeactivateModal(true);
-  }, []);
+  }, [selectedUser, deleteUser, showSuccess, showError, refetchUsers]);
 
   const confirmToggleUserStatus = useCallback(async () => {
-    if (!actionTargetUser) return;
-
-    const action = actionTargetUser.is_active ? 'deactivate' : 'activate';
+    if (!selectedUser) return;
 
     try {
-      await updateUser({
-        id: actionTargetUser.id,
-        is_active: !actionTargetUser.is_active,
-      }).unwrap();
-      
-      showSuccess(`User ${action}d successfully`);
-      setShowDeactivateModal(false);
-      setActionTargetUser(null);
+      if (selectedUser.is_active) {
+        await disableUser(selectedUser.id).unwrap();
+        showSuccess('User disabled successfully');
+      } else {
+        await enableUser(selectedUser.id).unwrap();
+        showSuccess('User enabled successfully');
+      }
+      setShowStatusModal(false);
+      setSelectedUser(null);
       refetchUsers();
     } catch (error: any) {
-      showError(error?.message || `Failed to ${action} user`);
+      showError(error?.message || 'Failed to update user status');
     }
-  }, [actionTargetUser, updateUser, showSuccess, showError, refetchUsers]);
+  }, [selectedUser, disableUser, enableUser, showSuccess, showError, refetchUsers]);
 
-  const handleEditUser = useCallback((user: User) => {
-    setSelectedUser(user);
-    setSelectedUserId(user.id);
-    setViewMode('edit');
-  }, []);
-
-  const handleViewUser = useCallback((user: User) => {
-    setSelectedUser(user);
-    setSelectedUserId(user.id);
-    setViewMode('view');
-  }, []);
-
-  const handleCancelForm = useCallback(() => {
+  const handleBackToList = useCallback(() => {
     setViewMode('list');
     setSelectedUser(null);
-    setSelectedUserId(null);
-  }, []);
+    refetchUsers();
+  }, [refetchUsers]);
 
-  const handleFormSubmit = useCallback((data: any) => {
-    if (viewMode === 'create') {
-      const createData = {
-        ...data
-      };
-      handleCreateUser(createData);
-    } else if (viewMode === 'edit' && detailedUser) {
-      const { avatar_file, ...updateData } = data;
-      handleUpdateUser({
-        id: detailedUser.id,
-        ...updateData,
-        avatar_file: avatar_file,
-      });
-    }
-  }, [viewMode, detailedUser, handleCreateUser, handleUpdateUser]);
+  // Column helper for type safety
+  const columnHelper = createColumnHelper<UserData>();
 
-  // Loading state
-  if (isLoadingUsers && !usersResponse) {
-    return <Loading fullScreen={false} />;
-  }
-
-  // Error state - show actual error
-  if (usersError) {
-    console.error('[UserManagement] Error loading users:', usersError);
-    
-    // Extract error message
-    let errorMessage = 'An error occurred while loading users';
-    let errorDetails = '';
-    
-    // Handle different error formats
-    const error = usersError as any;
-    if (typeof error === 'string') {
-      errorMessage = error;
-    } else if (error?.message) {
-      errorMessage = typeof error.message === 'string' ? error.message : JSON.stringify(error.message);
-      if (error.code) errorDetails = `Code: ${error.code}`;
-      if (error.hint) errorDetails += errorDetails ? `, ${error.hint}` : error.hint;
-    } else if (error?.data?.message) {
-      errorMessage = error.data.message;
-    } else if (error?.error) {
-      errorMessage = typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
-    }
-    
-    return (
-      <div className="container mx-auto px-4">
-        <PageHeader name="User Management" />
-        <div className="alert alert-error">
-          <div>
-            <h3 className="font-bold">Error Loading Users</h3>
-            <div className="text-sm mt-2">
-              {errorMessage}
+  // Table columns
+  const columns = useMemo<ColumnDef<UserData, any>[]>(() => [
+    columnHelper.accessor((row) => ({ 
+      name: row.first_name || row.last_name ? `${row.first_name || ''} ${row.last_name || ''}`.trim() : 'No name',
+      email: row.email,
+      avatar_url: row.avatar_url,
+      first_name: row.first_name
+    }), {
+      id: 'user',
+      header: 'User',
+      cell: (info) => {
+        const data = info.getValue();
+        return (
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              {data.avatar_url ? (
+                <img
+                  className="h-10 w-10 rounded-full"
+                  src={data.avatar_url}
+                  alt=""
+                />
+              ) : (
+                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    {data.first_name?.[0]?.toUpperCase() || data.email[0].toUpperCase()}
+                  </span>
+                </div>
+              )}
             </div>
-            {errorDetails && (
-              <div className="text-xs mt-1 opacity-70">
-                {errorDetails}
+            <div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                {data.name}
               </div>
-            )}
-            <div className="text-xs mt-2 opacity-70">
-              Check the console for more details.
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {data.email}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        );
+      },
+    }),
+    columnHelper.accessor('role', {
+      header: 'Role',
+      cell: (info) => (
+        <Badge variant={info.getValue() === 'admin' || info.getValue() === 'super_user' ? 'primary' : 'secondary'}>
+          {info.getValue()}
+        </Badge>
+      ),
+    }),
+    columnHelper.accessor('is_active', {
+      header: 'Status',
+      cell: (info) => (
+        <Badge variant={info.getValue() ? 'success' : 'danger'}>
+          {info.getValue() ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+    }),
+    columnHelper.accessor('last_sign_in_at', {
+      header: 'Last Login',
+      cell: (info) => (
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {info.getValue() 
+            ? new Date(info.getValue()).toLocaleDateString()
+            : 'Never'
+          }
+        </span>
+      ),
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: 'Actions',
+      cell: (info) => (
+        <UserActionsMenu
+          user={info.row.original}
+          currentUserId={currentUser?.id}
+          onEdit={() => handleEditUser(info.row.original)}
+          onManagePermissions={() => handleManagePermissions(info.row.original)}
+          onToggleStatus={() => handleToggleUserStatus(info.row.original)}
+          onDelete={() => handleDeleteUser(info.row.original)}
+        />
+      ),
+    }),
+  ], [columnHelper, currentUser?.id, handleEditUser, handleManagePermissions, handleToggleUserStatus, handleDeleteUser]);
+
+  // Create table instance
+  const table = useReactTable({
+    data: usersResponse?.data || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  // Render different views
+  if (viewMode === 'create' || viewMode === 'edit') {
+    return (
+      <UserForm
+        user={selectedUser}
+        mode={viewMode === 'create' ? 'create' : 'edit'}
+        onSuccess={handleBackToList}
+        onCancel={handleBackToList}
+      />
     );
   }
 
-  const users = usersResponse?.data || [];
+  if (viewMode === 'permissions' && selectedUser) {
+    return (
+      <PermissionsManager
+        user={selectedUser}
+        onBack={handleBackToList}
+      />
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 space-y-6">
-      <div className="flex items-center justify-between">
-        <PageHeader name="User Management" />
-        
-        {viewMode === 'list' && (
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-base-content/70">
-              {users.length} users
-            </div>
-            <button
-              onClick={() => setViewMode('create')}
-              className="btn btn-primary"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add User
-            </button>
-            {usersError && (
-              <button
-                onClick={() => setShowWorkaroundModal(true)}
-                className="btn btn-secondary btn-outline"
-                title="Use alternative method if normal creation fails"
-              >
-                Workaround
-              </button>
-            )}
-          </div>
-        )}
+    <div className="space-y-6">
+      <PageHeader
+        title="User Management"
+        description="Manage users, roles, and permissions"
+        icon={<Users className="h-8 w-8" />}
+        actions={
+          <Button onClick={handleCreateUser} variant="primary">
+            <Plus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
+        }
+      />
+
+      {/* Filters */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search users..."
+            className="md:col-span-2"
+          />
+          <Select
+            value={roleFilter}
+            onChange={(value) => setRoleFilter(value as UserRole | 'all')}
+            options={[
+              { value: 'all', label: 'All Roles' },
+              { value: 'super_user', label: 'Super User' },
+              { value: 'admin', label: 'Admin' },
+              { value: 'issuer', label: 'Issuer' },
+              { value: 'appraiser', label: 'Appraiser' },
+              { value: 'staff', label: 'Staff' },
+              { value: 'viewer', label: 'Viewer' },
+            ]}
+          />
+          <Select
+            value={statusFilter}
+            onChange={(value) => setStatusFilter(value as 'all' | 'active' | 'inactive')}
+            options={[
+              { value: 'all', label: 'All Status' },
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' },
+            ]}
+          />
+        </div>
       </div>
 
-      {/* List View */}
-      {viewMode === 'list' && (
-        <UserTable
-          users={users}
-          isLoading={isLoadingUsers}
-          onEditUser={handleEditUser}
-          onDeleteUser={handleDeleteUser}
-          onDeactivateUser={handleDeactivateUser}
-          onActivateUser={handleActivateUser}
-          onViewUser={handleViewUser}
-        />
-      )}
-
-      {/* Create/Edit Form */}
-      {(viewMode === 'create' || viewMode === 'edit') && (
-        <UserForm
-          user={detailedUser}
-          mode={viewMode}
-          isLoading={isCreatingUser || isUpdatingUser || isLoadingSelectedUser}
-          onSubmit={handleFormSubmit}
-          onCancel={handleCancelForm}
-          currentUserRole={currentUser?.role}
-        />
-      )}
-
-      {/* View User Details */}
-      {viewMode === 'view' && detailedUser && (
-        <div className="bg-base-100 border border-base-300 rounded-lg p-6 max-w-4xl mx-auto text-base-content">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">User Details</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleEditUser(detailedUser)}
-                className="btn btn-primary btn-sm"
-              >
-                Edit
-              </button>
-              <button
-                onClick={handleCancelForm}
-                className="btn btn-ghost btn-sm"
-              >
-                Close
-              </button>
-            </div>
+      {/* Users Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        {isLoadingUsers ? (
+          <div className="p-8">
+            <Loading />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium border-b border-base-300 pb-2">
-                Basic Information
-              </h3>
-              
-              <div className="space-y-3">
-                <div>
-                  <UserAvatar
-                    avatarUrl={detailedUser.avatar_url}
-                    firstName={detailedUser.first_name}
-                    lastName={detailedUser.last_name}
-                    email={detailedUser.email}
-                    size="xl"
-                    className="mb-4"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-base-content/70">Name</label>
-                  <p className="text-base-content">
-                    {detailedUser.first_name} {detailedUser.last_name}
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-base-content/70">Email</label>
-                  <p className="text-base-content">{detailedUser.email}</p>
-                </div>
-                
-                {detailedUser.phone && (
-                  <div>
-                    <label className="text-sm font-medium text-base-content/70">Phone</label>
-                    <p className="text-base-content">{detailedUser.phone}</p>
-                  </div>
-                )}
-                
-                <div>
-                  <label className="text-sm font-medium text-base-content/70">Role</label>
-                  <p>
-                    <span className={`badge ${detailedUser.role === 'admin' ? 'badge-primary' : 'badge-secondary'}`}>
-                      {detailedUser.role}
-                    </span>
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-base-content/70">Status</label>
-                  <p>
-                    <span className={`badge ${detailedUser.is_active ? 'badge-success' : 'badge-error'}`}>
-                      {detailedUser.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium border-b border-base-300 pb-2">
-                Activity Information
-              </h3>
-              
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-base-content/70">Created</label>
-                  <p className="text-base-content">
-                    {detailedUser.created_at ? new Date(detailedUser.created_at).toLocaleDateString() : 'N/A'}
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-base-content/70">Last Updated</label>
-                  <p className="text-base-content">
-                    {detailedUser.updated_at ? new Date(detailedUser.updated_at).toLocaleDateString() : 'N/A'}
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-base-content/70">Last Login</label>
-                  <p className="text-base-content">
-                    {detailedUser.last_login_at ? new Date(detailedUser.last_login_at).toLocaleDateString() : 'Never'}
-                  </p>
-                </div>
-              </div>
-            </div>
+        ) : usersError ? (
+          <div className="p-8">
+            <EmptyState
+              title="Error loading users"
+              description={usersError.toString()}
+              action={{
+                label: 'Retry',
+                onClick: () => refetchUsers()
+              }}
+            />
           </div>
-        </div>
-      )}
+        ) : !usersResponse?.data || usersResponse.data.length === 0 ? (
+          <div className="p-8">
+            <EmptyState
+              icon={<Users className="h-12 w-12" />}
+              title="No users found"
+              description={searchQuery || roleFilter !== 'all' || statusFilter !== 'all' 
+                ? "No users match your filters. Try adjusting your search criteria."
+                : "Get started by creating your first user."
+              }
+              action={
+                searchQuery || roleFilter !== 'all' || statusFilter !== 'all' ? {
+                  label: 'Clear filters',
+                  onClick: () => {
+                    setSearchQuery('');
+                    setRoleFilter('all');
+                    setStatusFilter('all');
+                  }
+                } : {
+                  label: 'Add User',
+                  onClick: handleCreateUser
+                }
+              }
+            />
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-900">
+                  {table.getHeaderGroups().map(headerGroup => (
+                    <tr key={headerGroup.id}>
+                      {headerGroup.headers.map(header => (
+                        <th
+                          key={header.id}
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {table.getRowModel().rows.map(row => (
+                    <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      {row.getVisibleCells().map(cell => (
+                        <td
+                          key={cell.id}
+                          className="px-6 py-4 whitespace-nowrap"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {usersResponse.count > pageSize && (
+              <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(usersResponse.count / pageSize)}
+                  onPageChange={setCurrentPage}
+                  totalItems={usersResponse.count}
+                  itemsPerPage={pageSize}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={showDeleteModal}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setActionTargetUser(null);
-        }}
+        onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDeleteUser}
         title="Delete User"
-        message={actionTargetUser ? 
-          `Are you sure you want to delete "${actionTargetUser.first_name} ${actionTargetUser.last_name}"? This action cannot be undone.` :
-          'Are you sure you want to delete this user?'
-        }
+        message={`Are you sure you want to delete ${selectedUser?.email}? This action cannot be undone.`}
         confirmText="Delete"
-        cancelText="Cancel"
-        isLoading={isDeletingUser}
         danger={true}
+        isLoading={isProcessing}
       />
 
-      {/* Deactivate/Activate Confirmation Modal */}
+      {/* Status Change Confirmation Modal */}
       <ConfirmationModal
-        isOpen={showDeactivateModal}
-        onClose={() => {
-          setShowDeactivateModal(false);
-          setActionTargetUser(null);
-        }}
+        isOpen={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
         onConfirm={confirmToggleUserStatus}
-        title={actionTargetUser?.is_active ? "Deactivate User" : "Activate User"}
-        message={actionTargetUser ? 
-          actionTargetUser.is_active ? 
-            `Are you sure you want to deactivate "${actionTargetUser.first_name} ${actionTargetUser.last_name}"?` :
-            `Are you sure you want to activate "${actionTargetUser.first_name} ${actionTargetUser.last_name}"?`
-          : ''
-        }
-        confirmText={actionTargetUser?.is_active ? "Deactivate" : "Activate"}
-        cancelText="Cancel"
-        isLoading={isUpdatingUser}
-        danger={actionTargetUser?.is_active}
-      />
-
-      {/* Create User Workaround Modal */}
-      <CreateUserModal
-        isOpen={showWorkaroundModal}
-        onClose={() => setShowWorkaroundModal(false)}
-        onSuccess={() => {
-          refetchUsers();
-          setShowWorkaroundModal(false);
-          showSuccess('User created successfully');
-        }}
+        title={selectedUser?.is_active ? 'Disable User' : 'Enable User'}
+        message={`Are you sure you want to ${selectedUser?.is_active ? 'disable' : 'enable'} ${selectedUser?.email}?`}
+        confirmText={selectedUser?.is_active ? 'Disable' : 'Enable'}
+        danger={selectedUser?.is_active}
+        isLoading={isProcessing}
       />
     </div>
   );

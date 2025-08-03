@@ -4,7 +4,6 @@ import {
   Users, 
   Building2, 
   Tag, 
-  Smartphone, 
   Shield, 
   Activity,
   ChevronRight,
@@ -21,7 +20,6 @@ import supabase from '../../supabase';
 interface AdminStats {
   users: { total: number; active: number; new: number };
   nfcTags: { total: number; attached: number; available: number };
-  devices: { total: number; active: number };
   organizations: { total: number; active: number };
 }
 
@@ -41,7 +39,6 @@ const Admin: React.FC = () => {
   const [stats, setStats] = useState<AdminStats>({
     users: { total: 0, active: 0, new: 0 },
     nfcTags: { total: 0, attached: 0, available: 0 },
-    devices: { total: 0, active: 0 },
     organizations: { total: 0, active: 0 }
   });
   const [loading, setLoading] = useState(true);
@@ -79,21 +76,9 @@ const Admin: React.FC = () => {
       //   .select('*', { count: 'exact', head: true })
       //   .not('artwork_id', 'is', null);
 
-      // Get device stats - Tables don't exist yet
-      // const { count: totalDevices } = await supabase
-      //   .from('devices')
-      //   .select('*', { count: 'exact', head: true });
-      
-      // const { count: activeDevices } = await supabase
-      //   .from('devices')
-      //   .select('*', { count: 'exact', head: true })
-      //   .eq('is_active', true);
-      
       // Set default values for now
       const totalTags = 0;
       const attachedTags = 0;
-      const totalDevices = 0;
-      const activeDevices = 0;
 
       // Get organization stats (only for super users)
       let orgStats = { total: 0, active: 0 };
@@ -120,10 +105,6 @@ const Admin: React.FC = () => {
           total: totalTags || 0, 
           attached: attachedTags || 0, 
           available: (totalTags || 0) - (attachedTags || 0) 
-        },
-        devices: { 
-          total: totalDevices || 0, 
-          active: activeDevices || 0 
         },
         organizations: orgStats
       });
@@ -160,18 +141,6 @@ const Admin: React.FC = () => {
         { label: 'Available', value: stats.nfcTags.available }
       ],
       color: 'secondary'
-    },
-    {
-      title: 'Devices',
-      description: 'Manage registered devices',
-      icon: Smartphone,
-      path: '/dashboard/admin/device',
-      visible: canManageOrgNfcTags || canManageAllNfcTags,
-      stats: [
-        { label: 'Total Devices', value: stats.devices.total },
-        { label: 'Active', value: stats.devices.active }
-      ],
-      color: 'accent'
     },
     {
       title: 'System Admin',
@@ -260,20 +229,6 @@ const Admin: React.FC = () => {
           </div>
         </div>
 
-        <div className="card bg-base-100 shadow-md">
-          <div className="card-body">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-base-content/60">Active Devices</p>
-                <p className="text-2xl font-bold">{stats.devices.active}</p>
-                <p className="text-xs text-base-content/60 mt-1">
-                  of {stats.devices.total} total
-                </p>
-              </div>
-              <Smartphone className="h-8 w-8 text-accent" />
-            </div>
-          </div>
-        </div>
 
         <div className="card bg-base-100 shadow-md">
           <div className="card-body">
@@ -374,17 +329,6 @@ const Admin: React.FC = () => {
                 <div>
                   <p className="text-sm font-medium">NFC tag attached to artwork</p>
                   <p className="text-xs text-base-content/60">5 hours ago</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded bg-accent/10">
-                  <Smartphone className="h-4 w-4 text-accent" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">New device registered</p>
-                  <p className="text-xs text-base-content/60">1 day ago</p>
                 </div>
               </div>
             </div>

@@ -1,6 +1,5 @@
-import { UserProfile, NfcStatusIndicator } from "@components";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useLogoutMutation } from "../../store/api/userApi";
+import { UserProfileDropdown, NfcStatusIndicator } from "@components";
+import { Link, useLocation } from "react-router-dom";
 import { usePermissions } from "../../hooks/usePermissions";
 import { useAuth } from '../../hooks/useAuth';
 import { Links, NavbarItemProps } from "./types";
@@ -54,8 +53,6 @@ const Sidebar = ({
   setIsOpen: (value: boolean) => void;
 }) => {
   const pathName = useLocation();
-  const navigate = useNavigate();
-  const [logout] = useLogoutMutation();
 
   const {
     canViewArtworks,
@@ -93,8 +90,7 @@ const Sidebar = ({
         path: "/dashboard/admin",
         children: [
           { name: "User Management", path: "/dashboard/admin/users" },
-          { name: "NFC Tags", path: "/dashboard/admin/nfc-tags" },
-          { name: "Devices", path: "/dashboard/admin/device" }
+          { name: "NFC Tags", path: "/dashboard/admin/nfc-tags" }
         ],
       });
 
@@ -134,10 +130,6 @@ const Sidebar = ({
     if (canManageAllNfcTags) {
       managementChildren.push({ name: "NFC Tags", path: "/dashboard/admin/nfc-tags" });
     }
-    
-    if (canManageAllNfcTags) {
-      managementChildren.push({ name: "Devices", path: "/dashboard/admin/device" });
-    }
 
     if (managementChildren.length > 0) {
       // Change section name based on user's primary capabilities
@@ -162,16 +154,6 @@ const Sidebar = ({
     isAdmin,
     user,
   ]);
-
-  const handleLogout = useCallback(async () => {
-    try {
-      await logout().unwrap();
-      navigate("/login");
-    } catch (error) {
-      console.error('Logout error:', error);
-      navigate("/login");
-    }
-  }, [logout, navigate]);
 
   const handleNavigate = useCallback(() => {
     if (window.innerWidth < 768) setIsOpen(false); // only close on small screens
@@ -199,17 +181,27 @@ const Sidebar = ({
       } md:relative md:translate-x-0 md:flex`}
     >
       <div className="flex flex-col w-[300px] h-screen">
-        {/* Close button on mobile */}
-        <button
-          onClick={() => setIsOpen(false)}
-          className="md:hidden self-end m-4 text-base-content dark:text-base-content hover:text-primary dark:hover:text-primary"
-        >
-          ✖
-        </button>
-        
-        
-        <div className="flex-shrink-0">
-          <UserProfile />
+        {/* Header with logo and close button */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-base-300 dark:border-base-300">
+          {/* Logo and title */}
+          <div className="flex items-center gap-3">
+            <img 
+              src="/PatunayLogo.svg" 
+              alt="Patunay Logo" 
+              className="w-10 h-10"
+            />
+            <span className="text-xl font-semibold text-base-content dark:text-base-content">
+              Patunay
+            </span>
+          </div>
+          
+          {/* Close button on mobile */}
+          <button
+            onClick={() => setIsOpen(false)}
+            className="md:hidden text-base-content dark:text-base-content hover:text-primary dark:hover:text-primary"
+          >
+            ✖
+          </button>
         </div>
 
         {/* Scrollable navigation menu */}
@@ -233,12 +225,11 @@ const Sidebar = ({
           <div className="px-4 py-3 border-t border-base-300 dark:border-base-300">
             <NfcStatusIndicator compact={false} showRefreshButton={true} />
           </div>
-          <button
-            onClick={handleLogout}
-            className="w-full hover:bg-primary/20 dark:hover:bg-primary/30 hover:text-primary dark:hover:text-primary text-base-content dark:text-base-content px-3 py-2 rounded mt-4 transition-colors duration-200"
-          >
-            Logout
-          </button>
+          
+          {/* User Profile dropdown at bottom */}
+          <div className="flex-shrink-0 border-t border-base-300 dark:border-base-300">
+            <UserProfileDropdown />
+          </div>
         </div>
       </div>
     </div>

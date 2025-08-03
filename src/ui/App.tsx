@@ -8,7 +8,6 @@ const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'))
 const Admin = lazy(() => import('./pages/Admin'));
 const Artworks = lazy(() => import('./pages/Artworks'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Devices = lazy(() => import('./pages/Devices'));
 const Login = lazy(() => import('./pages/Login'));
 const NfcTags = lazy(() => import('./pages/NfcTags'));
 const RegisterArtwork = lazy(() => import('./pages/RegisterArtwork'));
@@ -64,11 +63,6 @@ function App() {
             <Route path="admin/nfc-tags" element={
               <ErrorBoundary>
                 <NfcTags />
-              </ErrorBoundary>
-            } />
-            <Route path="admin/devices" element={
-              <ErrorBoundary>
-                <Devices />
               </ErrorBoundary>
             } />
             <Route path="admin/users" element={

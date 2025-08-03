@@ -16,8 +16,3 @@ export * from './upsertAppraisal';
 export * from './upsertAppraisalStub';
 export * from './verifyArtworkAccess';
 export * from './enhanced';
-
-// User management RPC functions
-export { createUserWithProfile } from './userManagement';
-export { updateUserProfile } from './userManagement';
-export { softDeleteUser } from './userManagement';

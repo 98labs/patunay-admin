@@ -12,7 +12,6 @@ import {
   Admin,
   NfcTags,
   UserManagement,
-  Devices,
   Login,
   NotFoundPage,
 } from "./LazyComponents";
@@ -85,16 +84,6 @@ const router = createBrowserRouter([
               <SuspenseWrapper>
                 <Dashboard />
               </SuspenseWrapper>
-            ),
-          },
-          {
-            path: "/dashboard/admin/device",
-            element: (
-              <NfcManagementRoute>
-                <SuspenseWrapper>
-                  <Devices />
-                </SuspenseWrapper>
-              </NfcManagementRoute>
             ),
           },
           {
