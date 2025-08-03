@@ -31,7 +31,7 @@ const UserManagement = () => {
   const [showWorkaroundModal, setShowWorkaroundModal] = useState(false);
 
   const { showSuccess, showError } = useNotification();
-  const { currentOrganization, isSuperUser, user: currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
 
   // API hooks
   const { 
@@ -43,9 +43,7 @@ const UserManagement = () => {
     page: 1,
     pageSize: 50,
     sortBy: 'created_at',
-    sortOrder: 'desc',
-    // Only filter by organization if not super user
-    organizationId: !isSuperUser ? currentOrganization?.id : undefined
+    sortOrder: 'desc'
   });
 
   const { 
@@ -155,10 +153,8 @@ const UserManagement = () => {
 
   const handleFormSubmit = useCallback((data: any) => {
     if (viewMode === 'create') {
-      // Add current organization_id for non-super users
       const createData = {
-        ...data,
-        organization_id: !isSuperUser && currentOrganization?.id ? currentOrganization.id : data.organization_id
+        ...data
       };
       handleCreateUser(createData);
     } else if (viewMode === 'edit' && detailedUser) {
@@ -169,7 +165,7 @@ const UserManagement = () => {
         avatar_file: avatar_file,
       });
     }
-  }, [viewMode, detailedUser, handleCreateUser, handleUpdateUser, isSuperUser, currentOrganization]);
+  }, [viewMode, detailedUser, handleCreateUser, handleUpdateUser]);
 
   // Loading state
   if (isLoadingUsers && !usersResponse) {

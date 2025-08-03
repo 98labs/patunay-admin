@@ -1,10 +1,8 @@
 export { 
   ProtectedRoute,
   AdminRoute,
-  SuperUserRoute,
   UserManagementRoute,
   ArtworkManagementRoute,
   NfcManagementRoute,
-  AppraisalRoute,
-  OrganizationRoute
+  AppraisalRoute
 } from './ProtectedRoute';

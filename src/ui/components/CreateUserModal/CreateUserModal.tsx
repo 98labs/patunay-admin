@@ -19,7 +19,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { currentOrganization, isSuperUser } = useAuth();
+  const { isAdmin } = useAuth();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,25 +81,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
 
       if (profileError) throw profileError;
 
-      // Add user to organization if not super user
-      if (!isSuperUser && currentOrganization?.id) {
-        try {
-          const { error: orgError } = await supabase
-            .rpc('add_user_to_organization', {
-              p_user_id: userId,
-              p_organization_id: currentOrganization.id,
-              p_role: userRole,
-              p_permissions: [],
-              p_is_primary: true
-            });
-          
-          if (orgError) {
-            console.error('Failed to add user to organization:', orgError);
-          }
-        } catch (error) {
-          console.error('Error adding user to organization:', error);
-        }
-      }
+      // In single-tenant mode, no need to add user to organization
 
       onSuccess();
       handleClose();

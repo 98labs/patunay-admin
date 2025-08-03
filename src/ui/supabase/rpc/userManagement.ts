@@ -9,7 +9,6 @@ interface CreateUserWithProfileParams {
   role?: string;
   phone?: string;
   avatar_url?: string;
-  organization_id?: string;
   permissions?: string[];
 }
 
@@ -23,14 +22,6 @@ interface UpdateUserProfileParams {
   avatar_url?: string;
 }
 
-interface GetOrganizationUsersParams {
-  organization_id?: string;
-  search?: string;
-  role?: string;
-  is_active?: boolean;
-  limit?: number;
-  offset?: number;
-}
 
 /**
  * Create a new user with profile using secure RPC function
@@ -45,7 +36,6 @@ export async function createUserWithProfile(params: CreateUserWithProfileParams)
     p_role: params.role,
     p_phone: params.phone,
     p_avatar_url: params.avatar_url,
-    p_organization_id: params.organization_id,
     p_permissions: params.permissions
   }, {
     retries: 1 // Don't retry user creation
@@ -78,17 +68,3 @@ export async function softDeleteUser(userId: string) {
   });
 }
 
-/**
- * Get organization users with filtering using secure RPC function
- * This function returns users based on the caller's permissions
- */
-export async function getOrganizationUsers(params: GetOrganizationUsersParams = {}) {
-  return safeCallRpc('get_organization_users', {
-    p_organization_id: params.organization_id,
-    p_search: params.search,
-    p_role: params.role,
-    p_is_active: params.is_active,
-    p_limit: params.limit || 50,
-    p_offset: params.offset || 0
-  });
-}

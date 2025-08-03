@@ -21,4 +21,3 @@ export * from './enhanced';
 export { createUserWithProfile } from './userManagement';
 export { updateUserProfile } from './userManagement';
 export { softDeleteUser } from './userManagement';
-export { getOrganizationUsers } from './userManagement';

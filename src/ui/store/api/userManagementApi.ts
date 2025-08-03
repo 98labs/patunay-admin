@@ -1,6 +1,6 @@
 import { api } from './baseApi';
 import supabase from '../../supabase';
-import { createUserWithProfile, updateUserProfile, softDeleteUser, getOrganizationUsers } from '../../supabase/rpc';
+import { createUserWithProfile, updateUserProfile, softDeleteUser } from '../../supabase/rpc';
 
 // Types for user management
 export type UserRole = 'super_user' | 'admin' | 'issuer' | 'appraiser' | 'staff' | 'viewer';
@@ -30,7 +30,6 @@ export interface CreateUserRequest {
   phone?: string;
   permissions?: string[];
   avatar_file?: File;
-  organization_id?: string;
 }
 
 export interface UpdateUserRequest {
@@ -88,7 +87,6 @@ export interface UserListRequest {
   filters?: UserFilters;
   sortBy?: 'created_at' | 'first_name' | 'last_name' | 'email' | 'last_login_at';
   sortOrder?: 'asc' | 'desc';
-  organizationId?: string;
 }
 
 // Inject user management endpoints
@@ -96,7 +94,7 @@ export const userManagementApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get all users with roles and permissions
     getUsers: builder.query<UserListResponse, UserListRequest>({
-      query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc', organizationId }) => ({
+      query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc' }) => ({
         supabaseOperation: async () => {
           try {
             // Check if we have proper access

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import type { NfcDeviceStatus } from '../../shared/types/electron';
 import { useLogger } from '../hooks/useLogger';
+import { LogCategory } from '../../shared/logging/types';
 
 interface NfcStatusContextType {
   deviceStatus: NfcDeviceStatus;
@@ -38,14 +39,14 @@ export const NfcStatusProvider: React.FC<NfcStatusProviderProps> = ({ children }
       
       if (window.electron?.getNfcDeviceStatus) {
         const status = await window.electron.getNfcDeviceStatus();
-        logger.info('NFC device status received via IPC', status);
+        logger.info('NFC device status received via IPC', LogCategory.NFC, status);
         setDeviceStatus(status);
       } else {
         logger.warn('NFC device status API not available');
         setDeviceStatus(defaultDeviceStatus);
       }
     } catch (error) {
-      logger.error('Failed to fetch NFC device status', error);
+      logger.error('Failed to fetch NFC device status', LogCategory.NFC, undefined, error as Error);
       setDeviceStatus(defaultDeviceStatus);
     } finally {
       setIsLoading(false);
@@ -91,7 +92,7 @@ export const NfcStatusProvider: React.FC<NfcStatusProviderProps> = ({ children }
 
     // Subscribe to device status updates
     const handleDeviceStatusChange = (status: NfcDeviceStatus) => {
-      logger.info('Received NFC device status update from main process', status);
+      logger.info('Received NFC device status update from main process', LogCategory.NFC, status);
       setDeviceStatus(status);
       setIsLoading(false);
       // Clear manual refresh failed state if NFC becomes available

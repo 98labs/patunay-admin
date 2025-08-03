@@ -14,19 +14,10 @@ const NfcTags = lazy(() => import('./pages/NfcTags'));
 const RegisterArtwork = lazy(() => import('./pages/RegisterArtwork'));
 const SearchArtwork = lazy(() => import('./pages/SearchArtwork'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
-const Appraisals = lazy(() => import('./pages/Appraisals'));
 
-// Organization pages
-const OrganizationPage = lazy(() => import('./pages/Organization/OrganizationPage'));
-const MembersPage = lazy(() => import('./pages/Members/MembersPage'));
-const Locations = lazy(() => import('./pages/Locations/Locations'));
-const OrganizationStatisticsPage = lazy(() => import('./pages/OrganizationStatistics/OrganizationStatisticsPage'));
-const OrganizationSettingsPage = lazy(() => import('./pages/OrganizationSettings/OrganizationSettingsPage'));
+// System pages
 
-// Super Admin pages
-const OrganizationManagementPage = lazy(() => import('./pages/OrganizationManagementPage/OrganizationManagementPage'));
-const SuperAdminPage = lazy(() => import('./pages/SuperAdmin/SuperAdmin'));
-const SystemStatistics = lazy(() => import('./pages/SuperAdmin/SystemStatistics'));
+// Super Admin pages removed for single-tenant
 
 function App() {
   return (
@@ -86,55 +77,8 @@ function App() {
               </ErrorBoundary>
             } />
 
-            <Route path="appraisals" element={
-              <ErrorBoundary>
-                <Appraisals />
-              </ErrorBoundary>
-            } />
 
-            {/* Organization Routes */}
-            <Route path="organization" element={
-              <ErrorBoundary>
-                <OrganizationPage />
-              </ErrorBoundary>
-            } />
-            <Route path="organization/members" element={
-              <ErrorBoundary>
-                <MembersPage />
-              </ErrorBoundary>
-            } />
-            <Route path="organization/locations" element={
-              <ErrorBoundary>
-                <Locations />
-              </ErrorBoundary>
-            } />
-            <Route path="organization/statistics" element={
-              <ErrorBoundary>
-                <OrganizationStatisticsPage />
-              </ErrorBoundary>
-            } />
-            <Route path="organization/settings" element={
-              <ErrorBoundary>
-                <OrganizationSettingsPage />
-              </ErrorBoundary>
-            } />
 
-            {/* Super Admin Routes */}
-            <Route path="super-admin/organizations" element={
-              <ErrorBoundary>
-                <OrganizationManagementPage />
-              </ErrorBoundary>
-            } />
-            <Route path="super-admin/users" element={
-              <ErrorBoundary>
-                <SuperAdminPage />
-              </ErrorBoundary>
-            } />
-            <Route path="super-admin/statistics" element={
-              <ErrorBoundary>
-                <SystemStatistics />
-              </ErrorBoundary>
-            } />
 
             <Route path="*" element={<Login />} />
           </Route>

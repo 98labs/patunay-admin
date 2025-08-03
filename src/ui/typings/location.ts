@@ -2,7 +2,6 @@ import { UserRole } from './user';
 
 export interface Location {
   id: string;
-  organization_id: string;
   name: string;
   code?: string;
   description?: string;
@@ -42,11 +41,6 @@ export interface Location {
   deleted_at?: string;
   
   // Relations
-  organization?: {
-    id: string;
-    name: string;
-    type: string;
-  };
   user_count?: number;
   artwork_count?: number;
 }
@@ -55,7 +49,6 @@ export interface LocationUser {
   id: string;
   location_id: string;
   user_id: string;
-  organization_id: string;
   
   // Role and permissions
   role: UserRole;
@@ -95,7 +88,6 @@ export interface LocationUser {
 }
 
 export interface CreateLocationData {
-  organization_id: string;
   name: string;
   code?: string;
   description?: string;
@@ -121,7 +113,6 @@ export interface UpdateLocationData extends Partial<CreateLocationData> {
 export interface AssignUserToLocationData {
   location_id: string;
   user_id: string;
-  organization_id: string;
   role?: UserRole;
   permissions?: string[];
   is_primary_location?: boolean;
@@ -134,7 +125,6 @@ export interface AssignUserToLocationData {
 }
 
 export interface LocationFilters {
-  organization_id?: string;
   is_active?: boolean;
   is_headquarters?: boolean;
   manager_id?: string;

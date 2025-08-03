@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { Link } from "react-router-dom";
 import { ArtworkEntity } from "../../../typings";
-import logo from '../../../../assets/logo/patunay-256x256.png';
+import { ArtworkImageCell } from '../components/ArtworkImageCell';
 
 export function useArtworkColumns(): ColumnDef<ArtworkEntity>[] {
   return useMemo<ColumnDef<ArtworkEntity>[]>(() => [
@@ -28,41 +28,13 @@ export function useArtworkColumns(): ColumnDef<ArtworkEntity>[] {
       cell: ({ row }) => {
         const firstAsset = row.original.assets?.[0];
         const imageUrl = firstAsset?.url;
-        const hasValidImage = imageUrl && imageUrl.trim() !== '';
         
         return (
-          <Link 
-            to={`/dashboard/artworks/${row.original.id}`} 
-            className="block"
-          >
-            <div className="avatar">
-              <div className="w-12 h-12 rounded border border-base-300">
-                {hasValidImage ? (
-                  <img 
-                    src={imageUrl} 
-                    alt={row.original.title || "Artwork"} 
-                    className="object-cover w-full h-full rounded"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      target.style.display = 'none';
-                      const fallback = target.nextElementSibling as HTMLElement;
-                      if (fallback) fallback.style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-                <div 
-                  className={`w-full h-full bg-base-200 flex items-center justify-center rounded ${hasValidImage ? 'hidden' : 'flex'}`}
-                  style={{ display: hasValidImage ? 'none' : 'flex' }}
-                >
-                  <img 
-                    src={logo} 
-                    alt="Default artwork" 
-                    className="w-8 h-8 opacity-60"
-                  />
-                </div>
-              </div>
-            </div>
-          </Link>
+          <ArtworkImageCell 
+            artworkId={row.original.id}
+            title={row.original.title}
+            imageUrl={imageUrl}
+          />
         );
       },
       meta: { className: "hidden sm:table-cell w-16" },

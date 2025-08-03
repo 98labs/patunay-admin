@@ -16,9 +16,6 @@ export const addArtworkEnhanced = async (artwork: ArtworkEntity) => {
     throw new ValidationError("Artist is required");
   }
   
-  if (!artwork.organization_id) {
-    throw new ValidationError("Organization ID is required");
-  }
   
   if (!artwork.expirationDate) {
     throw new ValidationError("Expiration date is required");
@@ -42,7 +39,6 @@ export const addArtworkEnhanced = async (artwork: ArtworkEntity) => {
       p_provenance: artwork.provenance,
       p_bibliography: artwork.bibliography || [],
       p_collectors: artwork.collectors || [],
-      p_organization_id: artwork.organization_id,
     }, {
       retries: 2, // Less retries for write operations
       timeout: 45000 // Longer timeout for complex operations

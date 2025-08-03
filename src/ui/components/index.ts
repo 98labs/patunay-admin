@@ -40,9 +40,7 @@ export { default as NfcTagsTable } from "./NfcTagsTable";
 export { DataTable } from "./DataTable";
 export { Toast, useToast, ToastContainer } from "./Toast/Toast";
 
-// Multi-tenant RBAC components
-export { OrganizationSwitcher } from "./OrganizationSwitcher";
-export { OrganizationManagement, OrganizationCard, CreateOrganizationModal } from "./OrganizationManagement";
+// RBAC components
 export { MigrationVerification } from "./MigrationVerification";
 export { 
   PermissionGuard,
@@ -58,7 +56,6 @@ export {
 export { 
   ProtectedRoute,
   AdminRoute,
-  SuperUserRoute,
   UserManagementRoute,
   ArtworkManagementRoute,
   NfcManagementRoute,

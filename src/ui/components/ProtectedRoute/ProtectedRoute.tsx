@@ -21,7 +21,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   redirectTo = '/dashboard',
   fallback
 }) => {
-  const { hasPermission, hasRole } = usePermissions();
+  const { hasPermission, hasRole } = useAuth();
 
   const hasRequiredPermission = permission ? hasPermission(permission) : true;
   const hasRequiredRole = role ? hasRole(role) : true;
@@ -57,8 +57,11 @@ export const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }
   </ProtectedRoute>
 );
 
-export const SuperUserRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isLoading, isSuperUser } = useAuth();
+// SuperUserRoute removed for single-tenant
+
+export const UserManagementRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { canManageAllUsers } = usePermissions();
+  const { isLoading } = useAuth();
   
   // Show loading while user data is being fetched
   if (isLoading) {
@@ -69,27 +72,7 @@ export const SuperUserRoute: React.FC<{ children: React.ReactNode }> = ({ childr
     );
   }
   
-  if (!isSuperUser) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
-export const UserManagementRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { canManageOrgUsers, canManageAllUsers } = usePermissions();
-  const { isLoading, currentOrganization } = useAuth();
-  
-  // Show loading while user data is being fetched
-  if (isLoading || currentOrganization === null) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    );
-  }
-  
-  if (!canManageOrgUsers && !canManageAllUsers) {
+  if (!canManageAllUsers) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -97,8 +80,8 @@ export const UserManagementRoute: React.FC<{ children: React.ReactNode }> = ({ c
 };
 
 export const ArtworkManagementRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { hasPermission } = usePermissions();
-  const { isLoading, user, hasRole } = useAuth();
+  const { canCreateArtworks, canManageAllArtworks } = usePermissions();
+  const { isLoading, hasRole } = useAuth();
   
   // Show loading while user data is being fetched
   if (isLoading) {
@@ -114,10 +97,8 @@ export const ArtworkManagementRoute: React.FC<{ children: React.ReactNode }> = (
   
   // Check for issuer-specific permissions or general artwork management permissions
   const canAccess = isIssuerRole || // Issuer role always gets access
-                   hasPermission('create_artworks') || 
-                   hasPermission('manage_artworks') ||
-                   hasPermission('manage_org_artworks') || 
-                   hasPermission('manage_all_artworks');
+                   canCreateArtworks || 
+                   canManageAllArtworks;
   
   if (!canAccess) {
     return <Navigate to="/dashboard" replace />;
@@ -127,11 +108,11 @@ export const ArtworkManagementRoute: React.FC<{ children: React.ReactNode }> = (
 };
 
 export const NfcManagementRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { hasPermission } = usePermissions();
-  const { isLoading, user, hasRole, currentOrganization } = useAuth();
+  const { canManageAllNfcTags, canAttachNfcTags, canIssueNfcTags } = usePermissions();
+  const { isLoading, hasRole } = useAuth();
   
   // Show loading while user data is being fetched
-  if (isLoading || currentOrganization === null) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <span className="loading loading-spinner loading-lg"></span>
@@ -144,10 +125,9 @@ export const NfcManagementRoute: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Check for issuer-specific permissions or general NFC management permissions
   const canAccess = isIssuerRole || // Issuer role always gets access
-                   hasPermission('manage_nfc_tags') || 
-                   hasPermission('attach_nfc_tags') ||
-                   hasPermission('manage_org_nfc_tags') || 
-                   hasPermission('manage_all_nfc_tags');
+                   canManageAllNfcTags || 
+                   canAttachNfcTags ||
+                   canIssueNfcTags;
   
   if (!canAccess) {
     return <Navigate to="/dashboard" replace />;
@@ -162,23 +142,3 @@ export const AppraisalRoute: React.FC<{ children: React.ReactNode }> = ({ childr
   </ProtectedRoute>
 );
 
-export const OrganizationRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { canViewOrgStatistics, canManageOrgSettings, canManageOrganizations } = usePermissions();
-  const { isLoading, isSuperUser } = useAuth();
-  
-  // Show loading while user data is being fetched
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    );
-  }
-  
-  // Allow access if user is super user or has any organization permission
-  if (!isSuperUser && !canViewOrgStatistics && !canManageOrgSettings && !canManageOrganizations) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  
-  return <>{children}</>;
-};

@@ -40,7 +40,7 @@ const ReviewArtwork = ({
   } = artwork;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { currentOrganization } = useAuth();
+  const { user } = useAuth();
 
   const details: Detail[] = [
     {
@@ -72,17 +72,12 @@ const ReviewArtwork = ({
   const handleSubmitArtwork = async () => {
     if (isSubmitting) return;
 
-    if (!currentOrganization?.id) {
-      console.error("No organization selected");
-      return;
-    }
 
     setIsSubmitting(true);
 
     try {
       const res = await handleAddArtwork({ 
-        data: artwork,
-        organizationId: currentOrganization.id 
+        data: artwork
       });
 
       onAddArtwork({ ...res, assets: assets });

@@ -6,7 +6,9 @@ import ArtworkImageModal from "./components/ArtworkImageModal";
 import EditArtworkModal from "./components/EditArtworkModal";
 import DetachNFCModal from "./components/DetachNFCModal";
 import { AttachNFCModal } from "./components/AttachNFCModal";
+import { ImageManagementModal } from "./components/ImageManagementModal";
 import { Appraisal, ArtworkType } from "./types";
+import { AssetEntity } from "../../typings/asset";
 import { selectNotif } from "../../components/NotificationMessage/selector";
 import { useSelector, useDispatch } from "react-redux";
 import AppraisalInfo from "./components/AppraisalInfo";
@@ -17,6 +19,7 @@ import { updateArtworkDirect } from "../../supabase/rpc/updateArtworkDirect";
 import { detachNfcTag } from "../../supabase/rpc/detachNfcTag";
 import { getArtworkDirect } from "../../supabase/rpc/getArtworkDirect";
 import { getAppraisals } from "../../supabase/rpc/getAppraisals";
+import { useGetArtworkQuery } from "../../store/api/artworkApi";
 
 import { safeJsonParse } from "../Artworks/components/utils";
 
@@ -26,8 +29,12 @@ const DetailArtwork = () => {
   const dispatch = useDispatch();
   const { canViewAppraisalDetails, canCreateAppraisals, canManageOrgAppraisals, canManageAllAppraisals } = usePermissions();
   const canManageAppraisals = canManageOrgAppraisals || canManageAllAppraisals;
-  const [artwork, setArtwork] = useState<ArtworkType | null>(null);
-  const [loading, setLoading] = useState(true);
+  
+  // Use RTK Query to fetch artwork with enhanced image URLs
+  const { data: artworkResponse, isLoading, error, refetch } = useGetArtworkQuery(id || '', {
+    skip: !id,
+  });
+  
   const [isUpdating, setIsUpdating] = useState(false);
   const modalId = useId();
 
@@ -37,8 +44,20 @@ const DetailArtwork = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAttachModal, setShowAttachModal] = useState(false);
+  const [showImageManagementModal, setShowImageManagementModal] = useState(false);
   const [tagId, setTagId] = useState("");
   const { status } = useSelector(selectNotif);
+  
+  // Get artwork from response
+  const artwork = artworkResponse?.data as ArtworkType | null;
+  
+  // Debug logging
+  useEffect(() => {
+    if (artwork) {
+      console.log('Artwork data:', artwork);
+      console.log('Assets:', artwork.assets);
+    }
+  }, [artwork]);
 
   const handleStartAttaching = useCallback(() => {
     setShowAttachModal(true);
@@ -49,20 +68,13 @@ const DetailArtwork = () => {
     
     // Refresh the artwork data to show the attached tag
     try {
-      const freshData = await getArtworkDirect(artwork!.id);
-      if (freshData && freshData.length > 0) {
-        setArtwork({
-          ...freshData[0],
-          bibliography: safeJsonParse(freshData[0].bibliography),
-          collectors: safeJsonParse(freshData[0].collectors),
-        });
-      }
+      await refetch();
     } catch (error) {
       console.error('Failed to refresh artwork data:', error);
     }
     
     setShowAttachModal(false);
-  }, [artwork]);
+  }, [refetch]);
 
   const handleDetach = () => {
     if (artwork?.tag_id) {
@@ -82,12 +94,8 @@ const DetailArtwork = () => {
       if (result && result.length > 0) {
         console.log('🏷️ Successfully detached NFC tag');
         
-        // Update local state
-        setArtwork({
-          ...artwork,
-          tag_id: null,
-          tag_issued_at: null,
-        });
+        // Refresh data via RTK Query
+        await refetch();
         
         dispatch(showNotification({
           title: 'Success',
@@ -157,23 +165,8 @@ const DetailArtwork = () => {
       if (result && result.length > 0) {
         console.log('📝 Successfully updated artwork:', result[0]);
         
-        // Fetch fresh data from the database to ensure all fields are up to date
-        const freshData = await getArtworkDirect(artwork.id);
-        
-        if (freshData && freshData.length > 0) {
-          setArtwork({
-            ...freshData[0],
-            bibliography: safeJsonParse(freshData[0].bibliography),
-            collectors: safeJsonParse(freshData[0].collectors),
-          });
-        } else {
-          // Fallback to using the result from update
-          setArtwork({
-            ...result[0],
-            bibliography: safeJsonParse(result[0].bibliography),
-            collectors: safeJsonParse(result[0].collectors),
-          });
-        }
+        // Refresh data via RTK Query to get enhanced URLs
+        await refetch();
         
         dispatch(showNotification({
           title: 'Success',
@@ -196,39 +189,39 @@ const DetailArtwork = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchArtwork = async () => {
-      try {
-        const data = await getArtworkDirect(id);
-        
-        if (!data || data.length === 0) {
-          console.error("Artwork not found");
-          navigate("/dashboard/artworks");
-          return;
-        }
-        
-        setArtwork({
-          ...data[0],
-          bibliography: safeJsonParse(data[0].bibliography),
-          collectors: safeJsonParse(data[0].collectors),
-        });
+  const handleImageUpdate = useCallback(async (updatedAssets: AssetEntity[]) => {
+    // Refresh the artwork data to show the updated images
+    try {
+      await refetch();
+    } catch (error) {
+      console.error('Failed to refresh artwork data:', error);
+    }
+  }, [refetch]);
 
-        // Fetch appraisals only if user has permission
-        if (canViewAppraisalDetails) {
-          const appraisalData = await getAppraisals(id!);
+  // Fetch appraisals separately
+  useEffect(() => {
+    const fetchAppraisals = async () => {
+      if (canViewAppraisalDetails && id) {
+        try {
+          const appraisalData = await getAppraisals(id);
           setAppraisals(appraisalData);
+        } catch (error) {
+          console.error("Error fetching appraisals:", error);
         }
-      } catch (error) {
-        console.error("Error fetching artwork:", error);
-        navigate("/dashboard/artworks");
-      } finally {
-        setLoading(false);
       }
     };
-    fetchArtwork();
-  }, [id, navigate, status, canViewAppraisalDetails]);
+    fetchAppraisals();
+  }, [id, canViewAppraisalDetails]);
+  
+  // Handle navigation when artwork not found
+  useEffect(() => {
+    if (error || (!isLoading && !artwork)) {
+      console.error("Artwork not found");
+      navigate("/dashboard/artworks");
+    }
+  }, [error, isLoading, artwork, navigate]);
 
-  if (loading) return <Loading fullScreen={false} />;
+  if (isLoading) return <Loading fullScreen={false} />;
   if (!artwork) return <div className="p-6">Artwork not found.</div>;
   const image = artwork.assets?.map((asset) => asset.url) || []
   return (
@@ -251,6 +244,12 @@ const DetailArtwork = () => {
               buttonLabel="Edit Artwork"
               className="btn-sm rounded-lg"
               onClick={handleEdit}
+            />
+            <Button
+              buttonType="secondary"
+              buttonLabel="Manage Images"
+              className="btn-sm rounded-lg"
+              onClick={() => setShowImageManagementModal(true)}
             />
             {artwork.tag_id ? (
               <Button
@@ -279,16 +278,16 @@ const DetailArtwork = () => {
       <section className="hero text-base-content">
         <div className="hero-content flex-col lg:flex-row">
           <div className="lg:w-1/3">
-            {!artwork.assets ? (
+            {!artwork.assets || artwork.assets.length === 0 ? (
               <div className="bg-base-200 border border-dashed border-base-300 rounded-2xl text-base-content/90 text-center p-4 flex flex-col gap-2">
                 <p className="text-sm font-semibold">
-                  Drag and drop the images here (WIP),
+                  No images uploaded yet
                 </p>
-                <span className="text-sm">or</span>
+                <span className="text-sm">Click below to add images</span>
                 <Button
-                  buttonLabel="Upload an artwork"
+                  buttonLabel="Upload images"
                   className="rounded-lg"
-                  onClick={async () => {}}
+                  onClick={() => setShowImageManagementModal(true)}
                 />
               </div>
             ) : (
@@ -309,9 +308,11 @@ const DetailArtwork = () => {
               <h2 className="text-2xl font-bold">{artwork.title}</h2>
               <p className="text-gray-500 text-xs">
                 {artwork.artist}{" "}
-                <span className="italic">
-                  ({format(new Date(artwork.tag_issued_at || artwork.created_at), "yyyy")})
-                </span>
+                {(artwork.tag_issued_at || artwork.created_at) && (
+                  <span className="italic">
+                    ({format(new Date(artwork.tag_issued_at || artwork.created_at), "yyyy")})
+                  </span>
+                )}
               </p>
             </ul>
             <div className="grid grid-cols-2 gap-4 mt-4">
@@ -327,7 +328,7 @@ const DetailArtwork = () => {
                 <div><strong>Provenance:</strong> {artwork.provenance || 'none'}</div>
                 <div className="col-span-2">
                   <strong>Bibliography:</strong>
-                  {!artwork.bibliography || artwork.bibliography.length === 0 ? (
+                  {!artwork.bibliography || !Array.isArray(artwork.bibliography) || artwork.bibliography.length === 0 ? (
                     <p className="text-gray-500">No bibliography available</p>
                   ) : (
                     <ul className="list-disc list-inside mt-1 ml-4">
@@ -339,7 +340,7 @@ const DetailArtwork = () => {
                 </div>
                 <div className="col-span-2">
                   <strong>Collectors:</strong>
-                  {!artwork.collectors || artwork.collectors.length === 0 ? (
+                  {!artwork.collectors || !Array.isArray(artwork.collectors) || artwork.collectors.length === 0 ? (
                     <p className="text-gray-500">No collectors available</p>
                   ) : (
                     <ul className="list-disc list-inside mt-1 ml-4">
@@ -408,6 +409,18 @@ const DetailArtwork = () => {
             onClose={() => setShowAttachModal(false)}
             artworkId={artwork.id}
             onSuccess={handleAttachSuccess}
+          />
+        )}
+
+        {/* Image Management Modal */}
+        {showImageManagementModal && artwork && (
+          <ImageManagementModal
+            isOpen={showImageManagementModal}
+            onClose={() => setShowImageManagementModal(false)}
+            artworkId={artwork.id}
+            artworkTitle={artwork.title || ""}
+            currentAssets={artwork.assets || []}
+            onUpdate={handleImageUpdate}
           />
         )}
         

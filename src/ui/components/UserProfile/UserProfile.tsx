@@ -10,7 +10,7 @@ import { USER_ROLES } from '../../typings';
 const UserProfile = () => {
   const [currentTheme, setCurrentTheme] = useState("light");
   const legacyUser = useSelector(selectUser);
-  const { user: currentUser, currentOrganization, organizations } = useAuth();
+  const { user: currentUser } = useAuth();
   useEffect(() => {
     themeChange(false);
     try {
@@ -79,20 +79,7 @@ const UserProfile = () => {
             }
           </div>
           <div className="text-sm text-base-content/70 dark:text-base-content/70">
-            {(() => {
-              // If super user, always show super user role
-              if (currentUser?.role === 'super_user') {
-                return USER_ROLES.super_user.label;
-              }
-              
-              // Find the user's role in the current organization
-              const currentOrgMembership = organizations.find(
-                org => org.organization_id === currentOrganization?.id
-              );
-              
-              const orgRole = currentOrgMembership?.role || currentUser?.role;
-              return orgRole ? USER_ROLES[orgRole]?.label : 'User';
-            })()}
+            {currentUser?.role ? USER_ROLES[currentUser.role]?.label : 'User'}
           </div>
         </div>
         <div className="flex items-center">

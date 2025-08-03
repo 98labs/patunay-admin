@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Console</title>
+    <script>
+        // Check if React app is loading
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded');
+            const root = document.getElementById('root');
+            console.log('Root element:', root);
+            
+            // Check for any console errors
+            window.addEventListener('error', (e) => {
+                console.error('Global error:', e);
+            });
+            
+            // Check localStorage for any auth issues
+            console.log('LocalStorage auth:', localStorage.getItem('sb-euimnkqawovkzyrirnnm-auth-token'));
+        });
+    </script>
+</head>
+<body>
+    <h1>Debug Page</h1>
+    <div id="root">If you see this, React didn't load</div>
+</body>
+</html>

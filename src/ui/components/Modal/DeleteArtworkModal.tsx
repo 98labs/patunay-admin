@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { showNotification } from '../NotificationMessage/slice'
 import { deleteArtwork } from "../../supabase/rpc/deleteArtwork";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { api } from '../../store/api';
 
 type DeleteArtworkProps = {
     artworkId: string;
@@ -12,6 +13,7 @@ type DeleteArtworkProps = {
 const DeleteArtworkModal = ({ artworkId, onClose }: DeleteArtworkProps) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
 
   const handleDetach = async () => {
@@ -21,15 +23,28 @@ const DeleteArtworkModal = ({ artworkId, onClose }: DeleteArtworkProps) => {
       const result = await deleteArtwork(artworkId as string);
 
       if (result) {
+        // Invalidate the artwork list cache to refresh the table
+        dispatch(api.util.invalidateTags([{ type: 'Artwork', id: 'LIST' }]));
+        
         dispatch(
           showNotification({
             title: 'ArtList',
-            message: 'Artwork successfull deleted.',
+            message: 'Artwork successfully deleted.',
             status: 'success'
           })
         );
         onClose();
-        navigate(`/dashboard/artworks/`);
+        
+        // Check if we're in the artworks list page or detail page
+        if (location.pathname.includes('/dashboard/artworks/')) {
+          // We're in detail page, navigate back to list
+          const savedPage = sessionStorage.getItem('artworksTablePage');
+          const pageQuery = savedPage && savedPage !== '0' ? `?page=${savedPage}` : '';
+          navigate(`/dashboard/artworks${pageQuery}`);
+        } else {
+          // We're already in the list page, just refresh
+          // The cache invalidation will trigger a refetch
+        }
       }
     } catch (error) {
       dispatch(

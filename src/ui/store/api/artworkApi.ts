@@ -1,12 +1,12 @@
 import { api } from './baseApi';
 import { addArtwork as addArtworkRpc } from '../../supabase/rpc/addArtwork';
 import { deleteArtwork as deleteArtworkRpc } from '../../supabase/rpc/deleteArtwork';
-import { getArtwork as getArtworkRpc } from '../../supabase/rpc/getArtwork';
 import { updateArtwork as updateArtworkRpc } from '../../supabase/rpc/updateArtwork';
 import { upsertAppraisal } from '../../supabase/rpc/upsertAppraisal';
 import type { ArtworkEntity } from '../../typings';
 import supabase from '../../supabase';
 import { store } from '../index';
+import { enhanceArtworkWithImageUrls, enhanceArtworksWithImageUrls } from './artworkApiEnhancer';
 
 // Define the API response types
 export interface ArtworkListResponse {
@@ -22,7 +22,6 @@ export interface ArtworkResponse {
 
 export interface CreateArtworkRequest {
   artwork: Partial<ArtworkEntity>;
-  organizationId: string;
 }
 
 export interface UpdateArtworkRequest {
@@ -49,7 +48,6 @@ export interface ArtworkListRequest {
   filters?: ArtworkFilters;
   sortBy?: 'created_at' | 'title' | 'artist' | 'updated_at';
   sortOrder?: 'asc' | 'desc';
-  organizationId: string;
 }
 
 export interface AppraisalRequest {
@@ -68,7 +66,7 @@ export const artworkApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get all artworks with filtering and pagination
     getArtworks: builder.query<ArtworkListResponse, ArtworkListRequest>({
-      query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc', organizationId }) => ({
+      query: ({ page = 1, pageSize = 10, filters = {}, sortBy = 'created_at', sortOrder = 'desc' }) => ({
         supabaseOperation: async () => {
           // Build the query with assets joined
           let query = supabase
@@ -76,9 +74,6 @@ export const artworkApi = api.injectEndpoints({
             .select('*, assets(*)', { count: 'exact' })
             .range((page - 1) * pageSize, page * pageSize - 1)
             .order(sortBy, { ascending: sortOrder === 'asc' });
-
-          // Filter by organization_id (required)
-          query = query.eq('organization_id', organizationId);
 
           // Apply filters
           if (filters.search) {
@@ -113,7 +108,10 @@ export const artworkApi = api.injectEndpoints({
           
           if (error) throw error;
           
-          return { data: data || [], count: count || 0 };
+          // Enhance artworks with long-lived image URLs
+          const enhancedData = await enhanceArtworksWithImageUrls(data || []);
+          
+          return { data: enhancedData, count: count || 0 };
         }
       }),
       providesTags: (result) =>
@@ -129,8 +127,18 @@ export const artworkApi = api.injectEndpoints({
     getArtwork: builder.query<ArtworkResponse, string>({
       query: (id) => ({
         supabaseOperation: async () => {
-          const result = await getArtworkRpc(id);
-          return { data: result };
+          // Get artwork with assets using direct query instead of RPC
+          const { data: artwork, error } = await supabase
+            .from('artworks')
+            .select('*, assets(*)')
+            .eq('id', id)
+            .single();
+          
+          if (error) throw error;
+          
+          // Enhance single artwork with long-lived image URLs
+          const enhancedResult = artwork ? await enhanceArtworkWithImageUrls(artwork) : null;
+          return { data: enhancedResult };
         }
       }),
       providesTags: (result, error, id) => [{ type: 'Artwork', id }],
@@ -138,14 +146,9 @@ export const artworkApi = api.injectEndpoints({
 
     // Create new artwork
     createArtwork: builder.mutation<ArtworkResponse, CreateArtworkRequest>({
-      query: ({ artwork, organizationId }) => ({
+      query: ({ artwork }) => ({
         supabaseOperation: async () => {
-          // Add organization_id to the artwork object
-          const artworkWithOrg = {
-            ...artwork,
-            organization_id: organizationId
-          };
-          const result = await addArtworkRpc(artworkWithOrg);
+          const result = await addArtworkRpc(artwork);
           return { data: result };
         }
       }),
@@ -204,14 +207,14 @@ export const artworkApi = api.injectEndpoints({
       withoutNfc: number;
       byStatus: Record<string, number>;
       byArtist: Record<string, number>;
-    }, { organizationId: string }>({
-      query: ({ organizationId }) => ({
+    }, void>({
+      query: () => ({
         supabaseOperation: async () => {
           let query = supabase
             .from('artworks')
             .select('status, artist, tag_id');
 
-          // Filter by organization_id if provided
+          // Get all artworks
           if (organizationId) {
             query = query.eq('organization_id', organizationId);
           }
@@ -274,26 +277,26 @@ export const artworkApi = api.injectEndpoints({
         supabaseOperation: async () => {
           // Try multiple approaches to find artwork by NFC UID
           if (uid) {
-            console.log('🔍 API: Searching artwork with NFC UID:', uid);
+            // Searching artwork with NFC UID
             
             // Approach 1: Try direct UID lookup (might work if database stores raw UIDs)
             try {
-              console.log('🔍 API: Trying direct UID lookup with get_artwork RPC');
+              // Try direct UID lookup with get_artwork RPC
               const directResult = await supabase.rpc("get_artwork", {
                 p_artwork_id: uid,
               });
               
               if (directResult.data && directResult.data.length > 0) {
-                console.log('🔍 API: Found artwork with direct UID lookup:', directResult.data[0]);
+                // Found artwork with direct UID lookup
                 return directResult.data[0];
               }
             } catch (error) {
-              console.log('🔍 API: Direct UID lookup failed (expected if UID format mismatch):', error);
+              // Direct UID lookup failed (expected if UID format mismatch)
             }
             
             // Approach 2: Search in artworks table by nfc_uid field or similar
             try {
-              console.log('🔍 API: Trying to search artworks by nfc_uid field');
+              // Try to search artworks by nfc_uid field
               const nfcSearchResult = await supabase
                 .from('artworks')
                 .select('*')
@@ -301,16 +304,16 @@ export const artworkApi = api.injectEndpoints({
                 .single();
               
               if (nfcSearchResult.data) {
-                console.log('🔍 API: Found artwork by nfc_uid field:', nfcSearchResult.data);
+                // Found artwork by nfc_uid field
                 return nfcSearchResult.data;
               }
             } catch (error) {
-              console.log('🔍 API: NFC UID field search failed:', error);
+              // NFC UID field search failed
             }
             
             // Approach 3: Search by any text field that might contain the UID
             try {
-              console.log('🔍 API: Trying to search artworks by text fields containing UID');
+              // Try to search artworks by text fields containing UID
               const textSearchResult = await supabase
                 .from('artworks')
                 .select('*')
@@ -318,15 +321,15 @@ export const artworkApi = api.injectEndpoints({
                 .single();
               
               if (textSearchResult.data) {
-                console.log('🔍 API: Found artwork by text field search:', textSearchResult.data);
+                // Found artwork by text field search
                 return textSearchResult.data;
               }
             } catch (error) {
-              console.log('🔍 API: Text field search failed:', error);
+              // Text field search failed
             }
           }
           
-          console.log('🔍 API: No artwork found for NFC UID:', uid);
+          // No artwork found for NFC UID
           return null;
         }
       }),

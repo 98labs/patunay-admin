@@ -6,4 +6,3 @@ export * from './userManagementApi';
 export * from './statisticsApi';
 export * from './storageApi';
 export * from './nfcApi';
-export * from './locationApi';

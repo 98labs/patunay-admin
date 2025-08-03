@@ -41,33 +41,40 @@ export const SessionProvider = ({ children }: Props) => {
   }, []);
 
   useEffect(() => {
+    console.log('SessionContext: Initializing auth...');
     
     // Add auth state listener first to catch any auth events
     const authStateListener = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('SessionContext: Auth state changed:', event, !!session);
         setSession(session);
         setIsLoading(false);
         
         // Update Redux auth state on auth changes
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session) {
+          console.log('SessionContext: Dispatching initializeAuth');
           dispatch(initializeAuth());
         } else if (event === 'SIGNED_OUT') {
+          console.log('SessionContext: User signed out');
           // The auth slice will handle clearing on initializeAuth returning null
         }
       }
     );
     
     // Get initial session
+    console.log('SessionContext: Getting initial session...');
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('SessionContext: Initial session:', !!session);
       setSession(session);
       setIsLoading(false);
       
       // Initialize Redux auth state if session exists
       if (session) {
+        console.log('SessionContext: Initializing Redux auth');
         dispatch(initializeAuth());
       }
     }).catch(error => {
-      console.error('Error getting session:', error);
+      console.error('SessionContext: Error getting session:', error);
       setIsLoading(false);
     });
 

@@ -1,4 +1,4 @@
-import { UserProfile, NfcStatusIndicator, OrganizationSwitcher } from "@components";
+import { UserProfile, NfcStatusIndicator } from "@components";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../../store/api/userApi";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -60,19 +60,12 @@ const Sidebar = ({
   const {
     canViewArtworks,
     canCreateArtworks,
-    canManageOrgUsers,
     canManageAllUsers,
-    canManageOrgNfcTags,
     canManageAllNfcTags,
-    canManageOrganizations,
-    canViewOrgStatistics,
-    canViewAllStatistics,
     canAttachNfcTags,
-    canCreateAppraisals,
-    canManageOrgSettings,
   } = usePermissions();
 
-  const { isSuperUser, isAdmin, isAppraiser, currentOrganization, user, organizations, isLoading } = useAuth();
+  const { isAdmin, user, isLoading } = useAuth();
 
 
   const links: Links[] = useMemo(() => {
@@ -81,15 +74,44 @@ const Sidebar = ({
     // Dashboard - always visible to authenticated users
     navigationLinks.push({ name: "Dashboard", path: "/dashboard" });
 
+    // For admin, show everything
+    if (user?.role === 'admin') {
+      // Artworks section
+      navigationLinks.push({
+        name: "Artworks",
+        path: "/dashboard/artworks",
+        children: [
+          { name: "Register Artwork", path: "/dashboard/artworks/register" },
+          { name: "Search", path: "/dashboard/artworks/search" }
+        ],
+      });
+
+
+      // Admin section
+      navigationLinks.push({
+        name: "Admin",
+        path: "/dashboard/admin",
+        children: [
+          { name: "User Management", path: "/dashboard/admin/users" },
+          { name: "NFC Tags", path: "/dashboard/admin/nfc-tags" },
+          { name: "Devices", path: "/dashboard/admin/device" }
+        ],
+      });
+
+
+
+      return navigationLinks;
+    }
+
+    // For non-super_user users, use permission-based logic
     // Artworks section - visible if user can view or manage artworks
-    // For super users, always show artworks section
-    if (canViewArtworks || canCreateArtworks || user?.role === 'super_user') {
+    if (canViewArtworks || canCreateArtworks) {
       const artworkChildren: Links[] = [];
-      if (canCreateArtworks || canAttachNfcTags || user?.role === 'super_user') {
+      if (canCreateArtworks || canAttachNfcTags) {
         artworkChildren.push({ name: "Register Artwork", path: "/dashboard/artworks/register" });
       }
       
-      if (canViewArtworks || user?.role === 'super_user') {
+      if (canViewArtworks) {
         artworkChildren.push({ name: "Search", path: "/dashboard/artworks/search" });
       }
 
@@ -100,38 +122,26 @@ const Sidebar = ({
       });
     }
 
-    // Appraisals section - visible to appraisers and those who can manage appraisals
-    // Check if user is appraiser in primary role or any organization
-    const isPrimaryAppraiser = user?.role === 'appraiser';
-    const isOrgAppraiser = organizations.some(org => org.role === 'appraiser');
-    const hasAppraiserAccess = isPrimaryAppraiser || isOrgAppraiser || isAppraiser || canCreateAppraisals;
-    
-    if (hasAppraiserAccess) {
-      navigationLinks.push({
-        name: "Appraisals",
-        path: "/dashboard/appraisals",
-      });
-    }
 
     // Management section - visible based on permissions
     const managementChildren: Links[] = [];
     
     // User Management - based on permissions only
-    if (canManageOrgUsers || canManageAllUsers || user?.role === 'super_user') {
+    if (canManageAllUsers) {
       managementChildren.push({ name: "User Management", path: "/dashboard/admin/users" });
     }
     
-    if (canManageOrgNfcTags || canManageAllNfcTags || user?.role === 'super_user') {
+    if (canManageAllNfcTags) {
       managementChildren.push({ name: "NFC Tags", path: "/dashboard/admin/nfc-tags" });
     }
     
-    if (canManageOrgNfcTags || canManageAllNfcTags || user?.role === 'super_user') {
+    if (canManageAllNfcTags) {
       managementChildren.push({ name: "Devices", path: "/dashboard/admin/device" });
     }
 
     if (managementChildren.length > 0) {
       // Change section name based on user's primary capabilities
-      const hasUserManagement = canManageOrgUsers || canManageAllUsers;
+      const hasUserManagement = canManageAllUsers;
       const sectionName = hasUserManagement ? "Admin" : "Tools";
       
       navigationLinks.push({
@@ -141,82 +151,16 @@ const Sidebar = ({
       });
     }
 
-    // Super User section - only visible to super users
-    if (isSuperUser || user?.role === 'super_user') {
-      const superUserChildren: Links[] = [];
-      
-      // For super users, always show these options even if permissions aren't loaded yet
-      if (canManageOrganizations || user?.role === 'super_user') {
-        superUserChildren.push({ name: "Organizations", path: "/dashboard/super-admin/organizations" });
-      }
-      
-      if (canManageAllUsers || user?.role === 'super_user') {
-        superUserChildren.push({ name: "System Users", path: "/dashboard/super-admin/users" });
-      }
-      
-      if (canViewAllStatistics || user?.role === 'super_user') {
-        superUserChildren.push({ name: "System Statistics", path: "/dashboard/super-admin/statistics" });
-      }
-
-      if (superUserChildren.length > 0) {
-        navigationLinks.push({
-          name: "Super Admin",
-          path: "/dashboard/super-admin",
-          children: superUserChildren,
-        });
-      }
-    }
-
-    // Organization Management - visible to organization admins and super users
-    if (currentOrganization && (isAdmin || isSuperUser) && (canManageOrgUsers || canViewOrgStatistics || canManageOrgSettings)) {
-      const orgChildren: Links[] = [];
-      
-      if (canManageOrgUsers) {
-        orgChildren.push({ name: "Members", path: "/dashboard/organization/members" });
-      }
-      
-      // Add Locations to organization menu
-      if (canManageOrgUsers || canManageOrgSettings) {
-        orgChildren.push({ name: "Locations", path: "/dashboard/organization/locations" });
-      }
-      
-      if (canViewOrgStatistics) {
-        orgChildren.push({ name: "Statistics", path: "/dashboard/organization/statistics" });
-      }
-      
-      if (canManageOrgSettings) {
-        orgChildren.push({ name: "Settings", path: "/dashboard/organization/settings" });
-      }
-
-      if (orgChildren.length > 0) {
-        navigationLinks.push({
-          name: "Organization",
-          path: "/dashboard/organization",
-          children: orgChildren,
-        });
-      }
-    }
 
     return navigationLinks;
   }, [
     canViewArtworks,
     canCreateArtworks,
-    canManageOrgUsers,
     canManageAllUsers,
-    canManageOrgNfcTags,
     canManageAllNfcTags,
-    canManageOrganizations,
-    canViewOrgStatistics,
-    canViewAllStatistics,
     canAttachNfcTags,
-    canCreateAppraisals,
-    canManageOrgSettings,
-    isSuperUser,
     isAdmin,
-    isAppraiser,
-    currentOrganization,
     user,
-    organizations,
   ]);
 
   const handleLogout = useCallback(async () => {
@@ -263,10 +207,6 @@ const Sidebar = ({
           ✖
         </button>
         
-        {/* Organization Switcher */}
-        <div className="flex-shrink-0 px-4 py-3 border-b border-base-300 dark:border-base-300">
-          <OrganizationSwitcher className="w-full" />
-        </div>
         
         <div className="flex-shrink-0">
           <UserProfile />

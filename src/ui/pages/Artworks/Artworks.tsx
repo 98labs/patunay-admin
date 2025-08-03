@@ -1,31 +1,37 @@
-import { useState, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  flexRender,
-  SortingState,
-  ColumnFiltersState,
-  PaginationState,
-} from "@tanstack/react-table";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { SortingState, ColumnFiltersState, PaginationState } from "@tanstack/react-table";
 
 import { useGetArtworksQuery } from "../../store/api/artworkApi";
 import { useAuth } from '../../hooks/useAuth';
+import { ImagePreloader } from '../../utils/imagePreloader';
 
 import UploadButton from "./components/UploadButton";
-import { useArtworkColumns } from "./hooks/useArtworkColumns";
-import { Loading, DetachNFCModal, DeleteArtworkModal } from "@components";
+import { ArtworksTable } from "./components/ArtworksTable";
+import { ArtworksFilters } from "./components/ArtworksFilters";
+import { ArtworksPagination } from "./components/ArtworksPagination";
+import { DetachNFCModal, DeleteArtworkModal } from "@components";
 
 const Artworks = () => {
   const navigate = useNavigate();
-  const { currentOrganization } = useAuth();
+  const location = useLocation();
+  const { user } = useAuth();
+  
+  // Get initial page from session storage or URL query params
+  const getInitialPage = () => {
+    const urlParams = new URLSearchParams(location.search);
+    const urlPage = urlParams.get('page');
+    if (urlPage) {
+      return parseInt(urlPage, 10) - 1; // Convert to 0-based index
+    }
+    
+    const savedPage = sessionStorage.getItem('artworksTablePage');
+    return savedPage ? parseInt(savedPage, 10) : 0;
+  };
   
   // Table state
   const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
+    pageIndex: getInitialPage(),
     pageSize: 10,
   });
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -69,9 +75,8 @@ const Artworks = () => {
       filters,
       sortBy,
       sortOrder,
-      organizationId: currentOrganization?.id || '',
     };
-  }, [pagination, sorting, columnFilters, globalFilter, currentOrganization?.id]);
+  }, [pagination, sorting, columnFilters, globalFilter]);
 
   // Fetch data using RTK Query
   const {
@@ -80,13 +85,9 @@ const Artworks = () => {
     isError,
     error,
     refetch,
-  } = useGetArtworksQuery(requestParams, {
-    skip: !currentOrganization?.id
-  });
+  } = useGetArtworksQuery(requestParams);
 
   const handleFile = useCallback((file: any) => {
-    console.log("Selected file:", file);
-    // Navigate to upload/register page
     navigate('/dashboard/artworks/register');
   }, [navigate]);
 
@@ -94,46 +95,51 @@ const Artworks = () => {
   const handleCloseDetachModal = useCallback(() => {
     setShowDetachModal(false);
     setSelectedTagId("");
-    refetch(); // Refresh data after detaching
+    refetch();
   }, [refetch]);
 
   const handleCloseDeleteModal = useCallback(() => {
     setShowDeleteModal(false);
     setSelectedArtworkId("");
-    refetch(); // Refresh data after deletion
+    refetch();
   }, [refetch]);
-
-  // Table columns
-  const columns = useArtworkColumns();
 
   // Table data
   const data = useMemo(() => artworksResponse?.data || [], [artworksResponse]);
   const totalCount = artworksResponse?.count || 0;
   const pageCount = Math.ceil(totalCount / pagination.pageSize);
-
-  // Table configuration
-  const table = useReactTable({
-    data,
-    columns,
-    pageCount,
-    state: {
-      pagination,
-      sorting,
-      columnFilters,
-      globalFilter,
-    },
-    onPaginationChange: setPagination,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    manualPagination: true,
-    manualSorting: true,
-    manualFiltering: true,
-  });
+  
+  // Save page number to session storage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('artworksTablePage', pagination.pageIndex.toString());
+  }, [pagination.pageIndex]);
+  
+  // Clear URL params after loading
+  useEffect(() => {
+    if (location.search) {
+      navigate(location.pathname, { replace: true });
+    }
+  }, []);
+  
+  // Preload images when data changes
+  useEffect(() => {
+    if (data && data.length > 0) {
+      const imageUrls = data
+        .map(artwork => artwork.assets?.[0]?.url)
+        .filter(Boolean);
+      
+      // Preload images in the background
+      ImagePreloader.preloadImages(imageUrls);
+    }
+  }, [data]);
+  
+  // Handle empty page after deletion
+  useEffect(() => {
+    if (!isLoading && data.length === 0 && pagination.pageIndex > 0 && totalCount > 0) {
+      // Current page is empty but there are records, go back one page
+      setPagination(prev => ({ ...prev, pageIndex: prev.pageIndex - 1 }));
+    }
+  }, [data.length, pagination.pageIndex, totalCount, isLoading]);
 
   if (isError) {
     return (
@@ -149,225 +155,59 @@ const Artworks = () => {
   }
 
   return (
-    <section className="container text-base-content dark:text-base-content bg-base-100 dark:bg-base-100">
+    <section className="container text-base-content bg-base-100">
       <div className="flex flex-col space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-base-content dark:text-base-content border-b border-base-300 dark:border-base-300 pb-3">
+            <h2 className="text-2xl font-semibold text-base-content">
               Artworks
             </h2>
-            <p className="text-sm text-base-content/70 dark:text-base-content/70 mt-2">
+            <p className="text-sm text-base-content/70 mt-1">
               {totalCount} artwork{totalCount !== 1 ? 's' : ''} total
             </p>
           </div>
 
-          <div className="flex items-center mt-4 sm:mt-0 gap-x-3">
+          <div className="flex items-center mt-4 sm:mt-0">
             <UploadButton onFileSelect={handleFile} />
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Global Search */}
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search artworks..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="input input-bordered w-full"
-            />
-          </div>
-
-          {/* NFC Filter */}
-          <div className="sm:w-48">
-            <select
-              value={
-                columnFilters.find((f) => f.id === "tag_id")?.value || "all"
-              }
-              onChange={(e) => {
-                const value = e.target.value;
-                setColumnFilters((prev) => {
-                  const filtered = prev.filter((f) => f.id !== "tag_id");
-                  if (value !== "all") {
-                    filtered.push({ id: "tag_id", value });
-                  }
-                  return filtered;
-                });
-              }}
-              className="select select-bordered w-full"
-            >
-              <option value="all">All NFCs</option>
-              <option value="with">Attached</option>
-              <option value="none">No NFC</option>
-            </select>
-          </div>
-        </div>
+        <ArtworksFilters
+          globalFilter={globalFilter}
+          onGlobalFilterChange={setGlobalFilter}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+        />
 
         {/* Table */}
-        <div className="overflow-x-auto border border-base-300 dark:border-base-300 bg-base-100 dark:bg-base-100 rounded-lg shadow-sm">
-          {isLoading ? (
-            <Loading fullScreen={false} />
-          ) : (
-            <table className="table table-sm table-zebra w-full">
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        className={`${
-                          header.column.columnDef.meta?.className ?? ""
-                        } ${
-                          header.column.getCanSort()
-                            ? "cursor-pointer select-none hover:bg-base-200"
-                            : ""
-                        }`}
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        <div className="flex items-center gap-2">
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                          {header.column.getCanSort() && (
-                            <span className="text-xs">
-                              {{
-                                asc: "↑",
-                                desc: "↓",
-                              }[header.column.getIsSorted() as string] ?? "↕"}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
-                {table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-base-200/50">
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className={
-                          cell.column.columnDef.meta?.className ?? ""
-                        }
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          {/* Empty State */}
-          {!isLoading && data.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-base-content/60">
-                {globalFilter || columnFilters.length > 0
-                  ? "No artworks match your filters"
-                  : "No artworks found"}
-              </div>
-              {(globalFilter || columnFilters.length > 0) && (
-                <button
-                  className="btn btn-sm btn-ghost mt-2"
-                  onClick={() => {
-                    setGlobalFilter("");
-                    setColumnFilters([]);
-                  }}
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-          )}
+        <div className="border border-base-300 bg-base-100 rounded-lg shadow-sm">
+          <ArtworksTable
+            data={data}
+            isLoading={isLoading}
+            totalCount={totalCount}
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            sorting={sorting}
+            onSortingChange={setSorting}
+            columnFilters={columnFilters}
+            onColumnFiltersChange={setColumnFilters}
+            globalFilter={globalFilter}
+            onGlobalFilterChange={setGlobalFilter}
+          />
         </div>
 
         {/* Pagination */}
         {data.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Page info */}
-            <div className="text-sm text-base-content/70">
-              Showing {pagination.pageIndex * pagination.pageSize + 1} to{" "}
-              {Math.min(
-                (pagination.pageIndex + 1) * pagination.pageSize,
-                totalCount
-              )}{" "}
-              of {totalCount} results
-            </div>
-
-            {/* Pagination controls */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
-                className="btn btn-sm btn-ghost"
-              >
-                {"<<"}
-              </button>
-              <button
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-                className="btn btn-sm btn-ghost"
-              >
-                {"<"}
-              </button>
-
-              <div className="flex items-center gap-1">
-                <span className="text-sm">Page</span>
-                <input
-                  type="number"
-                  value={pagination.pageIndex + 1}
-                  onChange={(e) => {
-                    const page = e.target.value ? Number(e.target.value) - 1 : 0;
-                    table.setPageIndex(page);
-                  }}
-                  className="input input-sm input-bordered w-16 text-center"
-                  min={1}
-                  max={pageCount}
-                />
-                <span className="text-sm">of {pageCount}</span>
-              </div>
-
-              <button
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-                className="btn btn-sm btn-ghost"
-              >
-                {">"}
-              </button>
-              <button
-                onClick={() => table.setPageIndex(pageCount - 1)}
-                disabled={!table.getCanNextPage()}
-                className="btn btn-sm btn-ghost"
-              >
-                {">>"}
-              </button>
-            </div>
-
-            {/* Page size selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Show</span>
-              <select
-                value={pagination.pageSize}
-                onChange={(e) => table.setPageSize(Number(e.target.value))}
-                className="select select-sm select-bordered"
-              >
-                {[10, 20, 30, 50, 100].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          <ArtworksPagination
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            totalCount={totalCount}
+            pageCount={pageCount}
+            canPreviousPage={pagination.pageIndex > 0}
+            canNextPage={pagination.pageIndex < pageCount - 1}
+          />
         )}
       </div>
 

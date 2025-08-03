@@ -2,31 +2,19 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy } from "react";
 import Providers from "../Providers";
 import SuspenseWrapper from "../layouts/SuspenseWrapper";
-import { SuperUserRoute, UserManagementRoute, NfcManagementRoute, ArtworkManagementRoute, OrganizationRoute } from "../components/ProtectedRoute";
+import { UserManagementRoute, NfcManagementRoute, ArtworkManagementRoute } from "../components/ProtectedRoute";
 import {
   Dashboard,
   Artworks,
   RegisterArtwork,
   SearchArtwork,
   DetailedArtwork,
-  Appraisals,
   Admin,
   NfcTags,
   UserManagement,
   Devices,
   Login,
   NotFoundPage,
-  OrganizationManagementPage,
-  MigrationVerificationPage,
-  OrganizationPage,
-  MembersPage,
-  StatisticsPage,
-  SettingsPage,
-  SuperAdmin,
-  SuperAdminDashboard,
-  SystemStatistics,
-  LocationsPage,
-  LocationUsersPage
 } from "./LazyComponents";
 
 // Layout components are loaded separately for better optimization
@@ -138,14 +126,6 @@ const router = createBrowserRouter([
             ),
           },
           {
-            path: "/dashboard/appraisals",
-            element: (
-              <SuspenseWrapper>
-                <Appraisals />
-              </SuspenseWrapper>
-            ),
-          },
-          {
             path: "/dashboard/admin/users",
             element: (
               <UserManagementRoute>
@@ -153,117 +133,6 @@ const router = createBrowserRouter([
                   <UserManagement />
                 </SuspenseWrapper>
               </UserManagementRoute>
-            ),
-          },
-          // Super Admin routes
-          {
-            path: "/dashboard/super-admin",
-            element: (
-              <SuperUserRoute>
-                <SuspenseWrapper>
-                  <SuperAdminDashboard />
-                </SuspenseWrapper>
-              </SuperUserRoute>
-            ),
-          },
-          {
-            path: "/dashboard/super-admin/organizations",
-            element: (
-              <SuperUserRoute>
-                <SuspenseWrapper>
-                  <OrganizationManagementPage />
-                </SuspenseWrapper>
-              </SuperUserRoute>
-            ),
-          },
-          {
-            path: "/dashboard/super-admin/users",
-            element: (
-              <SuperUserRoute>
-                <SuspenseWrapper>
-                  <SuperAdmin />
-                </SuspenseWrapper>
-              </SuperUserRoute>
-            ),
-          },
-          {
-            path: "/dashboard/super-admin/statistics",
-            element: (
-              <SuperUserRoute>
-                <SuspenseWrapper>
-                  <SystemStatistics />
-                </SuspenseWrapper>
-              </SuperUserRoute>
-            ),
-          },
-          {
-            path: "/dashboard/super-admin/migration-verification",
-            element: (
-              <SuperUserRoute>
-                <SuspenseWrapper>
-                  <MigrationVerificationPage />
-                </SuspenseWrapper>
-              </SuperUserRoute>
-            ),
-          },
-          {
-            path: "/dashboard/organization",
-            element: (
-              <OrganizationRoute>
-                <SuspenseWrapper>
-                  <OrganizationPage />
-                </SuspenseWrapper>
-              </OrganizationRoute>
-            ),
-          },
-          {
-            path: "/dashboard/organization/members",
-            element: (
-              <OrganizationRoute>
-                <SuspenseWrapper>
-                  <MembersPage />
-                </SuspenseWrapper>
-              </OrganizationRoute>
-            ),
-          },
-          {
-            path: "/dashboard/organization/statistics",
-            element: (
-              <OrganizationRoute>
-                <SuspenseWrapper>
-                  <StatisticsPage />
-                </SuspenseWrapper>
-              </OrganizationRoute>
-            ),
-          },
-          {
-            path: "/dashboard/organization/settings",
-            element: (
-              <OrganizationRoute>
-                <SuspenseWrapper>
-                  <SettingsPage />
-                </SuspenseWrapper>
-              </OrganizationRoute>
-            ),
-          },
-          {
-            path: "/dashboard/organization/locations",
-            element: (
-              <OrganizationRoute>
-                <SuspenseWrapper>
-                  <LocationsPage />
-                </SuspenseWrapper>
-              </OrganizationRoute>
-            ),
-          },
-          {
-            path: "/dashboard/organization/locations/:id",
-            element: (
-              <OrganizationRoute>
-                <SuspenseWrapper>
-                  <LocationUsersPage />
-                </SuspenseWrapper>
-              </OrganizationRoute>
             ),
           },
           {

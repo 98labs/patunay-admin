@@ -45,18 +45,18 @@ const Login = () => {
       
       // Initialize auth state after successful login
       if (result.session) {
-        console.log('Login: Session received, waiting for propagation');
+        // Session received, waiting for propagation
         
         // Wait a bit longer for the auth state to fully propagate
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        console.log('Login: Initializing auth state');
+        // Initializing auth state
         // Initialize auth state
         try {
           const authResult = await dispatch(initializeAuth()).unwrap();
-          console.log('Login: Auth initialized successfully', authResult ? 'with user' : 'no user');
+          // Auth initialized successfully
         } catch (authError) {
-          console.error('Login: Failed to initialize auth', authError);
+          // Failed to initialize auth: authError
         }
         
         // The SessionContext will handle the redirect once it detects the session

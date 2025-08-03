@@ -32,7 +32,7 @@ const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
 
       for (const file of acceptedFiles) {
         const fileName = `${Date.now()}-${file.name}`;
-        const filePath = `private/${fileName}`;
+        const filePath = `artworks/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from("artifacts")
@@ -43,18 +43,13 @@ const UploadImage = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
           continue;
         }
 
-        const { data, error: urlError } = await supabase.storage
+        const { data } = supabase.storage
           .from("artifacts")
-          .createSignedUrl(filePath, 60 * 60);
-
-        if (urlError) {
-          showError(`Failed to create URL for ${file.name}: ${urlError.message}`, "URL Generation Error");
-          continue;
-        }
+          .getPublicUrl(filePath);
 
         uploadedAssets.push({
           fileName: file.name,
-          url: data?.signedUrl ?? "",
+          url: data.publicUrl,
         });
       }
 
