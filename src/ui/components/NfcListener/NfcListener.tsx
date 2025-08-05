@@ -5,7 +5,7 @@ interface CardData {
 }
 
 const NfcListener = () => {
-  const [cardData, setCardData] = useState<any | null>(null);
+  const [cardData, setCardData] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if electron API is available

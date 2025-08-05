@@ -106,7 +106,7 @@ const UserTable: React.FC<UserTableProps> = ({
         );
       },
       enableSorting: true,
-      filterFn: (row, columnId, filterValue) => {
+      filterFn: (row, _columnId, filterValue) => {
         if (!filterValue || filterValue === 'all') return true;
         return row.original.role === filterValue;
       },
@@ -132,7 +132,7 @@ const UserTable: React.FC<UserTableProps> = ({
         );
       },
       enableSorting: true,
-      filterFn: (row, columnId, filterValue) => {
+      filterFn: (row, _columnId, filterValue) => {
         if (filterValue === 'all') return true;
         if (filterValue === 'active') return row.original.is_active;
         if (filterValue === 'inactive') return !row.original.is_active;
@@ -258,7 +258,7 @@ const UserTable: React.FC<UserTableProps> = ({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    globalFilterFn: (row, columnId, filterValue) => {
+    globalFilterFn: (row, _columnId, filterValue) => {
       const { first_name, last_name, email } = row.original;
       const fullName = `${first_name ?? ''} ${last_name ?? ''}`.toLowerCase();
       return (

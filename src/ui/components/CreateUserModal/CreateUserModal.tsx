@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Modal } from '@components';
 import supabase from '../../supabase';
-import { useAuth } from '../../hooks/useAuth';
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -19,7 +18,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { isAdmin } = useAuth();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,8 +48,11 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
       setUserId(data.user.id);
       setEmail(email);
       setStep('profile');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create user');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to create user');
+      }
+      
     } finally {
       setLoading(false);
     }
@@ -85,8 +86,10 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
 
       onSuccess();
       handleClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to create profile');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to create profile');
+      }
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNetworkStatus } from '../../utils/networkErrorHandler';
-import { WifiOff, Wifi } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 
 export const NetworkStatus: React.FC = () => {
   const isOnline = useNetworkStatus();

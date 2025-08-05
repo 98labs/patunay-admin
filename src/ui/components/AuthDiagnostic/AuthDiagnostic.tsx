@@ -5,6 +5,7 @@ interface DiagnosticResult {
   step: string;
   success: boolean;
   message: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   error?: any;
 }
 
@@ -19,20 +20,22 @@ export const AuthDiagnostic = () => {
 
     // Test 1: Check Supabase connection
     try {
-      const { data, error } = await supabase.from('profiles').select('count').single();
+      const { error } = await supabase.from('profiles').select('count').single();
       newResults.push({
         step: "Supabase Connection",
         success: !error,
         message: error ? `Failed: ${error.message}` : "Success: Connected to Supabase",
         error
       });
-    } catch (err: any) {
-      newResults.push({
-        step: "Supabase Connection",
-        success: false,
-        message: `Exception: ${err.message}`,
-        error: err
-      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        newResults.push({
+          step: "Supabase Connection",
+          success: false,
+          message: `Exception: ${err.message}`,
+          error: err
+        });
+      }
     }
 
     // Test 2: Check if auth is working
@@ -44,13 +47,15 @@ export const AuthDiagnostic = () => {
         message: error ? `Failed: ${error.message}` : `Success: ${user ? 'User logged in' : 'No user logged in'}`,
         error
       });
-    } catch (err: any) {
-      newResults.push({
-        step: "Auth Service",
-        success: false,
-        message: `Exception: ${err.message}`,
-        error: err
-      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        newResults.push({
+          step: "Auth Service",
+          success: false,
+          message: `Exception: ${err.message}`,
+          error: err
+        });
+      }
     }
 
     // Test 3: Try to check auth configuration
@@ -62,18 +67,20 @@ export const AuthDiagnostic = () => {
         message: error ? `Failed: ${error.message}` : `Success: ${data.session ? 'Active session' : 'No active session'}`,
         error
       });
-    } catch (err: any) {
-      newResults.push({
-        step: "Session Check",
-        success: false,
-        message: `Exception: ${err.message}`,
-        error: err
-      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        newResults.push({
+          step: "Session Check",
+          success: false,
+          message: `Exception: ${err.message}`,
+          error: err
+        });
+      }
     }
 
     // Test 4: Check profiles table structure
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .select('id')
         .limit(1);
@@ -83,13 +90,15 @@ export const AuthDiagnostic = () => {
         message: error ? `Failed: ${error.message}` : "Success: Profiles table accessible",
         error
       });
-    } catch (err: any) {
-      newResults.push({
-        step: "Profiles Table",
-        success: false,
-        message: `Exception: ${err.message}`,
-        error: err
-      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        newResults.push({
+          step: "Profiles Table",
+          success: false,
+          message: `Exception: ${err.message}`,
+          error: err
+        });
+      }
     }
 
     setResults(newResults);
@@ -117,9 +126,11 @@ export const AuthDiagnostic = () => {
         console.log('Login successful:', data);
         alert('Login successful!');
       }
-    } catch (err: any) {
-      console.error('Login exception:', err);
-      alert(`Login exception: ${err.message}`);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error('Login exception:', err);
+        alert(`Login exception: ${err.message}`);
+      }
     }
   };
 

@@ -1,5 +1,4 @@
 import { useNfc } from '../../hooks/useNfc';
-import { NfcOperationStatus } from '../../store/nfc/types';
 import { useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../DataTable';

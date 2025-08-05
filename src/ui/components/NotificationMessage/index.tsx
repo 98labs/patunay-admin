@@ -13,13 +13,14 @@ const NotificationMessage = () => {
       const timeout = setTimeout(() => dispatch(removeNotificationMessage()), 3000);
       return () => clearTimeout(timeout);
     }
+    return undefined;
   }, [message, dispatch]);
 
     const alertTypeClass = {
         success: 'alert-success',
         error: 'alert-error',
         info: 'alert-info',
-    }[status || 'info'];
+    }[(status || 'info') as 'success' | 'error' | 'info'];
   
     return (
         <div className={`${status ? '': 'hidden '}toast toast-top toast-end`}>

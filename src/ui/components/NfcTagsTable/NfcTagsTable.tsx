@@ -58,7 +58,7 @@ const NfcTagsTable: React.FC<NfcTagsTableProps> = ({
         );
       },
       enableSorting: true,
-      filterFn: (row, columnId, filterValue) => {
+      filterFn: (row, _columnId, filterValue) => {
         if (filterValue === 'all') return true;
         if (filterValue === 'active') return row.original.active;
         if (filterValue === 'inactive') return !row.original.active;
@@ -77,7 +77,7 @@ const NfcTagsTable: React.FC<NfcTagsTableProps> = ({
         );
       },
       enableSorting: true,
-      filterFn: (row, columnId, filterValue) => {
+      filterFn: (row, _columnId, filterValue) => {
         if (filterValue === 'all') return true;
         if (filterValue === 'attached') return !!row.original.artwork_id;
         if (filterValue === 'unattached') return !row.original.artwork_id;

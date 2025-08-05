@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNfc } from '../../hooks/useNfc';
-import { NfcModeEntity } from '../../typings/enums/nfcEnum';
 
 interface NfcManagerProps {
   onCardDetected?: (cardData: { uid: string; data?: string }) => void;
@@ -16,7 +15,6 @@ const NfcManager = ({
   className = '' 
 }: NfcManagerProps) => {
   const {
-    nfcStatus,
     currentOperation,
     detectedCard,
     isReaderConnected,

@@ -1,6 +1,5 @@
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { showNotification } from '../NotificationMessage/slice'
-import { selectUser } from '../../store/features/auth';
 import { useDetachNfcFromArtworkMutation } from '../../store/api/nfcApi';
 
 type DetachNFCProps = {
@@ -10,7 +9,6 @@ type DetachNFCProps = {
 
 const DetachNFCModal = ({ tagId, onClose }: DetachNFCProps) => {
   const dispatch = useDispatch();
-  const user = useSelector(selectUser);
   const [detachNfc, { isLoading }] = useDetachNfcFromArtworkMutation();
 
   const handleDetach = async () => {
@@ -25,13 +23,15 @@ const DetachNFCModal = ({ tagId, onClose }: DetachNFCProps) => {
         })
       );
       onClose();
-    } catch (error: any) {
-      dispatch(
-        showNotification({
-          message: error.message || 'Failed to detach NFC tag.',
-          status: 'error'
-        })
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        dispatch(
+          showNotification({
+            message: error.message || 'Failed to detach NFC tag.',
+            status: 'error'
+          })
+        );
+      }
     }
   };
 

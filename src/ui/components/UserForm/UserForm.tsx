@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { User, UserRole, USER_ROLES, DEFAULT_PERMISSIONS, PERMISSION_DESCRIPTIONS } from '../../typings';
-import supabase from '../../supabase';
 
 interface UserFormData {
   email?: string;
@@ -35,7 +34,6 @@ const UserForm: React.FC<UserFormProps> = ({
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -93,40 +91,6 @@ const UserForm: React.FC<UserFormProps> = ({
     
     setSelectedPermissions(updatedPermissions);
     setValue('permissions', updatedPermissions);
-  };
-
-  const uploadAvatar = async (file: File, userId: string): Promise<string | null> => {
-    try {
-      setIsUploadingAvatar(true);
-      
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('user-avatars')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (uploadError) {
-        console.error('Error uploading avatar:', uploadError);
-        throw uploadError;
-      }
-
-      // Get the public URL
-      const { data } = supabase.storage
-        .from('user-avatars')
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
-      throw error;
-    } finally {
-      setIsUploadingAvatar(false);
-    }
   };
 
   const handleFormSubmit = async (data: UserFormData) => {
@@ -344,7 +308,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 className="file-input file-input-bordered file-input-sm w-full max-w-xs"
                 accept="image/*"
                 onChange={handleAvatarFileChange}
-                disabled={isLoading || isUploadingAvatar}
+                disabled={isLoading}
               />
               
               {avatarFile && (
@@ -354,7 +318,7 @@ const UserForm: React.FC<UserFormProps> = ({
                     type="button"
                     onClick={handleRemoveAvatar}
                     className="btn btn-ghost btn-xs"
-                    disabled={isLoading || isUploadingAvatar}
+                    disabled={isLoading}
                   >
                     Remove
                   </button>
@@ -366,13 +330,6 @@ const UserForm: React.FC<UserFormProps> = ({
               </div>
             </div>
           </div>
-          
-          {isUploadingAvatar && (
-            <div className="mt-2 flex items-center space-x-2">
-              <span className="loading loading-spinner loading-sm"></span>
-              <span className="text-sm">Uploading avatar...</span>
-            </div>
-          )}
         </div>
 
         {/* Role and Status */}
@@ -394,7 +351,7 @@ const UserForm: React.FC<UserFormProps> = ({
                   }
                   return true;
                 })
-                .map(([value, { label, description }]) => (
+                .map(([value, { label }]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
@@ -484,9 +441,9 @@ const UserForm: React.FC<UserFormProps> = ({
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={isLoading || isUploadingAvatar}
+            disabled={isLoading}
           >
-            {(isLoading || isUploadingAvatar) && <span className="loading loading-spinner loading-sm"></span>}
+            {(isLoading) && <span className="loading loading-spinner loading-sm"></span>}
             {mode === 'create' ? 'Create User' : 'Update User'}
           </button>
         </div>

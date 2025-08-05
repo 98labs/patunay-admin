@@ -52,16 +52,6 @@ export const NfcWarningBanner: React.FC<NfcWarningBannerProps> = ({ className = 
     return null;
   }
 
-  const getStatusMessage = () => {
-    if (!deviceStatus.initialized) {
-      return 'NFC service failed to initialize';
-    }
-    if (deviceStatus.readers.length === 0) {
-      return 'NFC device NOT found';
-    }
-    return 'NFC device not available';
-  };
-
   const getDetailMessage = () => {
     if (!deviceStatus.initialized) {
       return 'Please check your NFC reader connection and restart the application.';
