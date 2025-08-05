@@ -10,7 +10,7 @@ import { ImageManagementModal } from "./components/ImageManagementModal";
 import { ImageGallery } from "./components/ImageGallery";
 import { Appraisal, ArtworkType } from "./types";
 import { AssetEntity } from "../../typings/asset";
-import { , useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import AppraisalInfo from "./components/AppraisalInfo";
 import { showNotification } from "../../components/NotificationMessage/slice";
 import { usePermissions } from "../../hooks/usePermissions";

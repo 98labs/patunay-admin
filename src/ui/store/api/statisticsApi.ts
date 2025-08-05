@@ -56,7 +56,7 @@ export const statisticsApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get comprehensive dashboard statistics
     getDashboardStats: builder.query<DashboardStats, StatsRequest | void>({
-      query: (request) => ({
+      query: () => ({
         supabaseOperation: async () => {
           try {
             // Use database views for optimized statistics

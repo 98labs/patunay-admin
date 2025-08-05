@@ -71,7 +71,7 @@ export const userApi = api.injectEndpoints({
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: ({ email, password }) => ({
         supabaseOperation: async () => {
-          const { data, error } = await supabase.auth.signInWithPassword({
+          const { error } = await supabase.auth.signInWithPassword({
             email,
             password,
           });
