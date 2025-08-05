@@ -96,8 +96,10 @@ export const PermissionsManager: React.FC<PermissionsManagerProps> = ({
       await assignRole({ userId: user.id, role: selectedRole }).unwrap();
       showSuccess('Role assigned successfully');
       refetchPermissions();
-    } catch (error: any) {
-      showError(error?.message || 'Failed to assign role');
+    } catch (error: unknown) {
+      if  (error instanceof Error) {
+        showError(error.message || 'Failed to assign role');
+      }
     }
   };
 
@@ -115,8 +117,10 @@ export const PermissionsManager: React.FC<PermissionsManagerProps> = ({
       showSuccess('Permission granted successfully');
       setSelectedPermission('');
       refetchPermissions();
-    } catch (error: any) {
-      showError(error?.message || 'Failed to grant permission');
+    } catch (error: unknown) {
+      if  (error instanceof Error) {
+        showError(error.message || 'Failed to grant permission');
+      }
     }
   };
 
@@ -128,8 +132,10 @@ export const PermissionsManager: React.FC<PermissionsManagerProps> = ({
       }).unwrap();
       showSuccess('Permission revoked successfully');
       refetchPermissions();
-    } catch (error: any) {
-      showError(error?.message || 'Failed to revoke permission');
+    } catch (error: unknown) {
+      if  (error instanceof Error) {
+        showError(error.message || 'Failed to revoke permission');
+      }
     }
   };
 

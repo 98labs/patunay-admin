@@ -16,13 +16,6 @@ interface Props {
   onNext: () => Promise<void>;
 }
 
-interface WriteResult {
-  success: boolean;
-  message: string;
-  data?: string;
-  error?: string;
-}
-
 const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
   const [isAttaching, setIsAttaching] = useState(false);
   const { showError, showSuccess } = useNotification();
@@ -38,7 +31,6 @@ const AttachNfc = ({ data, onUpdateArtwork, onPrev, onNext }: Props) => {
     lastError,
     startWriteOperation,
     startReadOperation,
-    cancelOperation,
     clearError,
     getOperationStatusText
   } = useNfc();

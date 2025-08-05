@@ -2,17 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
-  Building2, 
   Tag, 
   Shield, 
   Activity,
   ChevronRight,
-  TrendingUp,
   FileText,
   Settings
 } from 'lucide-react';
 import { PageHeader, Loading } from '@components';
-import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useNotification } from '../../hooks/useNotification';
 import supabase from '../../supabase';
@@ -25,7 +22,6 @@ interface AdminStats {
 
 const Admin: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { 
     canManageOrgUsers, 
     canManageAllUsers,

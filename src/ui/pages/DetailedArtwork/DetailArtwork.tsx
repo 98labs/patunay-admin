@@ -10,19 +10,15 @@ import { ImageManagementModal } from "./components/ImageManagementModal";
 import { ImageGallery } from "./components/ImageGallery";
 import { Appraisal, ArtworkType } from "./types";
 import { AssetEntity } from "../../typings/asset";
-import { selectNotif } from "../../components/NotificationMessage/selector";
-import { useSelector, useDispatch } from "react-redux";
+import { , useDispatch } from "react-redux";
 import AppraisalInfo from "./components/AppraisalInfo";
 import { showNotification } from "../../components/NotificationMessage/slice";
 import { usePermissions } from "../../hooks/usePermissions";
 
 import { updateArtworkDirect } from "../../supabase/rpc/updateArtworkDirect";
 import { detachNfcTag } from "../../supabase/rpc/detachNfcTag";
-import { getArtworkDirect } from "../../supabase/rpc/getArtworkDirect";
 import { getAppraisals } from "../../supabase/rpc/getAppraisals";
 import { useGetArtworkQuery } from "../../store/api/artworkApi";
-
-import { safeJsonParse } from "../Artworks/components/utils";
 
 const DetailArtwork = () => {
   const { id } = useParams();
@@ -47,7 +43,6 @@ const DetailArtwork = () => {
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [showImageManagementModal, setShowImageManagementModal] = useState(false);
   const [tagId, setTagId] = useState("");
-  const { status } = useSelector(selectNotif);
   
   // Get artwork from response
   const artwork = artworkResponse?.data as ArtworkType | null;
@@ -190,7 +185,7 @@ const DetailArtwork = () => {
     }
   };
 
-  const handleImageUpdate = useCallback(async (updatedAssets: AssetEntity[]) => {
+  const handleImageUpdate = useCallback(async (_updatedAssets: AssetEntity[]) => {
     // Refresh the artwork data to show the updated images
     try {
       await refetch();

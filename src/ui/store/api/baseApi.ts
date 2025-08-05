@@ -1,6 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../store';
-import supabase from '../../supabase';
 
 // Custom base query that uses Supabase client
 const supabaseBaseQuery = fetchBaseQuery({

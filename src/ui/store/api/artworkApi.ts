@@ -5,7 +5,6 @@ import { updateArtwork as updateArtworkRpc } from '../../supabase/rpc/updateArtw
 import { upsertAppraisal } from '../../supabase/rpc/upsertAppraisal';
 import type { ArtworkEntity } from '../../typings';
 import supabase from '../../supabase';
-import { store } from '../index';
 import { enhanceArtworkWithImageUrls, enhanceArtworksWithImageUrls } from './artworkApiEnhancer';
 
 // Define the API response types

@@ -74,24 +74,6 @@ const RegisterArtwork = () => {
     );
   };
 
-  const handleOnSkip = async (stepsToSkip: number = 1) => {
-    setCurrentStep(currentStep + stepsToSkip + 1);
-    setFormSteps(
-      formSteps.map((formStep) => {
-        if (formStep.stepNumber === currentStep)
-          return { ...formStep, active: false, complete: true, skip: false };
-
-        if (
-          formStep.stepNumber > currentStep &&
-          formStep.stepNumber <= currentStep + stepsToSkip
-        )
-          return { ...formStep, active: false, complete: false, skip: true };
-
-        return formStep;
-      })
-    );
-  };
-
   const handleOnDataChange = (data: { [key: string]: string | string[] }) => {
     setArtwork({ ...artwork, ...data });
   };

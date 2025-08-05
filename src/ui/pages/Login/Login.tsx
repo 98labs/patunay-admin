@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 
@@ -61,11 +61,13 @@ const Login = () => {
         
         // The SessionContext will handle the redirect once it detects the session
       }
-    } catch (error: any) {
-      dispatch(showNotification({
-        message: error.message || "Login failed",
-        status: "error",
-      }));
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        dispatch(showNotification({
+          message: error.message || "Login failed",
+          status: "error",
+        }));
+      }
     }
   };
 

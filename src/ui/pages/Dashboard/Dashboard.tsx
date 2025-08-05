@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   PageHeader, 
@@ -11,10 +10,8 @@ import {
   useGetDashboardStatsQuery, 
   useGetActivityLogQuery 
 } from '../../store/api/statisticsApi';
-import { useAuth } from '../../hooks/useAuth';
 
 const Dashboard = () => {
-  const { isSuperUser } = useAuth();
 
   // Fetch dashboard data
   const { 

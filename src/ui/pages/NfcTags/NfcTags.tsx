@@ -9,7 +9,7 @@ import { useNfcStatus } from "../../context/NfcStatusContext";
 
 const NfcTags = () => {
   const dispatch = useDispatch();
-  const { isNfcAvailable, nfcFeaturesEnabled, deviceStatus } = useNfcStatus();
+  const { isNfcAvailable, nfcFeaturesEnabled } = useNfcStatus();
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);

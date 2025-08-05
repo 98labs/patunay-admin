@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { handleAddArtwork } from "../../hooks/handleAddArtwork";
 import { useState } from "react";
 import ImageSlider from "../ImageSlider";
-import { useAuth } from '../../../../hooks/useAuth';
 
 interface Props {
   artwork: ArtworkEntity;
@@ -40,7 +39,6 @@ const ReviewArtwork = ({
   } = artwork;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const details: Detail[] = [
     {
@@ -88,12 +86,6 @@ const ReviewArtwork = ({
       console.error("Error in submitting artwork:", error);
       setIsSubmitting(false);
     }
-  };
-
-  const handleOnPrev = async () => {
-    if (isSubmitting) return;
-
-    onPrev();
   };
 
   return (
