@@ -103,10 +103,19 @@ const UserManagement = () => {
     setViewMode('permissions');
   }, []);
 
-  const handleDeleteUser = useCallback((user: SelectedUser) => {
-    setSelectedUser(user);
-    setShowDeleteModal(true);
-  }, []);
+  const handleDeleteUser = useCallback(
+    (user: SelectedUser) => {
+      setSelectedUser(user);
+      // Only super_user can actually delete, admin users get a different modal
+      if (currentUser?.role === 'super_user') {
+        setShowDeleteModal(true);
+      } else {
+        // For admin users, show a message about contacting support
+        showError('Contact Patunay support to delete a user. You can disable the account instead.');
+      }
+    },
+    [currentUser?.role, showError]
+  );
 
   const handleToggleUserStatus = useCallback((user: SelectedUser) => {
     setSelectedUser(user);
@@ -234,6 +243,7 @@ const UserManagement = () => {
           <UserActionsMenu
             user={info.row.original}
             currentUserId={currentUser?.id}
+            currentUserRole={currentUser?.role}
             onEdit={() => handleEditUser(info.row.original)}
             onManagePermissions={() => handleManagePermissions(info.row.original)}
             onToggleStatus={() => handleToggleUserStatus(info.row.original)}
@@ -245,6 +255,7 @@ const UserManagement = () => {
     [
       columnHelper,
       currentUser?.id,
+      currentUser?.role,
       handleEditUser,
       handleManagePermissions,
       handleToggleUserStatus,
