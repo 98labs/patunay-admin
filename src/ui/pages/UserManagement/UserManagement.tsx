@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { 
-  PageHeader, 
+import {
+  PageHeader,
   Loading,
   ConfirmationModal,
   Button,
@@ -8,9 +8,9 @@ import {
   Select,
   Badge,
   EmptyState,
-  Pagination
+  Pagination,
 } from '@components';
-import { 
+import {
   useGetUsersQuery,
   useDeleteUserMutation,
   useDisableUserMutation,
@@ -28,7 +28,6 @@ import {
   getCoreRowModel,
   flexRender,
   createColumnHelper,
-  ColumnDef
 } from '@tanstack/react-table';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'permissions';
@@ -53,7 +52,7 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
-  
+
   // Pagination and filtering
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
@@ -65,21 +64,21 @@ const UserManagement = () => {
   const { user: currentUser } = useAuth();
 
   // API hooks
-  const { 
-    data: usersResponse, 
-    isLoading: isLoadingUsers, 
+  const {
+    data: usersResponse,
+    isLoading: isLoadingUsers,
     error: usersError,
-    refetch: refetchUsers 
+    refetch: refetchUsers,
   } = useGetUsersQuery({
     page: currentPage,
     pageSize,
     filters: {
       role: roleFilter !== 'all' ? roleFilter : undefined,
       is_active: statusFilter === 'all' ? undefined : statusFilter === 'active',
-      search: searchQuery || undefined
+      search: searchQuery || undefined,
     },
     sortBy: 'created_at',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
   });
 
   const [deleteUser, { isLoading: isDeletingUser }] = useDeleteUserMutation();
@@ -123,8 +122,8 @@ const UserManagement = () => {
       setShowDeleteModal(false);
       setSelectedUser(null);
       refetchUsers();
-    } catch (error: any) {
-      showError(error?.message || 'Failed to delete user');
+    } catch (error: unknown) {
+      showError((error as Error)?.message || 'Failed to delete user');
     }
   }, [selectedUser, deleteUser, showSuccess, showError, refetchUsers]);
 
@@ -142,8 +141,8 @@ const UserManagement = () => {
       setShowStatusModal(false);
       setSelectedUser(null);
       refetchUsers();
-    } catch (error: any) {
-      showError(error?.message || 'Failed to update user status');
+    } catch (error: unknown) {
+      showError((error as Error)?.message || 'Failed to update user status');
     }
   }, [selectedUser, disableUser, enableUser, showSuccess, showError, refetchUsers]);
 
@@ -157,88 +156,101 @@ const UserManagement = () => {
   const columnHelper = createColumnHelper<UserData>();
 
   // Table columns
-  const columns = useMemo<ColumnDef<UserData, any>[]>(() => [
-    columnHelper.accessor((row) => ({ 
-      name: row.first_name || row.last_name ? `${row.first_name || ''} ${row.last_name || ''}`.trim() : 'No name',
-      email: row.email,
-      avatar_url: row.avatar_url,
-      first_name: row.first_name
-    }), {
-      id: 'user',
-      header: 'User',
-      cell: (info) => {
-        const data = info.getValue();
-        return (
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
-              {data.avatar_url ? (
-                <img
-                  className="h-10 w-10 rounded-full"
-                  src={data.avatar_url}
-                  alt=""
-                />
-              ) : (
-                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    {data.first_name?.[0]?.toUpperCase() || data.email[0].toUpperCase()}
-                  </span>
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor(
+        (row) => ({
+          name:
+            row.first_name || row.last_name
+              ? `${row.first_name || ''} ${row.last_name || ''}`.trim()
+              : 'No name',
+          email: row.email,
+          avatar_url: row.avatar_url,
+          first_name: row.first_name,
+        }),
+        {
+          id: 'user',
+          header: 'User',
+          cell: (info) => {
+            const data = info.getValue();
+            return (
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  {data.avatar_url ? (
+                    <img className="h-10 w-10 rounded-full" src={data.avatar_url} alt="" />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        {data.first_name?.[0]?.toUpperCase() || data.email[0].toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <div>
-              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                {data.name}
+                <div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    {data.name}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{data.email}</div>
+                </div>
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                {data.email}
-              </div>
-            </div>
-          </div>
-        );
-      },
-    }),
-    columnHelper.accessor('role', {
-      header: 'Role',
-      cell: (info) => (
-        <Badge variant={info.getValue() === 'admin' || info.getValue() === 'super_user' ? 'primary' : 'secondary'}>
-          {info.getValue()}
-        </Badge>
+            );
+          },
+        }
       ),
-    }),
-    columnHelper.accessor('is_active', {
-      header: 'Status',
-      cell: (info) => (
-        <Badge variant={info.getValue() ? 'success' : 'danger'}>
-          {info.getValue() ? 'Active' : 'Inactive'}
-        </Badge>
-      ),
-    }),
-    columnHelper.accessor('last_sign_in_at', {
-      header: 'Last Login',
-      cell: (info) => (
-        <span className="text-sm text-gray-500 dark:text-gray-400">
-          {info.getValue() 
-            ? new Date(info.getValue()).toLocaleDateString()
-            : 'Never'
-          }
-        </span>
-      ),
-    }),
-    columnHelper.display({
-      id: 'actions',
-      header: 'Actions',
-      cell: (info) => (
-        <UserActionsMenu
-          user={info.row.original}
-          currentUserId={currentUser?.id}
-          onEdit={() => handleEditUser(info.row.original)}
-          onManagePermissions={() => handleManagePermissions(info.row.original)}
-          onToggleStatus={() => handleToggleUserStatus(info.row.original)}
-          onDelete={() => handleDeleteUser(info.row.original)}
-        />
-      ),
-    }),
-  ], [columnHelper, currentUser?.id, handleEditUser, handleManagePermissions, handleToggleUserStatus, handleDeleteUser]);
+      columnHelper.accessor('role', {
+        header: 'Role',
+        cell: (info) => (
+          <Badge
+            variant={
+              info.getValue() === 'admin' || info.getValue() === 'super_user'
+                ? 'primary'
+                : 'secondary'
+            }
+          >
+            {info.getValue()}
+          </Badge>
+        ),
+      }),
+      columnHelper.accessor('is_active', {
+        header: 'Status',
+        cell: (info) => (
+          <Badge variant={info.getValue() ? 'success' : 'danger'}>
+            {info.getValue() ? 'Active' : 'Inactive'}
+          </Badge>
+        ),
+      }),
+      columnHelper.accessor('last_sign_in_at', {
+        header: 'Last Login',
+        cell: (info) => (
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {info.getValue() ? new Date(info.getValue() as string).toLocaleDateString() : 'Never'}
+          </span>
+        ),
+      }),
+      columnHelper.display({
+        id: 'actions',
+        header: 'Actions',
+        cell: (info) => (
+          <UserActionsMenu
+            user={info.row.original}
+            currentUserId={currentUser?.id}
+            onEdit={() => handleEditUser(info.row.original)}
+            onManagePermissions={() => handleManagePermissions(info.row.original)}
+            onToggleStatus={() => handleToggleUserStatus(info.row.original)}
+            onDelete={() => handleDeleteUser(info.row.original)}
+          />
+        ),
+      }),
+    ],
+    [
+      columnHelper,
+      currentUser?.id,
+      handleEditUser,
+      handleManagePermissions,
+      handleToggleUserStatus,
+      handleDeleteUser,
+    ]
+  );
 
   // Create table instance
   const table = useReactTable({
@@ -260,31 +272,27 @@ const UserManagement = () => {
   }
 
   if (viewMode === 'permissions' && selectedUser) {
-    return (
-      <PermissionsManager
-        user={selectedUser}
-        onBack={handleBackToList}
-      />
-    );
+    return <PermissionsManager user={selectedUser} onBack={handleBackToList} />;
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="User Management"
-        description="Manage users, roles, and permissions"
-        icon={<Users className="h-8 w-8" />}
-        actions={
-          <Button onClick={handleCreateUser} variant="primary">
-            <Plus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
+        subtitle="Manage users, roles, and permissions"
+        action={
+          currentUser?.role === 'admin' || currentUser?.role === 'super_user' ? (
+            <Button onClick={handleCreateUser} variant="primary">
+              <Plus className="mr-2 h-4 w-4" />
+              Add User
+            </Button>
+          ) : null
         }
       />
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Filters and Actions */}
+      <div className="rounded-lg bg-white p-4 shadow dark:bg-gray-800">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
@@ -317,7 +325,7 @@ const UserManagement = () => {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div className="rounded-lg bg-white shadow dark:bg-gray-800">
         {isLoadingUsers ? (
           <div className="p-8">
             <Loading />
@@ -329,7 +337,7 @@ const UserManagement = () => {
               description={usersError.toString()}
               action={{
                 label: 'Retry',
-                onClick: () => refetchUsers()
+                onClick: () => refetchUsers(),
               }}
             />
           </div>
@@ -338,22 +346,27 @@ const UserManagement = () => {
             <EmptyState
               icon={<Users className="h-12 w-12" />}
               title="No users found"
-              description={searchQuery || roleFilter !== 'all' || statusFilter !== 'all' 
-                ? "No users match your filters. Try adjusting your search criteria."
-                : "Get started by creating your first user."
+              description={
+                searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
+                  ? 'No users match your filters. Try adjusting your search criteria.'
+                  : 'Get started by creating your first user.'
               }
               action={
-                searchQuery || roleFilter !== 'all' || statusFilter !== 'all' ? {
-                  label: 'Clear filters',
-                  onClick: () => {
-                    setSearchQuery('');
-                    setRoleFilter('all');
-                    setStatusFilter('all');
-                  }
-                } : {
-                  label: 'Add User',
-                  onClick: handleCreateUser
-                }
+                searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
+                  ? {
+                      label: 'Clear filters',
+                      onClick: () => {
+                        setSearchQuery('');
+                        setRoleFilter('all');
+                        setStatusFilter('all');
+                      },
+                    }
+                  : currentUser?.role === 'admin' || currentUser?.role === 'super_user'
+                    ? {
+                        label: 'Add User',
+                        onClick: handleCreateUser,
+                      }
+                    : undefined
               }
             />
           </div>
@@ -362,36 +375,27 @@ const UserManagement = () => {
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-900">
-                  {table.getHeaderGroups().map(headerGroup => (
+                  {table.getHeaderGroups().map((headerGroup) => (
                     <tr key={headerGroup.id}>
-                      {headerGroup.headers.map(header => (
+                      {headerGroup.headers.map((header) => (
                         <th
                           key={header.id}
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                          className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
                         >
                           {header.isPlaceholder
                             ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
+                            : flexRender(header.column.columnDef.header, header.getContext())}
                         </th>
                       ))}
                     </tr>
                   ))}
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {table.getRowModel().rows.map(row => (
+                <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                  {table.getRowModel().rows.map((row) => (
                     <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      {row.getVisibleCells().map(cell => (
-                        <td
-                          key={cell.id}
-                          className="px-6 py-4 whitespace-nowrap"
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       ))}
                     </tr>
@@ -400,7 +404,7 @@ const UserManagement = () => {
               </table>
             </div>
             {usersResponse.count > pageSize && (
-              <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+              <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-700">
                 <Pagination
                   currentPage={currentPage}
                   totalPages={Math.ceil(usersResponse.count / pageSize)}
