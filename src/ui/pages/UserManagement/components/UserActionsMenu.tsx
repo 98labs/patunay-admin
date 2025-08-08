@@ -1,13 +1,6 @@
 import { Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
-import { 
-  MoreVertical, 
-  Pencil, 
-  ShieldCheck,
-  Trash,
-  Ban,
-  CheckCircle
-} from 'lucide-react';
+import { MoreVertical, Pencil, ShieldCheck, Trash, Ban, CheckCircle } from 'lucide-react';
 import { classNames } from '../../../utils/classNames';
 
 interface UserActionsMenuProps {
@@ -18,6 +11,7 @@ interface UserActionsMenuProps {
     is_active: boolean;
   };
   currentUserId?: string;
+  currentUserRole?: string;
   onEdit: () => void;
   onManagePermissions: () => void;
   onToggleStatus: () => void;
@@ -27,6 +21,7 @@ interface UserActionsMenuProps {
 export const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
   user,
   currentUserId,
+  currentUserRole,
   onEdit,
   onManagePermissions,
   onToggleStatus,
@@ -34,11 +29,13 @@ export const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
 }) => {
   // Don't allow users to modify themselves
   const isCurrentUser = user.id === currentUserId;
-  
+  // Only super_user can delete users
+  const canDelete = currentUserRole === 'super_user' && !isCurrentUser;
+
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>
-        <Menu.Button className="rounded-full flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800 focus:ring-indigo-500">
+        <Menu.Button className="flex items-center rounded-full text-gray-400 hover:text-gray-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100 focus:outline-none dark:hover:text-gray-300 dark:focus:ring-offset-gray-800">
           <span className="sr-only">Open options</span>
           <MoreVertical className="h-5 w-5" aria-hidden="true" />
         </Menu.Button>
@@ -53,15 +50,17 @@ export const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Items className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 dark:divide-gray-700 focus:outline-none z-10">
+        <Menu.Items className="ring-opacity-5 absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black focus:outline-none dark:divide-gray-700 dark:bg-gray-800">
           <div className="py-1">
             <Menu.Item>
               {({ active }) => (
                 <button
                   onClick={onEdit}
                   className={classNames(
-                    active ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300',
-                    'group flex items-center px-4 py-2 text-sm w-full'
+                    active
+                      ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
+                      : 'text-gray-700 dark:text-gray-300',
+                    'group flex w-full items-center px-4 py-2 text-sm'
                   )}
                 >
                   <Pencil
@@ -77,8 +76,10 @@ export const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
                 <button
                   onClick={onManagePermissions}
                   className={classNames(
-                    active ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300',
-                    'group flex items-center px-4 py-2 text-sm w-full'
+                    active
+                      ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
+                      : 'text-gray-700 dark:text-gray-300',
+                    'group flex w-full items-center px-4 py-2 text-sm'
                   )}
                 >
                   <ShieldCheck
@@ -98,9 +99,11 @@ export const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
                   onClick={onToggleStatus}
                   disabled={isCurrentUser}
                   className={classNames(
-                    active ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300',
-                    isCurrentUser ? 'opacity-50 cursor-not-allowed' : '',
-                    'group flex items-center px-4 py-2 text-sm w-full'
+                    active
+                      ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
+                      : 'text-gray-700 dark:text-gray-300',
+                    isCurrentUser ? 'cursor-not-allowed opacity-50' : '',
+                    'group flex w-full items-center px-4 py-2 text-sm'
                   )}
                 >
                   {user.is_active ? (
@@ -125,27 +128,35 @@ export const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
             </Menu.Item>
           </div>
 
-          <div className="py-1">
-            <Menu.Item>
-              {({ active }) => (
-                <button
-                  onClick={onDelete}
-                  disabled={isCurrentUser}
-                  className={classNames(
-                    active ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300',
-                    isCurrentUser ? 'opacity-50 cursor-not-allowed' : '',
-                    'group flex items-center px-4 py-2 text-sm w-full'
-                  )}
-                >
-                  <Trash
-                    className="mr-3 h-5 w-5 text-red-400 group-hover:text-red-500"
-                    aria-hidden="true"
-                  />
-                  Delete User
-                </button>
-              )}
-            </Menu.Item>
-          </div>
+          {!isCurrentUser && (
+            <div className="py-1">
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    onClick={canDelete ? onDelete : undefined}
+                    disabled={!canDelete}
+                    title={!canDelete ? 'Contact Patunay support to delete a user' : ''}
+                    className={classNames(
+                      active && canDelete
+                        ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
+                        : 'text-gray-700 dark:text-gray-300',
+                      !canDelete ? 'cursor-not-allowed opacity-50' : '',
+                      'group flex w-full items-center px-4 py-2 text-sm'
+                    )}
+                  >
+                    <Trash
+                      className={classNames(
+                        'mr-3 h-5 w-5',
+                        canDelete ? 'text-red-400 group-hover:text-red-500' : 'text-gray-400'
+                      )}
+                      aria-hidden="true"
+                    />
+                    Delete User
+                  </button>
+                )}
+              </Menu.Item>
+            </div>
+          )}
         </Menu.Items>
       </Transition>
     </Menu>
