@@ -15,7 +15,7 @@
     "build:validate": "npm run validate && npm run build:all",
     "build:all": "npm run clean && npm-run-all --parallel build:react build:electron && npm run package:electron",
     "build:react": "vite build --mode production",
-    "build:electron": "tsc --project src/electron/tsconfig.json && cp src/electron/preload.js dist-electron/preload.js",
+    "build:electron": "tsc --project src/electron/tsconfig.json && node -e \"require('fs').copyFileSync('src/electron/preload.js', 'dist-electron/preload.js')\"",
     "package:electron": "electron-builder",
     "dist": "npm run build",
     "dist:mac": "npm run build && electron-builder --mac --arm64",
