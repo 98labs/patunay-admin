@@ -40,9 +40,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint:fix` - Run ESLint with auto-fix
 - `npm run format` - Format code with Prettier
 - `npm run format:check` - Check code formatting
-- `npm run type-check` - Run TypeScript type checking
+- `npm run type-check` - Run TypeScript type checking for both UI and Electron
 - `npm run validate` - Run all validation checks (lint, type-check, tests)
 - `npm run clean` - Remove all build artifacts
+
+**Important:** Always run `npm run validate` before committing to ensure code quality and tests pass.
 
 ## Architecture Overview
 
@@ -67,13 +69,15 @@ This is an Electron-based desktop application for artwork management with NFC ta
 
 ### Key Dependencies
 - **@supabase/supabase-js**: Database and authentication
-- **nfc-pcsc**: NFC tag communication
-- **@reduxjs/toolkit**: State management
-- **react-router-dom**: Client-side routing
-- **react-hook-form**: Form handling
-- **@tanstack/react-table**: Data tables
-- **date-fns**: Date manipulation
+- **nfc-pcsc**: NFC tag communication (Electron main process only)
+- **@reduxjs/toolkit**: State management with RTK Query
+- **react-router-dom**: Client-side routing with createBrowserRouter
+- **react-hook-form**: Form handling with Zod validation
+- **@tanstack/react-table**: Data tables with sorting/filtering
+- **date-fns**: Date manipulation utilities
 - **lucide-react**: Icon library
+- **tailwindcss + daisyui**: Styling framework and component library
+- **electron-updater**: Auto-update functionality
 
 ### Database & Authentication
 - **Supabase** for PostgreSQL database with Row Level Security (RLS)
@@ -117,9 +121,10 @@ src/ui/
 
 **Component Patterns:**
 - Each component in its own folder with `ComponentName.tsx` and `index.ts`
-- Lazy loading for route-based code splitting
-- Error boundaries for graceful error handling
-- Suspense wrappers for loading states
+- Lazy loading for route-based code splitting (see `LazyComponents.tsx`)
+- Error boundaries for graceful error handling (`EnhancedErrorBoundary`)
+- Suspense wrappers for loading states (`SuspenseWrapper`)
+- Path aliases: `@components`, `@pages`, `@hooks`, `@typings` for clean imports
 
 ### NFC Integration
 **Main Process:**
@@ -146,40 +151,56 @@ src/ui/
 
 ### Build & Deployment
 **Build Output:**
-- `dist-react/` - Built React application
-- `dist-electron/` - Compiled Electron code
-- `dist/` - Packaged applications
+- `dist-react/` - Built React application (Vite output)
+- `dist-electron/` - Compiled Electron code (TypeScript → JavaScript)
+- `dist/` - Packaged applications (electron-builder output)
+
+**Vite Configuration:**
+- Manual chunk splitting for optimal loading (see `vite.config.ts`)
+- Path aliases for clean imports
+- Bundle size optimization with chunk size warnings
 
 **Auto-Update:**
 - Uses electron-updater for automatic updates
 - Update configuration in `electron-builder.json`
+- Platform-specific builds: macOS (ARM64), Windows (x64), Linux (x64)
 
 ### Development Best Practices
-1. **TypeScript:** Use strict type checking
-2. **Components:** Follow atomic design principles
+1. **TypeScript:** Use strict type checking (see `eslint.config.js`)
+2. **Components:** Follow atomic design principles, each in own folder
 3. **State:** Use RTK Query for server state, Redux for client state
-4. **Errors:** Implement proper error boundaries
-5. **Logging:** Use structured logging with categories
-6. **Security:** Follow RLS patterns, sanitize inputs
-7. **Performance:** Lazy load routes, memoize expensive operations
+4. **Errors:** Implement proper error boundaries (`EnhancedErrorBoundary`)
+5. **Logging:** Use structured logging with categories (renderer + electron)
+6. **Security:** Follow RLS patterns, sanitize inputs, use Zod validation
+7. **Performance:** Lazy load routes, memoize expensive operations, manual chunking
+8. **Code Quality:** Always run `npm run validate` before committing
 
 ### Common Tasks
 
 **Adding a New Page:**
-1. Create component in `src/ui/pages/YourPage/`
-2. Add to `LazyComponents.tsx`
-3. Add route in `router/index.tsx`
-4. Add navigation item if needed
+1. Create component in `src/ui/pages/YourPage/` with `YourPage.tsx` and `index.ts`
+2. Add lazy-loaded export to `LazyComponents.tsx`
+3. Add route in `router/index.tsx` with proper error boundary
+4. Add navigation item in `Sidebar.tsx` if needed
+5. Add permission guards using `PermissionGuard` if required
 
 **Adding an API Endpoint:**
-1. Add RPC function in `src/ui/supabase/rpc/`
-2. Create RTK Query endpoint in appropriate API file
-3. Use in components with generated hooks
+1. Add RPC function in `src/ui/supabase/rpc/` with proper error handling
+2. Create RTK Query endpoint in appropriate API file (`artworkApi.ts`, etc.)
+3. Use in components with generated hooks (`useGetArtworksQuery`, etc.)
+4. Follow existing patterns for optimistic updates and cache invalidation
+
+**Adding NFC Functionality:**
+1. Extend `nfcService.ts` in Electron main process
+2. Update IPC types in `src/electron/types/electronApi.ts`
+3. Update renderer hooks in `src/ui/hooks/useNfc.ts`
+4. Test with NFC status context for real-time updates
 
 **Managing State:**
-1. Server state: Use RTK Query
-2. UI state: Use component state or Redux slice
+1. Server state: Use RTK Query with proper cache management
+2. UI state: Use component state or React Context
 3. Global UI state: Create Redux slice in `store/features/`
+4. Form state: Use react-hook-form with Zod validation
 
 ### Environment Variables
 **Required:**
