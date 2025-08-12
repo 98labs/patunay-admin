@@ -94,92 +94,105 @@ export async function upsertAppraisal(appraisal: Appraisal, artworkId: string) {
     console.log('upsertAppraisal: Valid appraisers to process:', validAppraisers.length);
     
     if (validAppraisers.length > 0) {
-      // Get all existing active relationships for this appraisal to avoid duplicates
-      const { data: existingActiveRelations, error: activeCheckError } = await supabase
-        .from("appraisal_appraisers")
-        .select("appraiser_id, artwork_appraisers!inner(name)")
-        .eq("appraisal_id", appraisalId)
-        .is("deleted_at", null);
-      
-      if (activeCheckError) {
-        console.error('upsertAppraisal: Error checking active relationships:', activeCheckError);
-      }
-      
-      const existingAppraiserNames = new Set(
-        existingActiveRelations?.map(rel => rel.artwork_appraisers?.name) || []
-      );
-      
-      const appraiserInsertResults = await Promise.all(
-        validAppraisers.map(async (a) => {
-          const trimmedName = a.name.trim();
-          console.log('upsertAppraisal: Processing appraiser:', trimmedName);
-          
-          // Skip if this appraiser is already linked to this appraisal
-          if (existingAppraiserNames.has(trimmedName)) {
-            console.log('upsertAppraisal: Appraiser already linked, skipping:', trimmedName);
-            return null;
-          }
-          
-          // First try to find existing appraiser
-          const { data: existingAppraiser, error: findError } = await supabase
-            .from("artwork_appraisers")
-            .select("id")
-            .eq("name", trimmedName)
-            .single();
-          
-          if (findError && findError.code !== 'PGRST116') { // PGRST116 is "no rows found"
-            console.error('upsertAppraisal: Error finding appraiser:', findError);
-            throw findError;
-          }
-          
-          if (existingAppraiser) {
-            console.log('upsertAppraisal: Found existing appraiser:', existingAppraiser);
-            return existingAppraiser.id;
-          }
-          
-          // If not found, insert new appraiser
-          console.log('upsertAppraisal: Inserting new appraiser:', trimmedName);
-          const { data: newAppraiser, error: insertError } = await supabase
-            .from("artwork_appraisers")
-            .insert({ name: trimmedName })
-            .select("id")
-            .single();
-
-          if (insertError) {
-            console.error('upsertAppraisal: Error inserting appraiser:', insertError);
-            throw insertError;
-          }
-          
-          console.log('upsertAppraisal: Appraiser inserted:', newAppraiser);
-          return newAppraiser.id;
-        })
-      );
-
-      // Filter out null values (appraisers that were already linked)
-      const newAppraiserIds = appraiserInsertResults.filter(id => id !== null);
-      console.log('upsertAppraisal: New appraisers to link:', newAppraiserIds.length);
-
-      // 4. Link new appraisers to appraisal
-      if (newAppraiserIds.length > 0) {
-        const appraiserRelations = newAppraiserIds.map((appraiserId) => ({
-          appraisal_id: appraisalId,
-          appraiser_id: appraiserId,
-        }));
-
-        console.log('upsertAppraisal: Linking appraisers to appraisal:', appraiserRelations);
-
-        const { error: linkError } = await supabase
+      try {
+        // Get all existing active relationships for this appraisal to avoid duplicates
+        const { data: existingActiveRelations, error: activeCheckError } = await supabase
           .from("appraisal_appraisers")
-          .insert(appraiserRelations);
-
-        if (linkError) {
-          console.error('upsertAppraisal: Error linking appraisers:', linkError);
-          throw linkError;
+          .select("appraiser_id, artwork_appraisers!inner(name)")
+          .eq("appraisal_id", appraisalId)
+          .is("deleted_at", null);
+        
+        if (activeCheckError) {
+          console.error('upsertAppraisal: Error checking active relationships:', activeCheckError);
         }
         
-        console.log('upsertAppraisal: Successfully linked', appraiserRelations.length, 'appraisers');
-      } else {
-        console.log('upsertAppraisal: All appraisers were already linked');
+        const existingAppraiserNames = new Set(
+          existingActiveRelations?.map(rel => rel.artwork_appraisers?.name) || []
+        );
+        
+        const appraiserInsertResults = await Promise.all(
+          validAppraisers.map(async (a) => {
+            try {
+              const trimmedName = a.name.trim();
+              console.log('upsertAppraisal: Processing appraiser:', trimmedName);
+              
+              // Skip if this appraiser is already linked to this appraisal
+              if (existingAppraiserNames.has(trimmedName)) {
+                console.log('upsertAppraisal: Appraiser already linked, skipping:', trimmedName);
+                return null;
+              }
+              
+              // First try to find existing appraiser
+              const { data: existingAppraiser, error: findError } = await supabase
+                .from("artwork_appraisers")
+                .select("id")
+                .eq("name", trimmedName)
+                .single();
+              
+              if (findError && findError.code !== 'PGRST116') { // PGRST116 is "no rows found"
+                console.error('upsertAppraisal: Error finding appraiser:', findError);
+                // Don't throw, just skip this appraiser
+                return null;
+              }
+              
+              if (existingAppraiser) {
+                console.log('upsertAppraisal: Found existing appraiser:', existingAppraiser);
+                return existingAppraiser.id;
+              }
+              
+              // If not found, insert new appraiser
+              console.log('upsertAppraisal: Inserting new appraiser:', trimmedName);
+              const { data: newAppraiser, error: insertError } = await supabase
+                .from("artwork_appraisers")
+                .insert({ name: trimmedName })
+                .select("id")
+                .single();
+
+              if (insertError) {
+                console.error('upsertAppraisal: Error inserting appraiser:', insertError);
+                // Don't throw, just skip this appraiser
+                return null;
+              }
+              
+              console.log('upsertAppraisal: Appraiser inserted:', newAppraiser);
+              return newAppraiser.id;
+            } catch (appraiserError) {
+              console.error('upsertAppraisal: Error processing individual appraiser:', appraiserError);
+              return null;
+            }
+          })
+        );
+
+        // Filter out null values (appraisers that were already linked or failed)
+        const newAppraiserIds = appraiserInsertResults.filter(id => id !== null);
+        console.log('upsertAppraisal: New appraisers to link:', newAppraiserIds.length);
+
+        // 4. Link new appraisers to appraisal
+        if (newAppraiserIds.length > 0) {
+          const appraiserRelations = newAppraiserIds.map((appraiserId) => ({
+            appraisal_id: appraisalId,
+            appraiser_id: appraiserId,
+          }));
+
+          console.log('upsertAppraisal: Linking appraisers to appraisal:', appraiserRelations);
+
+          const { error: linkError } = await supabase
+            .from("appraisal_appraisers")
+            .insert(appraiserRelations);
+
+          if (linkError) {
+            console.error('upsertAppraisal: Error linking appraisers:', linkError);
+            // Don't throw - the appraisal is already saved
+            console.warn('upsertAppraisal: Continuing despite link error - appraisal is saved');
+          } else {
+            console.log('upsertAppraisal: Successfully linked', appraiserRelations.length, 'appraisers');
+          }
+        } else {
+          console.log('upsertAppraisal: No appraisers to link or all failed');
+        }
+      } catch (appraiserProcessingError) {
+        console.error('upsertAppraisal: Error in appraiser processing:', appraiserProcessingError);
+        console.warn('upsertAppraisal: Continuing despite appraiser errors - appraisal is saved');
       }
     } else {
       console.log('upsertAppraisal: No valid appraisers to link');
