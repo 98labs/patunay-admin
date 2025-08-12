@@ -15,7 +15,7 @@ export const getAppraisals = async (artworkId: string): Promise<Appraisal[]> => 
         notes,
         recommendation,
         appraisal_date,
-        appraisal_appraisers!inner (
+        appraisal_appraisers!left (
           artwork_appraisers (
             name
           ),
@@ -23,7 +23,6 @@ export const getAppraisals = async (artworkId: string): Promise<Appraisal[]> => 
         )
       `)
       .eq('artwork_id', artworkId)
-      .is('appraisal_appraisers.deleted_at', null) // Filter out soft-deleted relationships
       .order('appraisal_date', { ascending: false, nullsFirst: false });
 
     if (error) {
@@ -42,11 +41,11 @@ export const getAppraisals = async (artworkId: string): Promise<Appraisal[]> => 
       notes: appraisal.notes || '',
       recommendation: appraisal.recommendation || '',
       appraisalDate: appraisal.appraisal_date || new Date().toISOString(),
-      appraisedBy: appraisal.appraisal_appraisers
-        ?.filter((aa: any) => !aa.deleted_at) // Extra filter to ensure no soft-deleted records
+      appraisedBy: (appraisal.appraisal_appraisers || [])
+        .filter((aa: any) => !aa.deleted_at && aa.artwork_appraisers) // Filter out soft-deleted and null appraisers
         .map((aa: any) => ({
           name: aa.artwork_appraisers?.name || ''
-        })) || []
+        }))
     }));
 
     return transformedAppraisals;
