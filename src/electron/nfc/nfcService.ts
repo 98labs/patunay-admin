@@ -317,7 +317,21 @@ export const initializeNfc = (window: BrowserWindow) => {
 const handleCardRead = async (reader: Reader, uid: string): Promise<void> => {
   try {
     const data = await reader.read(4, 64);
-    const payload = data.toString();
+    
+    // Clean the buffer data by removing null bytes and control characters
+    // This prevents the weird box characters that appear from null padding
+    let payload = data.toString('utf8');
+    
+    // Remove null bytes and other control characters that cause display issues
+    // eslint-disable-next-line no-control-regex
+    payload = payload.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '').trim();
+    
+    // If the payload looks like it might contain a UUID, extract it cleanly
+    const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+    const uuidMatch = payload.match(uuidPattern);
+    if (uuidMatch) {
+      payload = uuidMatch[0];
+    }
     
     mainWindow?.webContents.send("nfc-card-detected", {
       uid,
@@ -407,7 +421,8 @@ const handleCardWrite = async (reader: Reader, uid: string): Promise<void> => {
 
 // Helper function to extract UUID from NFC data
 const extractUuidFromNfcData = (rawData: Buffer): string => {
-  const dataString = rawData.toString();
+  // Convert buffer to string with UTF-8 encoding
+  const dataString = rawData.toString('utf8');
   
   // UUID regex pattern (8-4-4-4-12 format)
   const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
@@ -420,9 +435,9 @@ const extractUuidFromNfcData = (rawData: Buffer): string => {
   }
   
   // If no UUID found, try to clean up the string and look for UUID-like patterns
-  // Remove null bytes and control characters
+  // Remove null bytes and control characters (but keep valid UUID characters)
   // eslint-disable-next-line no-control-regex
-  const cleanedString = dataString.replace(/[\x00-\x1F\x7F]/g, '');
+  const cleanedString = dataString.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '').trim();
   const cleanedMatch = cleanedString.match(uuidPattern);
   
   if (cleanedMatch) {
@@ -446,7 +461,10 @@ const handleCardSearch = async (reader: Reader, uid: string): Promise<void> => {
     try {
       // Try to read data from the NFC tag
       const data = await reader.read(4, 64);
-      const rawDataString = data.toString();
+      
+      // Clean the raw data string for logging (remove control characters)
+      // eslint-disable-next-line no-control-regex
+      const rawDataString = data.toString('utf8').replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '').trim();
       
       electronLogger.info(`NFC search: Raw data read from tag`, LogCategory.NFC, { component: "Search" }, { 
         uid, 
