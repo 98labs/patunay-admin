@@ -346,8 +346,7 @@ const DetailArtwork = () => {
                 isOpen={showDetachModal}
                 onClose={() => setShowDetachModal(false)}
                 artworkId={artwork.id}
-                tagId={tagId}
-                onDetachSuccess={handleDetachConfirm}
+                onSuccess={handleDetachConfirm}
               />
             )}
           {showDeleteModal && (
