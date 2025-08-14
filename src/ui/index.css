@@ -1,14 +1,16 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @tailwind utilities;
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Apply Inter as the default font */
 body {
-  font-family: "Inter", sans-serif;
+  font-family: 'Inter', sans-serif;
   color: var(--color-neutral-black-01);
+  border: 0 !important;
 }
 
 @theme {
+  /* Primary colors */
   --color-primary-100: #818cf8;
   --color-primary-200: #665bed;
   --color-primary-300: #544ada;
