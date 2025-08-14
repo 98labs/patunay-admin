@@ -14,5 +14,6 @@ export interface NavbarItemProps {
   icon?: LucideIcon;
   childrenLinks?: Links[];
   isChild?: boolean;
+  isMinimized?: boolean;
   onNavigate?: () => void;
 }
