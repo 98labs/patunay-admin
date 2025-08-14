@@ -13,7 +13,7 @@ const sizeClasses = {
   sm: 'w-8 h-8 text-xs',
   md: 'w-10 h-10 text-sm',
   lg: 'w-12 h-12 text-base',
-  xl: 'w-16 h-16 text-lg'
+  xl: 'w-16 h-16 text-lg',
 };
 
 export const UserAvatar: FC<UserAvatarProps> = ({
@@ -22,7 +22,7 @@ export const UserAvatar: FC<UserAvatarProps> = ({
   lastName,
   email,
   size = 'md',
-  className = ''
+  className = '',
 }) => {
   const getInitials = () => {
     if (firstName && lastName) {
@@ -47,17 +47,17 @@ export const UserAvatar: FC<UserAvatarProps> = ({
     for (let i = 0; i < str.length; i++) {
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
-    
+
     const colors = [
       'bg-primary',
-      'bg-secondary', 
+      'bg-secondary',
       'bg-accent',
       'bg-info',
       'bg-success',
       'bg-warning',
-      'bg-error'
+      'bg-error',
     ];
-    
+
     const index = Math.abs(hash) % colors.length;
     return colors[index];
   };
@@ -65,11 +65,11 @@ export const UserAvatar: FC<UserAvatarProps> = ({
   if (avatarUrl) {
     return (
       <div className={`avatar ${className}`}>
-        <div className={`${sizeClasses[size]} rounded-full`}>
-          <img 
-            src={avatarUrl} 
+        <div className={`${sizeClasses[size]} rounded-full border-0`}>
+          <img
+            src={avatarUrl}
             alt={`${firstName || ''} ${lastName || ''}`.trim() || 'User avatar'}
-            className="w-full h-full object-cover"
+            className="h-full w-full border-0 object-cover"
           />
         </div>
       </div>
@@ -78,7 +78,9 @@ export const UserAvatar: FC<UserAvatarProps> = ({
 
   return (
     <div className={`avatar placeholder ${className}`}>
-      <div className={`${getBackgroundColor()} text-neutral-content rounded-full ${sizeClasses[size]}`}>
+      <div
+        className={`${getBackgroundColor()} text-neutral-content rounded-full ${sizeClasses[size]}`}
+      >
         <span>{getInitials()}</span>
       </div>
     </div>

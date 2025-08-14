@@ -8,19 +8,19 @@ interface NfcStatusIndicatorProps {
   compact?: boolean;
 }
 
-export const NfcStatusIndicator: React.FC<NfcStatusIndicatorProps> = ({ 
-  className = '', 
+export const NfcStatusIndicator: React.FC<NfcStatusIndicatorProps> = ({
+  className = '',
   showRefreshButton = true,
-  compact = false 
+  compact = false,
 }) => {
-  const { isNfcAvailable, deviceStatus, refreshDeviceStatus, isLoading, nfcFeaturesEnabled } = useNfcStatus();
+  const { isNfcAvailable, deviceStatus, refreshDeviceStatus, isLoading, nfcFeaturesEnabled } =
+    useNfcStatus();
   const logger = useLogger('NfcStatusIndicator');
 
   const handleRefresh = () => {
     logger.info('User clicked refresh NFC device status from indicator');
     refreshDeviceStatus();
   };
-
 
   const getStatusColor = () => {
     if (isLoading) return 'bg-base-content/50';
@@ -30,10 +30,11 @@ export const NfcStatusIndicator: React.FC<NfcStatusIndicatorProps> = ({
   };
 
   const getStatusTextColor = () => {
-    if (isLoading) return 'text-base-content/70';
-    if (isNfcAvailable && nfcFeaturesEnabled) return 'text-success';
-    if (deviceStatus.readers.length > 0 && !nfcFeaturesEnabled) return 'text-warning';
-    return 'text-error';
+    if (isLoading) return 'text-[var(--color-neutral-gray-01)]/20';
+    if (isNfcAvailable && nfcFeaturesEnabled) return 'text-[var(--color-semantic-success)]';
+    if (deviceStatus.readers.length > 0 && !nfcFeaturesEnabled)
+      return 'text-[var(--color-semantic-warning)]';
+    return 'text-[var(--color-semantic-error)]';
   };
 
   const getStatusText = () => {
@@ -60,17 +61,17 @@ export const NfcStatusIndicator: React.FC<NfcStatusIndicatorProps> = ({
   if (compact) {
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
-        <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} title={getDetailText()} />
+        <div className={`h-3 w-3 rounded-full ${getStatusColor()}`} title={getDetailText()} />
         {showRefreshButton && (
           <button
             onClick={handleRefresh}
             disabled={isLoading}
-            className="p-1 hover:bg-base-200 rounded"
+            className="rounded p-1"
             title="Refresh NFC status"
             aria-label="Refresh NFC status"
           >
             <svg
-              className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`}
+              className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -91,25 +92,31 @@ export const NfcStatusIndicator: React.FC<NfcStatusIndicatorProps> = ({
   const isNfcNotAvailable = !isLoading && !isNfcAvailable && !nfcFeaturesEnabled;
 
   return (
-    <div className={`p-3 rounded-lg bg-base-200 ${className}`}>
+    <div className={`rounded-lg border-0 px-4 py-3 ${className}`}>
       <div className="flex items-center gap-3">
-        <div className="flex items-center space-x-2 flex-1">
-          <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
+        <div className="flex flex-1 items-center space-x-2">
+          <div className={`h-3 w-3 rounded-full ${getStatusColor()}`} />
           {isNfcNotAvailable ? (
             <div className="flex-1">
-              <span className={`text-sm font-medium ${getStatusTextColor()}`}>{getStatusText()}</span>
+              <span className={`text-sm font-medium ${getStatusTextColor()}`}>
+                {getStatusText()}
+              </span>
               {!deviceStatus.initialized && (
-                <p className="text-xs text-base-content opacity-70 mt-1">NFC service failed to initialize</p>
+                <p className="text-base-content mt-1 text-xs opacity-70">
+                  NFC service failed to initialize
+                </p>
               )}
               {deviceStatus.initialized && deviceStatus.readers.length === 0 && (
-                <p className="text-xs text-base-content opacity-70 mt-1">No NFC readers detected</p>
+                <p className="text-base-content mt-1 text-xs opacity-70">No NFC readers detected</p>
               )}
             </div>
           ) : (
             <>
-              <span className={`text-sm font-medium ${getStatusTextColor()}`}>{getStatusText()}</span>
+              <span className={`text-sm font-medium ${getStatusTextColor()}`}>
+                {getStatusText()}
+              </span>
               <div className="flex-1">
-                <p className="text-xs text-base-content opacity-70">{getDetailText()}</p>
+                <p className="text-base-content text-xs opacity-70">{getDetailText()}</p>
               </div>
             </>
           )}
@@ -124,7 +131,7 @@ export const NfcStatusIndicator: React.FC<NfcStatusIndicatorProps> = ({
             aria-label="Refresh NFC device status"
           >
             <svg
-              className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
+              className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

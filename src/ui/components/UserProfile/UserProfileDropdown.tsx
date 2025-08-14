@@ -1,52 +1,54 @@
-import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { ChevronUp, User, LogOut, Sun, Moon } from "lucide-react";
-import { themeChange } from "theme-change";
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { ChevronUp, User, LogOut, Sun, Moon } from 'lucide-react';
+import { themeChange } from 'theme-change';
 
 import { selectUser } from '../../store/features/auth';
 import { UserAvatar } from '@components';
 import { useAuth } from '../../hooks/useAuth';
-import { useLogoutMutation } from "../../store/api/userApi";
+import { useLogoutMutation } from '../../store/api/userApi';
 import { USER_ROLES } from '../../typings';
 
 const UserProfileDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState("light");
+  const [isVisible, setIsVisible] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState('light');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
   const [logout] = useLogoutMutation();
-  
+
   const legacyUser = useSelector(selectUser);
   const { user: currentUser } = useAuth();
-  
-  const username = currentUser?.email?.split("@")[0] || legacyUser?.email?.split("@")[0];
+
+  const username = currentUser?.email?.split('@')[0] || legacyUser?.email?.split('@')[0];
 
   // Initialize theme
   useEffect(() => {
     themeChange(false);
     try {
-      let savedTheme = localStorage.getItem("theme");
-    
+      let savedTheme = localStorage.getItem('theme');
+
       if (!savedTheme) {
-        savedTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       }
-    
-      localStorage.setItem("theme", savedTheme);
-      
+
+      localStorage.setItem('theme', savedTheme);
+
       // Set DaisyUI theme
-      document.documentElement.setAttribute("data-theme", savedTheme);
-      
+      document.documentElement.setAttribute('data-theme', savedTheme);
+
       // Set Tailwind dark mode class
-      if (savedTheme === "dark") {
-        document.documentElement.classList.add("dark");
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
       } else {
-        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.remove('dark');
       }
-      
+
       setCurrentTheme(savedTheme);
     } catch (error) {
-      console.error("Error initializing theme:", error);
+      console.error('Error initializing theme:', error);
     }
   }, []);
 
@@ -58,108 +60,138 @@ const UserProfileDropdown = () => {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, []);
 
   const handleLogout = async () => {
     try {
       await logout().unwrap();
-      navigate("/login");
+      navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
-      navigate("/login");
+      navigate('/login');
     }
   };
 
   const handleAccount = () => {
-    navigate("/dashboard/account");
+    navigate('/dashboard/account');
     setIsOpen(false);
   };
 
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setIsOpen(true);
+    // Small delay to trigger the opacity animation
+    setTimeout(() => setIsVisible(true), 10);
+  };
+
+  const handleMouseLeave = () => {
+    setIsVisible(false);
+    timeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 200); // Match the animation duration
+  };
+
   const toggleTheme = () => {
-    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     try {
-      localStorage.setItem("theme", newTheme);
+      localStorage.setItem('theme', newTheme);
     } catch (error) {
-      console.error("Error toggling theme:", error);
+      console.error('Error toggling theme:', error);
     }
-    
+
     // Set DaisyUI theme
-    document.documentElement.setAttribute("data-theme", newTheme);
-    
+    document.documentElement.setAttribute('data-theme', newTheme);
+
     // Set Tailwind dark mode class
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
     } else {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove('dark');
     }
-    
+
     setCurrentTheme(newTheme);
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div
+      className="relative"
+      ref={dropdownRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* Dropdown trigger */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-base-300 dark:hover:bg-base-300 transition-colors duration-200"
-      >
+      <button className="hover:bg-primary-100/10 flex w-full items-center gap-2 p-4 transition-colors duration-200">
         <UserAvatar
           avatarUrl={currentUser?.avatar_url}
           firstName={currentUser?.first_name}
           lastName={currentUser?.last_name}
           email={currentUser?.email || legacyUser?.email}
           size="md"
-          className="ring ring-primary ring-offset-2 ring-offset-base-200 dark:ring-offset-base-200"
         />
         <div className="flex-1 text-left">
-          <div className="text-sm font-semibold text-base-content dark:text-base-content">
-            {currentUser?.first_name && currentUser?.last_name 
+          <div className="text-base-content dark:text-base-content text-sm font-semibold">
+            {currentUser?.first_name && currentUser?.last_name
               ? `${currentUser.first_name} ${currentUser.last_name}`
-              : currentUser || legacyUser ? username : "User"
-            }
+              : currentUser || legacyUser
+                ? username
+                : 'User'}
           </div>
-          <div className="text-xs text-base-content/70 dark:text-base-content/70">
+          <div className="text-base-content/70 dark:text-base-content/70 text-xs">
             {currentUser?.role ? USER_ROLES[currentUser.role]?.label : 'User'}
           </div>
         </div>
-        <ChevronUp 
-          className={`w-4 h-4 text-base-content/70 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
+        <ChevronUp
+          className={`text-base-content/70 h-4 w-4 transition-transform duration-200 ${
+            isOpen ? 'rotate-180' : ''
           }`}
         />
       </button>
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className="absolute bottom-full left-0 right-0 mb-1 bg-base-100 dark:bg-base-100 border border-base-300 dark:border-base-300 rounded-lg shadow-lg overflow-hidden">
+        <div
+          className={`bg-base-100 dark:bg-base-100 absolute right-0 bottom-full left-0 transform overflow-hidden rounded-2xl shadow-lg transition-all duration-200 ease-out ${
+            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
+          }`}
+        >
           <button
             onClick={handleAccount}
-            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-base-200 dark:hover:bg-base-200 transition-colors duration-200 text-left"
+            className="hover:bg-base-200 dark:hover:bg-base-200 flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors duration-200"
           >
-            <User className="w-4 h-4 text-base-content/70" />
-            <span className="text-sm text-base-content dark:text-base-content">Account</span>
+            <User className="text-base-content/70 h-4 w-4" />
+            <span className="text-base-content dark:text-base-content text-sm">Account</span>
           </button>
           <button
             onClick={toggleTheme}
-            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-base-200 dark:hover:bg-base-200 transition-colors duration-200 text-left"
+            className="hover:bg-base-200 dark:hover:bg-base-200 flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors duration-200"
           >
-            {currentTheme === "dark" ? (
-              <Sun className="w-4 h-4 text-base-content/70" />
+            {currentTheme === 'dark' ? (
+              <Sun className="text-base-content/70 h-4 w-4" />
             ) : (
-              <Moon className="w-4 h-4 text-base-content/70" />
+              <Moon className="text-base-content/70 h-4 w-4" />
             )}
-            <span className="text-sm text-base-content dark:text-base-content">
-              {currentTheme === "dark" ? "Light mode" : "Dark mode"}
+            <span className="text-base-content dark:text-base-content text-sm">
+              {currentTheme === 'dark' ? 'Light mode' : 'Dark mode'}
             </span>
           </button>
           <button
             onClick={handleLogout}
-            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-base-200 dark:hover:bg-base-200 transition-colors duration-200 text-left border-t border-base-300 dark:border-base-300"
+            className="flex w-full cursor-pointer items-center gap-3 bg-[var(--color-tertiary-red-200)]/50 px-4 py-3 text-left transition-colors duration-200 hover:bg-[var(--color-tertiary-red-200)]"
           >
-            <LogOut className="w-4 h-4 text-base-content/70" />
-            <span className="text-sm text-base-content dark:text-base-content">Log out</span>
+            <LogOut className="h-4 w-4 text-[var(--color-tertiary-red-400)]" />
+            <span className="dark:text-base-content text-sm text-[var(--color-tertiary-red-400)]">
+              Log out
+            </span>
           </button>
         </div>
       )}

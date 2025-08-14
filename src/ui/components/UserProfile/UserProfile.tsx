@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { themeChange } from "theme-change";
-import { useSelector } from "react-redux";
+import { useEffect, useState } from 'react';
+import { themeChange } from 'theme-change';
+import { useSelector } from 'react-redux';
 
 import { selectUser } from '../../store/features/auth';
 import { UserAvatar } from '@components';
@@ -8,60 +8,60 @@ import { useAuth } from '../../hooks/useAuth';
 import { USER_ROLES } from '../../typings';
 
 const UserProfile = () => {
-  const [currentTheme, setCurrentTheme] = useState("light");
+  const [currentTheme, setCurrentTheme] = useState('light');
   const legacyUser = useSelector(selectUser);
   const { user: currentUser } = useAuth();
   useEffect(() => {
     themeChange(false);
     try {
-      let savedTheme = localStorage.getItem("theme");
-    
+      let savedTheme = localStorage.getItem('theme');
+
       if (!savedTheme) {
-        savedTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       }
-    
-      localStorage.setItem("theme", savedTheme);
-      
+
+      localStorage.setItem('theme', savedTheme);
+
       // Set DaisyUI theme
-      document.documentElement.setAttribute("data-theme", savedTheme);
-      
+      document.documentElement.setAttribute('data-theme', savedTheme);
+
       // Set Tailwind dark mode class
-      if (savedTheme === "dark") {
-        document.documentElement.classList.add("dark");
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
       } else {
-        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.remove('dark');
       }
-      
+
       setCurrentTheme(savedTheme);
     } catch (error) {
-      console.error("Error initializing themeChange:", error);
+      console.error('Error initializing themeChange:', error);
     }
   }, []);
-  
+
   const toggleTheme = () => {
-    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     try {
-      localStorage.setItem("theme", newTheme);
+      localStorage.setItem('theme', newTheme);
     } catch (error) {
-      console.error("Error toggling theme:", error);
+      console.error('Error toggling theme:', error);
     }
-    
+
     // Set DaisyUI theme
-    document.documentElement.setAttribute("data-theme", newTheme);
-    
+    document.documentElement.setAttribute('data-theme', newTheme);
+
     // Set Tailwind dark mode class
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
     } else {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove('dark');
     }
-    
+
     setCurrentTheme(newTheme);
   };
-    const username = currentUser?.email?.split("@")[0] || legacyUser?.email?.split("@")[0];
+  const username = currentUser?.email?.split('@')[0] || legacyUser?.email?.split('@')[0];
 
   return (
-    <div className="px-8 py-8 bg-base-200 dark:bg-base-200 border-b border-base-300 dark:border-base-300">
+    <div className="bg-base-200 dark:bg-base-200 px-8 py-8">
       <div className="flex items-center gap-4">
         <UserAvatar
           avatarUrl={currentUser?.avatar_url}
@@ -69,30 +69,30 @@ const UserProfile = () => {
           lastName={currentUser?.last_name}
           email={currentUser?.email || legacyUser?.email}
           size="lg"
-          className="ring ring-primary ring-offset-2 ring-offset-base-200 dark:ring-offset-base-200"
         />
         <div className="flex-1">
-          <div className="text-base font-semibold text-base-content dark:text-base-content">
-            {currentUser?.first_name && currentUser?.last_name 
+          <div className="text-base-content dark:text-base-content text-base font-semibold">
+            {currentUser?.first_name && currentUser?.last_name
               ? `${currentUser.first_name} ${currentUser.last_name}`
-              : currentUser || legacyUser ? username : "User"
-            }
+              : currentUser || legacyUser
+                ? username
+                : 'User'}
           </div>
-          <div className="text-sm text-base-content/70 dark:text-base-content/70">
+          <div className="text-base-content/70 dark:text-base-content/70 text-sm">
             {currentUser?.role ? USER_ROLES[currentUser.role]?.label : 'User'}
           </div>
         </div>
         <div className="flex items-center">
-          <label className="swap swap-rotate cursor-pointer p-2 rounded-lg hover:bg-base-300 dark:hover:bg-base-300 transition-colors">
+          <label className="swap swap-rotate hover:bg-base-300 dark:hover:bg-base-300 cursor-pointer rounded-lg p-2 transition-colors">
             <input
               type="checkbox"
               onChange={toggleTheme}
-              checked={currentTheme === "dark"}
+              checked={currentTheme === 'dark'}
               className="sr-only"
             />
             {/* Light icon (sun) */}
             <svg
-              className="swap-off fill-current w-6 h-6 text-base-content dark:text-base-content"
+              className="swap-off text-base-content dark:text-base-content h-6 w-6 fill-current"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
             >
@@ -100,7 +100,7 @@ const UserProfile = () => {
             </svg>
             {/* Dark icon (moon) */}
             <svg
-              className="swap-on fill-current w-6 h-6 text-base-content dark:text-base-content"
+              className="swap-on text-base-content dark:text-base-content h-6 w-6 fill-current"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
             >
