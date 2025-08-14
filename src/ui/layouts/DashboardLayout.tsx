@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Sidebar, NotificationMessage, NfcWarningBanner, NetworkStatus } from "@components";
-import { Navigate, Outlet } from "react-router-dom";
-import { useSession } from "../context/SessionContext";
+import { useState } from 'react';
+import { Sidebar, NotificationMessage, NfcWarningBanner, NetworkStatus } from '@components';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useSession } from '../context/SessionContext';
 
 const DashboardLayout = () => {
   const { session } = useSession();
@@ -12,22 +12,22 @@ const DashboardLayout = () => {
   }
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-base-100 dark:bg-base-100">
+    <div className="bg-base-100 dark:bg-base-100 flex h-screen overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
-      <main className="flex-1 flex flex-col overflow-auto p-6 bg-base-100 dark:bg-base-100">
+      <main className="bg-base-100 dark:bg-base-100 flex h-screen flex-1 flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="text-base-content dark:text-base-content md:hidden">
-          <div className="max-w-screen-xl mx-auto px-4 py-4 flex items-center justify-between">
+        <header className="text-base-content dark:text-base-content flex-shrink-0 md:hidden">
+          <div className="mx-auto flex max-w-screen-xl items-center justify-between px-4 py-4">
             <button
-              className="md:hidden text-2xl text-base-content dark:text-base-content hover:text-primary dark:hover:text-primary transition-colors duration-200"
+              className="text-base-content dark:text-base-content hover:text-primary dark:hover:text-primary text-2xl transition-colors duration-200 md:hidden"
               onClick={() => setSidebarOpen(true)}
             >
               ☰
             </button>
           </div>
         </header>
-        <div className="grow">
-          <div className="px-4 sm:px-6 lg:px-8 py-4 w-full max-w-9xl mx-auto">
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-9xl mx-auto w-full px-4 py-4 sm:px-6 lg:px-8">
             <div className="text-base-content">
               <NetworkStatus />
               <NfcWarningBanner className="mb-4" />
@@ -37,11 +37,11 @@ const DashboardLayout = () => {
           </div>
         </div>
       </main>
-      
+
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 dark:bg-black/70 z-40 md:hidden"
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden dark:bg-black/70"
           onClick={() => setSidebarOpen(false)}
         />
       )}

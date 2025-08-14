@@ -217,24 +217,28 @@ const Sidebar = ({
 
   return (
     <div
-      className={`fixed top-0 left-0 z-50 h-full ${isMinimized ? 'w-16' : 'w-[300px]'} transform border-0 bg-[var(--color-neutral-gray-01)] transition-all duration-200 ease-out dark:bg-[var(--color-neutral-gray-01)] ${
+      className={`fixed top-0 left-0 z-50 h-screen ${isMinimized ? 'w-16' : 'w-[300px]'} transform border-0 bg-[var(--color-neutral-gray-01)] transition-all duration-200 ease-out dark:bg-[var(--color-neutral-gray-01)] ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
-      } md:relative md:flex md:translate-x-0`}
+      } flex-shrink-0 md:relative md:translate-x-0`}
     >
       <div
-        className={`flex h-screen ${isMinimized ? 'w-16' : 'w-[300px]'} flex-col transition-all duration-200 ease-out`}
+        className={`flex h-full ${isMinimized ? 'w-16' : 'w-[300px]'} flex-col transition-all duration-200 ease-out`}
       >
         {/* Header with logo and close button */}
         <div
           className={`flex items-center ${isMinimized ? 'flex-col justify-center' : 'justify-between'} border-0 py-4`}
         >
           {/* Logo and title */}
-          <div className="flex items-center gap-3 px-4">
+          <Link
+            to="/dashboard"
+            onClick={handleNavigate}
+            className="flex items-center gap-3 px-4 transition-opacity duration-200"
+          >
             <img src="/PatunayLogo.svg" alt="Patunay Logo" className="h-10 w-10 flex-shrink-0" />
             {!isMinimized && (
               <span className="text-color-neutral-black-02 text-2xl font-semibold">Patunay</span>
             )}
-          </div>
+          </Link>
 
           {isMinimized && (
             // Show expand button when minimized - below logo
@@ -273,8 +277,8 @@ const Sidebar = ({
         </div>
 
         {/* Scrollable navigation menu */}
-        <div className="flex-1 overflow-y-auto">
-          <ul className="w-full p-0">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto">
+          <ul className="min-h-0 w-full p-0">
             {links.map(({ name, path, icon, children }) => (
               <NavbarItem
                 currentPath={pathName.pathname}
@@ -290,8 +294,8 @@ const Sidebar = ({
           </ul>
         </div>
 
-        {/* Fixed bottom section */}
-        <div className="mt-auto flex-shrink-0">
+        {/* Fixed bottom section - always at bottom, never scrolled */}
+        <div className="border-base-300/20 dark:border-base-300/20 flex-shrink-0 border-t">
           <div className={isMinimized ? 'flex justify-center py-2' : ''}>
             <NfcStatusIndicator compact={isMinimized} showRefreshButton={!isMinimized} />
           </div>
