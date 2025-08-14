@@ -30,7 +30,7 @@ const DashboardLayout = () => {
           <div className="max-w-9xl mx-auto w-full px-4 py-4 sm:px-6 lg:px-8">
             <div className="text-base-content">
               <NetworkStatus />
-              <NfcWarningBanner className="mb-4" />
+              {/* <NfcWarningBanner className="mb-4" /> */}
               <NotificationMessage />
               <Outlet />
             </div>
