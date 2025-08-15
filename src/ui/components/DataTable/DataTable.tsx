@@ -169,7 +169,6 @@ export function DataTable<TData, TValue>({
                       } ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
                       style={{
                         color: 'var(--color-neutral-black-02)',
-                        opacity: 0.2,
                         width: header.getSize(),
                         maxWidth: header.getSize(),
                       }}
@@ -208,14 +207,16 @@ export function DataTable<TData, TValue>({
                   } ${
                     index % 2 === 0
                       ? 'bg-[var(--color-neutral-white)]'
-                      : 'bg-[var(--color-neutral-gray-01)]'
+                      : 'bg-[var(--color-neutral-gray-01)]/20'
                   }`}
                   onClick={() => onRowClick?.(row)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-6 py-2 text-left whitespace-nowrap"
+                      className={`px-6 py-2 whitespace-nowrap ${
+                        centerAlignColumns.includes(cell.column.id) ? 'text-center' : 'text-left'
+                      }`}
                       style={{
                         width: cell.column.getSize(),
                         maxWidth: cell.column.getSize(),

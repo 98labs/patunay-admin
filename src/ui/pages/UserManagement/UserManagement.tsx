@@ -222,25 +222,38 @@ const UserManagement = () => {
       ),
       columnHelper.accessor('role', {
         header: 'Role',
-        cell: (info) => (
-          <Badge
-            variant={
-              info.getValue() === 'admin' || info.getValue() === 'super_user'
-                ? 'primary'
-                : 'secondary'
-            }
-          >
-            {info.getValue()}
-          </Badge>
-        ),
+        cell: (info) => {
+          const role = info.getValue();
+          const isAdminRole = role === 'admin' || role === 'super_user';
+          return (
+            <Badge
+              className={`rounded-lg ${
+                isAdminRole
+                  ? 'bg-[var(--color-primary-500)] text-[var(--color-neutral-white)]'
+                  : 'bg-[var(--color-neutral-gray-01)] text-[var(--color-neutral-black-01)]'
+              }`}
+            >
+              {role}
+            </Badge>
+          );
+        },
       }),
       columnHelper.accessor('is_active', {
         header: 'Status',
-        cell: (info) => (
-          <Badge variant={info.getValue() ? 'success' : 'danger'}>
-            {info.getValue() ? 'Active' : 'Inactive'}
-          </Badge>
-        ),
+        cell: (info) => {
+          const isActive = info.getValue();
+          return (
+            <Badge
+              className={`rounded-lg ${
+                isActive
+                  ? 'bg-[var(--color-semantic-success)] text-[var(--color-neutral-white)]'
+                  : 'bg-[var(--color-semantic-error)] text-[var(--color-neutral-white)]'
+              }`}
+            >
+              {isActive ? 'Active' : 'Inactive'}
+            </Badge>
+          );
+        },
       }),
       columnHelper.accessor('last_sign_in_at', {
         header: 'Last Login',
