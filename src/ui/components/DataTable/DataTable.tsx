@@ -11,8 +11,10 @@ import {
   ColumnFiltersState,
   VisibilityState,
   PaginationState,
+  OnChangeFn,
+  Row,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { DataTablePagination } from './DataTablePagination';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -21,11 +23,27 @@ interface DataTableProps<TData, TValue> {
   enableSorting?: boolean;
   enableFiltering?: boolean;
   pageSize?: number;
-  onRowClick?: (row: TData) => void;
+  onRowClick?: (row: Row<TData>) => void;
   isLoading?: boolean;
   emptyMessage?: string;
   className?: string;
+  centerAlignColumns?: string[]; // Array of column IDs to center-align
+  // For server-side functionality
+  totalCount?: number;
+  pagination?: PaginationState;
+  onPaginationChange?: OnChangeFn<PaginationState>;
+  sorting?: SortingState;
+  onSortingChange?: OnChangeFn<SortingState>;
+  columnFilters?: ColumnFiltersState;
+  onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>;
+  globalFilter?: string;
+  onGlobalFilterChange?: (filter: string) => void;
+  manualPagination?: boolean;
+  manualSorting?: boolean;
+  manualFiltering?: boolean;
 }
+
+export type { DataTableProps };
 
 export function DataTable<TData, TValue>({
   columns,
@@ -38,18 +56,47 @@ export function DataTable<TData, TValue>({
   isLoading = false,
   emptyMessage = 'No data available',
   className = '',
+  centerAlignColumns = [],
+  // Server-side props
+  totalCount,
+  pagination: controlledPagination,
+  onPaginationChange,
+  sorting: controlledSorting,
+  onSortingChange,
+  columnFilters: controlledColumnFilters,
+  onColumnFiltersChange,
+  globalFilter: controlledGlobalFilter,
+  onGlobalFilterChange,
+  manualPagination = false,
+  manualSorting = false,
+  manualFiltering = false,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  // Local state for client-side functionality
+  const [localSorting, setLocalSorting] = React.useState<SortingState>([]);
+  const [localColumnFilters, setLocalColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [pagination, setPagination] = React.useState<PaginationState>({
+  const [localPagination, setLocalPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize,
   });
+  const [localGlobalFilter, setLocalGlobalFilter] = React.useState('');
+
+  // Use controlled state if provided, otherwise use local state
+  const sorting = controlledSorting ?? localSorting;
+  const setSorting = onSortingChange ?? setLocalSorting;
+  const columnFilters = controlledColumnFilters ?? localColumnFilters;
+  const setColumnFilters = onColumnFiltersChange ?? setLocalColumnFilters;
+  const pagination = controlledPagination ?? localPagination;
+  const setPagination = onPaginationChange ?? setLocalPagination;
+  const globalFilter = controlledGlobalFilter ?? localGlobalFilter;
+  const setGlobalFilter = onGlobalFilterChange ?? setLocalGlobalFilter;
+
+  const pageCount = totalCount ? Math.ceil(totalCount / pagination.pageSize) : undefined;
 
   const table = useReactTable({
     data,
     columns,
+    pageCount,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: enablePagination ? getPaginationRowModel() : undefined,
     getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,
@@ -58,144 +105,133 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
+    onGlobalFilterChange: setGlobalFilter,
+    manualPagination,
+    manualSorting,
+    manualFiltering,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       pagination,
+      globalFilter,
     },
   });
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="loading loading-spinner loading-lg"></div>
+      </div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-base-content/60">
+          {globalFilter || columnFilters.length > 0 ? `No data matches your filters` : emptyMessage}
+        </p>
+        {(globalFilter || columnFilters.length > 0) && (
+          <button
+            className="btn btn-sm btn-ghost mt-4"
+            onClick={() => {
+              setGlobalFilter('');
+              setColumnFilters([]);
+            }}
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={`space-y-4 ${className}`}>
-      <div className="overflow-x-auto rounded-lg border border-base-300">
-        <table className="table table-zebra w-full">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className={
-                      header.column.getCanSort()
-                        ? 'cursor-pointer select-none hover:bg-base-200'
-                        : ''
-                    }
-                    onClick={header.column.getToggleSortingHandler()}
-                  >
-                    <div className="flex items-center gap-2">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                      {header.column.getCanSort() && (
-                        <span className="text-base-content/50">
-                          {header.column.getIsSorted() === 'asc' ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : header.column.getIsSorted() === 'desc' ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronsUpDown className="h-4 w-4" />
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="text-center py-8 text-base-content/60"
-                >
-                  <span className="loading loading-spinner loading-md"></span>
-                  <p className="mt-2">Loading...</p>
-                </td>
-              </tr>
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+      <div
+        className="overflow-hidden rounded-lg"
+        style={{
+          borderColor: 'var(--color-neutral-gray-01)',
+          backgroundColor: 'var(--color-neutral-white)',
+        }}
+      >
+        <div className="overflow-x-auto">
+          <table className="min-w-full" style={{ borderColor: 'var(--color-neutral-gray-01)' }}>
+            <thead style={{ backgroundColor: 'var(--color-neutral-gray-01)' }}>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className={`px-6 py-4 text-xs font-semibold tracking-wider uppercase ${
+                        centerAlignColumns.includes(header.id) ? 'text-center' : 'text-left'
+                      } ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
+                      style={{
+                        color: 'var(--color-neutral-black-02)',
+                        opacity: 0.2,
+                        width: header.getSize(),
+                        maxWidth: header.getSize(),
+                      }}
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      <div
+                        className={`flex items-center gap-2 ${
+                          centerAlignColumns.includes(header.id) ? 'justify-center' : ''
+                        }`}
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.column.getCanSort() && (
+                          <span className="text-xs opacity-60">
+                            {{
+                              asc: '↑',
+                              desc: '↓',
+                            }[header.column.getIsSorted() as string] ?? '↕'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody
+              style={{
+                backgroundColor: 'var(--color-neutral-white)',
+              }}
+            >
+              {table.getRowModel().rows.map((row, index) => (
                 <tr
                   key={row.id}
-                  className={
-                    onRowClick
-                      ? 'cursor-pointer hover:bg-base-200 transition-colors'
-                      : ''
-                  }
-                  onClick={() => onRowClick && onRowClick(row.original)}
+                  className={`transition-colors duration-150 hover:!bg-[var(--color-primary-100)]/10 ${
+                    onRowClick ? 'cursor-pointer' : ''
+                  } ${
+                    index % 2 === 0
+                      ? 'bg-[var(--color-neutral-white)]'
+                      : 'bg-[var(--color-neutral-gray-01)]'
+                  }`}
+                  onClick={() => onRowClick?.(row)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id}>
+                    <td
+                      key={cell.id}
+                      className="px-6 py-2 text-left whitespace-nowrap"
+                      style={{
+                        width: cell.column.getSize(),
+                        maxWidth: cell.column.getSize(),
+                      }}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="text-center py-8 text-base-content/60"
-                >
-                  {emptyMessage}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {enablePagination && table.getPageCount() > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-base-content/70">
-            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-              data.length
-            )}{' '}
-            of {data.length} entries
-          </div>
-          <div className="join">
-            <button
-              className="join-item btn btn-sm"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              First
-            </button>
-            <button
-              className="join-item btn btn-sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </button>
-            <button className="join-item btn btn-sm btn-active">
-              Page {table.getState().pagination.pageIndex + 1} of{' '}
-              {table.getPageCount()}
-            </button>
-            <button
-              className="join-item btn btn-sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </button>
-            <button
-              className="join-item btn btn-sm"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              Last
-            </button>
-          </div>
-        </div>
-      )}
+      {enablePagination && <DataTablePagination table={table} totalCount={totalCount} />}
     </div>
   );
 }
