@@ -7,26 +7,35 @@ interface BadgeProps {
   variant?: BadgeVariant;
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  primary: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
-  secondary: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-  success: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  danger: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  info: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  primary:
+    'bg-[var(--color-primary-400)] text-[var(--color-neutral-white)] dark:bg-[var(--color-primary-400)] dark:text-[var(--color-neutral-white)]',
+  secondary:
+    'bg-[var(--color-neutral-gray-01)] text-[var(--color-neutral-black-02)] dark:bg-[var(--color-neutral-gray-01)] dark:text-[var(--color-neutral-black-02)]',
+  success:
+    'bg-[var(--color-success-100)] text-[var(--color-success-800)] dark:bg-[var(--color-success-900)] dark:text-[var(--color-success-200)]',
+  danger:
+    'bg-[var(--color-danger-100)] text-[var(--color-danger-800)] dark:bg-[var(--color-danger-900)] dark:text-[var(--color-danger-200)]',
+  warning:
+    'bg-[var(--color-warning-100)] text-[var(--color-warning-800)] dark:bg-[var(--color-warning-900)] dark:text-[var(--color-warning-200)]',
+  info: 'bg-[var(--color-info-100)] text-[var(--color-info-800)] dark:bg-[var(--color-info-900)] dark:text-[var(--color-info-200)]',
 };
 
 const Badge: React.FC<BadgeProps> = ({
   variant = 'secondary',
   children,
-  className = ''
+  className = '',
+  onClick,
 }) => {
   return (
     <span
+      onClick={onClick}
       className={classNames(
-        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+        'inline-flex items-center rounded-full px-4 py-2 text-xs font-medium transition-all duration-200 ease-out',
+        onClick != null && 'cursor-pointer',
         variantStyles[variant],
         className
       )}

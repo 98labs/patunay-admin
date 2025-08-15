@@ -128,7 +128,7 @@ const Button = ({
   const buttonClasses = [
     'btn',
     'active:border-0',
-    'transition-colors duration-200',
+    'ease-in transition-colors duration-100',
     'dark:border-base-300',
     variantClasses[finalVariant],
     sizeClasses[size],

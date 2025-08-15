@@ -1,22 +1,19 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { SortingState, ColumnFiltersState, PaginationState } from "@tanstack/react-table";
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { SortingState, ColumnFiltersState, PaginationState } from '@tanstack/react-table';
 
-import { useGetArtworksQuery } from "../../store/api/artworkApi";
-import { useAuth } from '../../hooks/useAuth';
+import { useGetArtworksQuery, ArtworkFilters } from '../../store/api/artworkApi';
 import { ImagePreloader } from '../../utils/imagePreloader';
 
-import UploadButton from "./components/UploadButton";
-import { ArtworksTable } from "./components/ArtworksTable";
-import { ArtworksFilters } from "./components/ArtworksFilters";
-import { ArtworksPagination } from "./components/ArtworksPagination";
-import { DetachNFCModal, DeleteArtworkModal } from "@components";
+import { ArtworksTable } from './components/ArtworksTable';
+import { ArtworksFilters } from './components/ArtworksFilters';
+import { ArtworksPagination } from './components/ArtworksPagination';
+import { DetachNFCModal, DeleteArtworkModal, PageHeader } from '@components';
 
 const Artworks = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
-  
+
   // Get initial page from session storage or URL query params
   const getInitialPage = () => {
     const urlParams = new URLSearchParams(location.search);
@@ -24,11 +21,11 @@ const Artworks = () => {
     if (urlPage) {
       return parseInt(urlPage, 10) - 1; // Convert to 0-based index
     }
-    
+
     const savedPage = sessionStorage.getItem('artworksTablePage');
     return savedPage ? parseInt(savedPage, 10) : 0;
   };
-  
+
   // Table state
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: getInitialPage(),
@@ -36,26 +33,27 @@ const Artworks = () => {
   });
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [globalFilter, setGlobalFilter] = useState('');
 
   // Modal state
   const [showDetachModal, setShowDetachModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedTagId, setSelectedTagId] = useState("");
-  const [selectedArtworkId, setSelectedArtworkId] = useState("");
+  const [selectedTagId, setSelectedTagId] = useState('');
+  const [selectedArtworkId, setSelectedArtworkId] = useState('');
 
   // Prepare API request parameters
   const requestParams = useMemo(() => {
-    const sortBy = sorting[0]?.id || 'created_at';
-    const sortOrder = sorting[0]?.desc ? 'desc' : 'asc';
-    
-    const filters: any = {};
-    
+    const sortBy =
+      (sorting[0]?.id as 'created_at' | 'title' | 'artist' | 'updated_at') || 'created_at';
+    const sortOrder = (sorting[0]?.desc ? 'desc' : 'asc') as 'asc' | 'desc';
+
+    const filters: ArtworkFilters = {};
+
     // Apply global search filter
     if (globalFilter) {
       filters.search = globalFilter;
     }
-    
+
     // Apply column filters
     columnFilters.forEach((filter) => {
       if (filter.id === 'tag_id' && filter.value !== 'all') {
@@ -65,7 +63,16 @@ const Artworks = () => {
           filters.hasNfcTag = false;
         }
       } else if (filter.value) {
-        filters[filter.id] = filter.value;
+        // Handle other filter types based on the ArtworkFilters interface
+        if (filter.id === 'artist' && typeof filter.value === 'string') {
+          filters.artist = filter.value;
+        } else if (filter.id === 'status' && typeof filter.value === 'string') {
+          filters.status = filter.value;
+        } else if (filter.id === 'dateFrom' && typeof filter.value === 'string') {
+          filters.dateFrom = filter.value;
+        } else if (filter.id === 'dateTo' && typeof filter.value === 'string') {
+          filters.dateTo = filter.value;
+        }
       }
     });
 
@@ -87,20 +94,16 @@ const Artworks = () => {
     refetch,
   } = useGetArtworksQuery(requestParams);
 
-  const handleFile = useCallback((file: any) => {
-    navigate('/dashboard/artworks/register');
-  }, [navigate]);
-
   // Close modal handlers
   const handleCloseDetachModal = useCallback(() => {
     setShowDetachModal(false);
-    setSelectedTagId("");
+    setSelectedTagId('');
     refetch();
   }, [refetch]);
 
   const handleCloseDeleteModal = useCallback(() => {
     setShowDeleteModal(false);
-    setSelectedArtworkId("");
+    setSelectedArtworkId('');
     refetch();
   }, [refetch]);
 
@@ -108,42 +111,40 @@ const Artworks = () => {
   const data = useMemo(() => artworksResponse?.data || [], [artworksResponse]);
   const totalCount = artworksResponse?.count || 0;
   const pageCount = Math.ceil(totalCount / pagination.pageSize);
-  
+
   // Save page number to session storage whenever it changes
   useEffect(() => {
     sessionStorage.setItem('artworksTablePage', pagination.pageIndex.toString());
   }, [pagination.pageIndex]);
-  
+
   // Clear URL params after loading
   useEffect(() => {
     if (location.search) {
       navigate(location.pathname, { replace: true });
     }
-  }, []);
-  
+  }, [location.pathname, location.search, navigate]);
+
   // Preload images when data changes
   useEffect(() => {
     if (data && data.length > 0) {
-      const imageUrls = data
-        .map(artwork => artwork.assets?.[0]?.url)
-        .filter(Boolean);
-      
+      const imageUrls = data.map((artwork) => artwork.assets?.[0]?.url).filter(Boolean);
+
       // Preload images in the background
       ImagePreloader.preloadImages(imageUrls);
     }
   }, [data]);
-  
+
   // Handle empty page after deletion
   useEffect(() => {
     if (!isLoading && data.length === 0 && pagination.pageIndex > 0 && totalCount > 0) {
       // Current page is empty but there are records, go back one page
-      setPagination(prev => ({ ...prev, pageIndex: prev.pageIndex - 1 }));
+      setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex - 1 }));
     }
   }, [data.length, pagination.pageIndex, totalCount, isLoading]);
 
   if (isError) {
     return (
-      <div className="container text-base-content bg-base-100">
+      <div className="text-base-content bg-base-100 container">
         <div className="alert alert-error">
           <span>Error loading artworks: {error?.toString()}</span>
           <button className="btn btn-sm" onClick={() => refetch()}>
@@ -155,23 +156,10 @@ const Artworks = () => {
   }
 
   return (
-    <section className="container text-base-content bg-base-100">
+    <section className="text-base-content bg-base-100 container">
       <div className="flex flex-col space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold text-base-content">
-              Artworks
-            </h2>
-            <p className="text-sm text-base-content/70 mt-1">
-              {totalCount} artwork{totalCount !== 1 ? 's' : ''} total
-            </p>
-          </div>
-
-          <div className="flex items-center mt-4 sm:mt-0">
-            <UploadButton onFileSelect={handleFile} />
-          </div>
-        </div>
+        <PageHeader name="Artworks" />
 
         {/* Filters */}
         <ArtworksFilters
@@ -179,10 +167,11 @@ const Artworks = () => {
           onGlobalFilterChange={setGlobalFilter}
           columnFilters={columnFilters}
           onColumnFiltersChange={setColumnFilters}
+          onDataRefresh={refetch}
         />
 
         {/* Table */}
-        <div className="border border-base-300 bg-base-100 rounded-lg shadow-sm">
+        <div className="border-base-300 bg-base-100 rounded-lg border shadow-sm">
           <ArtworksTable
             data={data}
             isLoading={isLoading}
@@ -212,17 +201,9 @@ const Artworks = () => {
       </div>
 
       {/* Modals */}
-      {showDetachModal && (
-        <DetachNFCModal
-          tagId={selectedTagId}
-          onClose={handleCloseDetachModal}
-        />
-      )}
+      {showDetachModal && <DetachNFCModal tagId={selectedTagId} onClose={handleCloseDetachModal} />}
       {showDeleteModal && (
-        <DeleteArtworkModal
-          artworkId={selectedArtworkId}
-          onClose={handleCloseDeleteModal}
-        />
+        <DeleteArtworkModal artworkId={selectedArtworkId} onClose={handleCloseDeleteModal} />
       )}
     </section>
   );
