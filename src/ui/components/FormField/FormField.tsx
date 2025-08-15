@@ -1,7 +1,8 @@
+import React, { ChangeEvent, forwardRef, memo, useState } from 'react';
 import { InputType } from '@typings';
 import { Button, RadioButton } from '@components';
-import { ChangeEvent, forwardRef, memo, useState } from 'react';
 import { LucideIcon, Plus, Eye, EyeOff } from 'lucide-react';
+import { classNames } from '../../utils/classNames';
 
 interface Props {
   name?: string;
@@ -19,8 +20,13 @@ interface Props {
   isListItem?: boolean;
   listButtonDisabled?: boolean;
   buttonIcon?: LucideIcon;
+  prefixIcon?: LucideIcon;
+  onPrefixIconClick?: () => void;
+  suffixIcon?: LucideIcon;
+  onSuffixIconClick?: () => void;
   disabled?: boolean;
   rows?: number;
+  className?: string;
   onChange?: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onListItemClick?: () => Promise<void>;
   onInputChange?: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -40,9 +46,14 @@ const FormField = forwardRef<HTMLInputElement, Props>(
       inputType = InputType.Text,
       items = [],
       buttonIcon = Plus,
+      prefixIcon,
+      onPrefixIconClick,
+      suffixIcon,
+      onSuffixIconClick,
       disabled = false,
       listButtonDisabled = false,
       isListItem = false,
+      className,
       onChange,
       onListItemClick,
       value,
@@ -68,6 +79,29 @@ const FormField = forwardRef<HTMLInputElement, Props>(
     const actualInputType =
       fieldType === InputType.Password && showPassword ? InputType.Text : fieldType;
 
+    // Extract default classes and handle padding override
+    const baseClasses =
+      'custom-form-input focus:border-primary dark:focus:border-primary focus:ring-primary/20 dark:focus:ring-primary/30 bg-base-100 dark:bg-base-200 text-base-content dark:text-base-content hover:border-base-content/30 dark:hover:border-base-content/40 w-full rounded-lg border-2 transition-all focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50';
+    const defaultPadding = 'py-4';
+
+    // Dynamic padding based on prefix/suffix icons
+    const hasPrefix = prefixIcon;
+    const hasSuffix = suffixIcon || fieldType === InputType.Password;
+    const leftPadding = hasPrefix ? 'pl-10' : 'pl-4';
+    const rightPadding = hasSuffix ? 'pr-10' : 'pr-4';
+
+    // Check if className contains padding classes, if so, don't add defaults
+    const hasPaddingY = className && /py-\d+/.test(className);
+    const hasPaddingX = className && /(px-\d+|pl-\d+|pr-\d+)/.test(className);
+
+    const finalClasses = classNames(
+      baseClasses,
+      !hasPaddingY && defaultPadding,
+      !hasPaddingX && leftPadding,
+      !hasPaddingX && rightPadding,
+      className
+    );
+
     return (
       <div className="flex flex-col gap-2">
         {isLabelVisible && (
@@ -81,11 +115,22 @@ const FormField = forwardRef<HTMLInputElement, Props>(
         ) : (
           <div className="flex gap-2">
             <div className={`${isListItem && 'flex-5/6'} relative w-full`}>
+              {prefixIcon && (
+                <button
+                  type="button"
+                  className="text-base-content/50 hover:text-base-content/70 dark:text-base-content/60 dark:hover:text-base-content/80 focus:text-base-content/80 absolute top-1/2 left-3 -translate-y-1/2 transition-colors focus:outline-none"
+                  onClick={onPrefixIconClick}
+                  onMouseDown={(e) => e.preventDefault()}
+                  aria-label="Prefix icon"
+                >
+                  {React.createElement(prefixIcon, { size: 20 })}
+                </button>
+              )}
               <input
                 ref={ref}
                 name={name}
                 type={actualInputType}
-                className="custom-form-input focus:border-primary dark:focus:border-primary focus:ring-primary/20 dark:focus:ring-primary/30 bg-base-100 dark:bg-base-200 text-base-content dark:text-base-content hover:border-base-content/30 dark:hover:border-base-content/40 w-full rounded-lg border-2 px-4 py-4 pr-10 transition-all focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                className={finalClasses}
                 value={value}
                 placeholder={placeholder || ''}
                 onChange={handleChange}
@@ -100,6 +145,17 @@ const FormField = forwardRef<HTMLInputElement, Props>(
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              )}
+              {suffixIcon && fieldType !== InputType.Password && (
+                <button
+                  type="button"
+                  className="text-base-content/50 hover:text-base-content/70 dark:text-base-content/60 dark:hover:text-base-content/80 focus:text-base-content/80 absolute top-1/2 right-3 -translate-y-1/2 transition-colors focus:outline-none"
+                  onClick={onSuffixIconClick}
+                  onMouseDown={(e) => e.preventDefault()}
+                  aria-label="Suffix icon"
+                >
+                  {React.createElement(suffixIcon, { size: 20 })}
                 </button>
               )}
             </div>
