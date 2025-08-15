@@ -44,7 +44,11 @@ const NavbarItem = ({
         className={`cursor-pointer overflow-hidden transition-all duration-200 ease-out hover:text-white dark:hover:text-gray-200 ${
           isMinimized ? 'flex justify-center p-2 py-4' : 'p-4'
         } ${isChild && !isMinimized ? 'px-8' : ''} ${
-          currentPath === path
+          currentPath === path ||
+          (path === '/dashboard/artworks' &&
+            currentPath.startsWith('/dashboard/artworks') &&
+            !currentPath.startsWith('/dashboard/artworks/register') &&
+            !currentPath.startsWith('/dashboard/artworks/search'))
             ? 'bg-primary-100 dark:bg-primary-100 text-white dark:text-white'
             : 'hover:bg-primary-100/20 text-color-neutral-black-02'
         }`}
