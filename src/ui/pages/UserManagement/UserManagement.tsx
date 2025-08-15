@@ -8,8 +8,8 @@ import {
   Select,
   Badge,
   EmptyState,
-  Pagination,
 } from '@components';
+import { DataTable } from '../../components/DataTable';
 import {
   useGetUsersQuery,
   useDeleteUserMutation,
@@ -24,10 +24,10 @@ import { PermissionsManager } from './components/PermissionsManager';
 import { UserActionsMenu } from './components/UserActionsMenu';
 import { Plus, Users } from 'lucide-react';
 import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
   createColumnHelper,
+  PaginationState,
+  SortingState,
+  ColumnFiltersState,
 } from '@tanstack/react-table';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'permissions';
@@ -53,10 +53,16 @@ const UserManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
-  // Pagination and filtering
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
-  const [searchQuery, setSearchQuery] = useState('');
+  // DataTable state
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+
+  // Legacy filter states for backward compatibility
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
@@ -70,15 +76,15 @@ const UserManagement = () => {
     error: usersError,
     refetch: refetchUsers,
   } = useGetUsersQuery({
-    page: currentPage,
-    pageSize,
+    page: pagination.pageIndex + 1, // API expects 1-based pagination
+    pageSize: pagination.pageSize,
     filters: {
       role: roleFilter !== 'all' ? roleFilter : undefined,
       is_active: statusFilter === 'all' ? undefined : statusFilter === 'active',
-      search: searchQuery || undefined,
+      search: globalFilter || undefined,
     },
-    sortBy: 'created_at',
-    sortOrder: 'desc',
+    sortBy: sorting.length > 0 ? sorting[0].id : 'created_at',
+    sortOrder: sorting.length > 0 ? (sorting[0].desc ? 'desc' : 'asc') : 'desc',
   });
 
   const [deleteUser, { isLoading: isDeletingUser }] = useDeleteUserMutation();
@@ -196,10 +202,18 @@ const UserManagement = () => {
                   )}
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                  <div
+                    className="text-sm font-medium"
+                    style={{ color: 'var(--color-neutral-black-01)' }}
+                  >
                     {data.name}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">{data.email}</div>
+                  <div
+                    className="text-sm"
+                    style={{ color: 'var(--color-neutral-black-02)', opacity: 0.6 }}
+                  >
+                    {data.email}
+                  </div>
                 </div>
               </div>
             );
@@ -231,7 +245,10 @@ const UserManagement = () => {
       columnHelper.accessor('last_sign_in_at', {
         header: 'Last Login',
         cell: (info) => (
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span
+            className="text-sm"
+            style={{ color: 'var(--color-neutral-black-02)', opacity: 0.6 }}
+          >
             {info.getValue() ? new Date(info.getValue() as string).toLocaleDateString() : 'Never'}
           </span>
         ),
@@ -262,13 +279,6 @@ const UserManagement = () => {
       handleDeleteUser,
     ]
   );
-
-  // Create table instance
-  const table = useReactTable({
-    data: usersResponse?.data || [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
 
   // Render different views
   if (viewMode === 'create' || viewMode === 'edit') {
@@ -305,8 +315,8 @@ const UserManagement = () => {
       <div className="rounded-lg bg-white p-4 shadow dark:bg-gray-800">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
           <SearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
+            value={globalFilter}
+            onChange={setGlobalFilter}
             placeholder="Search users..."
             className="md:col-span-2"
           />
@@ -336,98 +346,74 @@ const UserManagement = () => {
       </div>
 
       {/* Users Table */}
-      <div className="rounded-lg bg-white shadow dark:bg-gray-800">
-        {isLoadingUsers ? (
-          <div className="p-8">
-            <Loading />
-          </div>
-        ) : usersError ? (
-          <div className="p-8">
-            <EmptyState
-              title="Error loading users"
-              description={usersError.toString()}
-              action={{
-                label: 'Retry',
-                onClick: () => refetchUsers(),
-              }}
-            />
-          </div>
-        ) : !usersResponse?.data || usersResponse.data.length === 0 ? (
-          <div className="p-8">
-            <EmptyState
-              icon={<Users className="h-12 w-12" />}
-              title="No users found"
-              description={
-                searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
-                  ? 'No users match your filters. Try adjusting your search criteria.'
-                  : 'Get started by creating your first user.'
-              }
-              action={
-                searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
-                  ? {
-                      label: 'Clear filters',
-                      onClick: () => {
-                        setSearchQuery('');
-                        setRoleFilter('all');
-                        setStatusFilter('all');
-                      },
-                    }
-                  : currentUser?.role === 'admin' || currentUser?.role === 'super_user'
-                    ? {
-                        label: 'Add User',
-                        onClick: handleCreateUser,
-                      }
-                    : undefined
-              }
-            />
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <tr key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <th
-                          key={header.id}
-                          className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
-                        >
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(header.column.columnDef.header, header.getContext())}
-                        </th>
-                      ))}
-                    </tr>
-                  ))}
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                  {table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {isLoadingUsers || usersError || !usersResponse?.data || usersResponse.data.length === 0 ? (
+        <div className="rounded-lg bg-white shadow dark:bg-gray-800">
+          {isLoadingUsers ? (
+            <div className="p-8">
+              <Loading />
             </div>
-            {usersResponse.count > pageSize && (
-              <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-700">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={Math.ceil(usersResponse.count / pageSize)}
-                  onPageChange={setCurrentPage}
-                  totalItems={usersResponse.count}
-                  itemsPerPage={pageSize}
-                />
-              </div>
-            )}
-          </>
-        )}
-      </div>
+          ) : usersError ? (
+            <div className="p-8">
+              <EmptyState
+                title="Error loading users"
+                description={usersError.toString()}
+                action={{
+                  label: 'Retry',
+                  onClick: () => refetchUsers(),
+                }}
+              />
+            </div>
+          ) : (
+            <div className="p-8">
+              <EmptyState
+                icon={<Users className="h-12 w-12" />}
+                title="No users found"
+                description={
+                  globalFilter || roleFilter !== 'all' || statusFilter !== 'all'
+                    ? 'No users match your filters. Try adjusting your search criteria.'
+                    : 'Get started by creating your first user.'
+                }
+                action={
+                  globalFilter || roleFilter !== 'all' || statusFilter !== 'all'
+                    ? {
+                        label: 'Clear filters',
+                        onClick: () => {
+                          setGlobalFilter('');
+                          setRoleFilter('all');
+                          setStatusFilter('all');
+                        },
+                      }
+                    : currentUser?.role === 'admin' || currentUser?.role === 'super_user'
+                      ? {
+                          label: 'Add User',
+                          onClick: handleCreateUser,
+                        }
+                      : undefined
+                }
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        <DataTable
+          data={usersResponse.data}
+          columns={columns}
+          isLoading={isLoadingUsers}
+          totalCount={usersResponse.count}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+          globalFilter={globalFilter}
+          onGlobalFilterChange={setGlobalFilter}
+          manualPagination={true}
+          manualSorting={true}
+          manualFiltering={true}
+          centerAlignColumns={['role', 'is_active', 'actions']}
+        />
+      )}
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
