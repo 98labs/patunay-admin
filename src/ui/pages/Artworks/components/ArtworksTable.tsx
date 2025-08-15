@@ -279,7 +279,7 @@ export const ArtworksTable = ({
                 className={`cursor-pointer transition-colors duration-150 hover:!bg-[var(--color-primary-100)]/10 ${
                   index % 2 === 0
                     ? 'bg-[var(--color-neutral-white)]'
-                    : 'bg-[var(--color-neutral-gray-01)]'
+                    : 'bg-[var(--color-neutral-gray-01)]/20'
                 }`}
                 onClick={() => {
                   const artworkId = row.original.id;
