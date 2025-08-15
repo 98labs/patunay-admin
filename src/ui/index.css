@@ -54,9 +54,51 @@ body {
   --color-neutral-black-02: #475569;
   --color-neutral-gray-01: #e2e8f0;
   --color-neutral-gray-02: #d1d5db;
+  --color-neutral-gray-03: #cbd5e1;
   --color-neutral-white: #ffffff;
 
   --color-inactive-gray: #24233ab0;
+
+  --color-page-header: #24233a;
 }
 
 @plugin "daisyui";
+
+/* Custom form field styles */
+.custom-form-input {
+  border-color: var(--color-neutral-gray-03) !important;
+}
+
+.custom-form-input::placeholder {
+  color: var(--color-neutral-gray-03) !important;
+  opacity: 1 !important;
+}
+
+/* Custom radio button styles */
+.custom-radio {
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--color-neutral-gray-03);
+  border-radius: 50%;
+  background-color: white;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.custom-radio:checked {
+  border-color: var(--color-primary-400);
+}
+
+.custom-radio:checked::after {
+  content: '';
+  position: absolute;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background-color: var(--color-primary-400);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}

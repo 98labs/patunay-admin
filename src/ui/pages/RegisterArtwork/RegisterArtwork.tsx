@@ -1,45 +1,51 @@
-import { FormStepTitle, PageHeader } from "@components";
-import { useEffect, useState } from "react";
-import { ArtworkEntity, FormStepsEntity } from "../../typings";
+import { FormStepTitle, PageHeader } from '@components';
+import { useEffect, useState } from 'react';
+import { ArtworkEntity, FormStepsEntity } from '../../typings';
 
-import Bibliography from "./components/steps/Bibliography";
-import Collector from "./components/steps/Collector";
-import Info from "./components/steps/Info";
-import Size from "./components/steps/Size";
-import ReviewArtwork from "./components/steps/ReviewArtwork";
-import UploadImage from "./components/steps/UploadImage";
+import Bibliography from './components/steps/Bibliography';
+import Collector from './components/steps/Collector';
+import Info from './components/steps/Info';
+import Size from './components/steps/Size';
+import ReviewArtwork from './components/steps/ReviewArtwork';
+import Summary from './components/steps/Summary';
+import UploadImage from './components/steps/UploadImage';
 
 const RegisterArtwork = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formSteps, setFormSteps] = useState<FormStepsEntity[]>([
     {
       stepNumber: 1,
-      stepName: "Enter Artwork",
+      stepName: 'Enter Artwork',
       complete: false,
     },
     {
       stepNumber: 2,
-      stepName: "Enter Artwork Size",
+      stepName: 'Enter Artwork Size',
       complete: false,
     },
     {
       stepNumber: 3,
-      stepName: "Enter Bibliography/s",
+      stepName: 'Enter Bibliography/s',
       complete: false,
     },
     {
       stepNumber: 4,
-      stepName: "Enter Collector/s",
+      stepName: 'Enter Collector/s',
       complete: false,
     },
     {
       stepNumber: 5,
-      stepName: "Upload Images",
+      stepName: 'Upload Images',
       complete: false,
     },
     {
       stepNumber: 6,
-      stepName: "Review and Save Artwork",
+      stepName: 'Review and Save Artwork',
+      complete: false,
+    },
+    {
+      stepNumber: 7,
+      stepName: 'Summary',
       complete: false,
     },
   ]);
@@ -47,9 +53,13 @@ const RegisterArtwork = () => {
   const [artwork, setArtwork] = useState<Partial<ArtworkEntity>>({});
   const [addedArtwork, setAddedArtwork] = useState<ArtworkEntity | null>(null);
 
-  const handleOnStepClick = (stepNumber: number, _complete: boolean) => {
-    // if (currentStep > stepNumber) setCurrentStep(stepNumber);
-    setCurrentStep(stepNumber);
+  const handleOnStepClick = (stepNumber: number, complete: boolean) => {
+    // Only allow navigation to current step, previous steps, or completed steps
+    const isStepReachable = stepNumber <= currentStep || complete;
+
+    if (isStepReachable) {
+      setCurrentStep(stepNumber);
+    }
   };
 
   const handleOnPrev = async () => {
@@ -81,10 +91,7 @@ const RegisterArtwork = () => {
         if (formStep.stepNumber === currentStep)
           return { ...formStep, active: false, complete: true, skip: false };
 
-        if (
-          formStep.stepNumber > currentStep &&
-          formStep.stepNumber <= currentStep + stepsToSkip
-        )
+        if (formStep.stepNumber > currentStep && formStep.stepNumber <= currentStep + stepsToSkip)
           return { ...formStep, active: false, complete: false, skip: true };
 
         return formStep;
@@ -97,88 +104,96 @@ const RegisterArtwork = () => {
   };
 
   const handleAddArtworkResult = (addedArtwork: ArtworkEntity) => {
-    setAddedArtwork(addedArtwork);
+    // Merge the original artwork data with the API response to preserve all form data
+    const mergedArtwork = { ...artwork, ...addedArtwork };
+    setAddedArtwork(mergedArtwork);
+    // Advance to Summary step after successful artwork submission
+    handleOnNext();
   };
 
   useEffect(() => {
-    console.log("artwork", artwork);
+    console.log('artwork', artwork);
 
     return () => {};
   }, [artwork]);
 
   return (
-    <div className="flex flex-col h-full text-base-content dark:text-base-content bg-base-100 dark:bg-base-100">
+    <div className="text-base-content dark:text-base-content bg-base-100 dark:bg-base-100 flex h-full flex-col gap-2">
       <PageHeader name="Register Artwork" />
       <div className="flex flex-1">
         {/* Left Column */}
-        <div className="flex-1 bg-base-100 dark:bg-base-100 border-r border-base-300 dark:border-base-300 p-4">
-          <ul className="space-y-2">
-            {formSteps.map(({ stepNumber, stepName, complete, skip }) => (
-              <FormStepTitle
-                key={stepNumber}
-                className={
-                  currentStep < stepNumber && !complete
-                    ? "cursor-not-allowed opacity-50"
-                    : "cursor-pointer hover:bg-base-200 dark:hover:bg-base-200 rounded-lg"
-                }
-                stepNumber={stepNumber.toString()}
-                stepName={stepName}
-                active={currentStep === stepNumber}
-                complete={complete}
-                skip={skip}
-                onClick={() => handleOnStepClick(stepNumber, complete)}
-              />
-            ))}
+        <div className="flex-1/4">
+          <ul className="flex flex-col">
+            {formSteps.map(({ stepNumber, stepName, complete, skip }) => {
+              const isStepDisabled = stepNumber > currentStep && !complete;
+
+              return (
+                <FormStepTitle
+                  key={stepNumber}
+                  className=""
+                  stepNumber={stepNumber.toString()}
+                  stepName={stepName}
+                  active={currentStep === stepNumber}
+                  complete={complete}
+                  skip={skip}
+                  disabled={isStepDisabled}
+                  onClick={() => handleOnStepClick(stepNumber, complete)}
+                />
+              );
+            })}
           </ul>
         </div>
         {/* Right Column */}
-        {currentStep === 1 && (
-          <Info
-            artwork={artwork}
-            onPrev={handleOnPrev}
-            onNext={handleOnNext}
-            onDataChange={handleOnDataChange}
-          />
-        )}
-        {currentStep === 2 && (
-          <Size
-            artwork={artwork}
-            onPrev={handleOnPrev}
-            onNext={handleOnNext}
-            onDataChange={handleOnDataChange}
-          />
-        )}
-        {currentStep === 3 && (
-          <Bibliography
-            artwork={artwork}
-            onPrev={handleOnPrev}
-            onNext={handleOnNext}
-            onDataChange={handleOnDataChange}
-          />
-        )}
-        {currentStep === 4 && (
-          <Collector
-            artwork={artwork}
-            onPrev={handleOnPrev}
-            onNext={handleOnNext}
-            onDataChange={handleOnDataChange}
-          />
-        )}
-        {currentStep === 5 && (
-          <UploadImage
-            artwork={artwork}
-            onDataChange={handleOnDataChange}
-            onPrev={handleOnPrev}
-            onNext={handleOnNext}
-          />
-        )}
-        {currentStep === 6 && (
-          <ReviewArtwork
-            artwork={addedArtwork ?? artwork}
-            onAddArtwork={handleAddArtworkResult}
-            onPrev={handleOnPrev}
-          />
-        )}
+        <div className="flex-3/4">
+          {currentStep === 1 && (
+            <Info
+              artwork={artwork}
+              onPrev={handleOnPrev}
+              onNext={handleOnNext}
+              onDataChange={handleOnDataChange}
+            />
+          )}
+          {currentStep === 2 && (
+            <Size
+              artwork={artwork}
+              onPrev={handleOnPrev}
+              onNext={handleOnNext}
+              onDataChange={handleOnDataChange}
+            />
+          )}
+          {currentStep === 3 && (
+            <Bibliography
+              artwork={artwork}
+              onPrev={handleOnPrev}
+              onNext={handleOnNext}
+              onDataChange={handleOnDataChange}
+            />
+          )}
+          {currentStep === 4 && (
+            <Collector
+              artwork={artwork}
+              onPrev={handleOnPrev}
+              onNext={handleOnNext}
+              onDataChange={handleOnDataChange}
+            />
+          )}
+          {currentStep === 5 && (
+            <UploadImage
+              artwork={artwork}
+              onDataChange={handleOnDataChange}
+              onPrev={handleOnPrev}
+              onNext={handleOnNext}
+            />
+          )}
+          {currentStep === 6 && (
+            <ReviewArtwork
+              artwork={addedArtwork ?? artwork}
+              onAddArtwork={handleAddArtworkResult}
+              onPrev={handleOnPrev}
+            />
+          )}
+          {currentStep === 7 && <Summary artwork={addedArtwork ?? artwork} onPrev={handleOnPrev} />}
+        </div>
       </div>
     </div>
   );

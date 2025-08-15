@@ -132,7 +132,7 @@ const Info = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
                 required={required}
                 isLabelVisible
                 label={artworkLabel}
-                hint={hint}
+                placeholder={hint}
                 inputType={inputType}
                 onInputChange={handleOnChange}
               />
