@@ -1,7 +1,7 @@
-import { Button, FormField } from "@components";
-import { ArtworkEntity, FormErrorsEntity } from "@typings";
-import { Minus, Plus } from "lucide-react";
-import { ChangeEvent, useEffect, useState } from "react";
+import { Button, FormField } from '@components';
+import { ArtworkEntity } from '@typings';
+import { Minus, Plus } from 'lucide-react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 
 interface Props {
   artwork: ArtworkEntity;
@@ -11,142 +11,113 @@ interface Props {
 }
 
 const Collector = ({ artwork, onDataChange, onPrev, onNext }: Props) => {
-  const [formData, setFormData] = useState<string[]>([""]);
-  const [formErrors, setFormErrors] = useState<FormErrorsEntity<string>>({});
+  const [currentEntry, setCurrentEntry] = useState('');
+  const [collectorsList, setCollectorsList] = useState<string[]>([]);
+  const [error, setError] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleOnChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    index: number
-  ) => {
-    const { value } = e.target;
+  const handleAddEntry = () => {
+    if (!currentEntry.trim()) {
+      setError('Please enter a collector name');
+      return;
+    }
 
-    setFormData((prev) => {
-      const updated = [...prev];
-      updated[index] = value;
+    const updatedList = [...collectorsList, currentEntry.trim()];
+    setCollectorsList(updatedList);
+    onDataChange({ collectors: updatedList });
+    setCurrentEntry('');
+    setError('');
 
-      onDataChange({ collectors: updated });
-
-      return updated;
-    });
-
-    // Clear error on change
-    const errorKey = `collectors-${index}`;
-    setFormErrors((prev) => ({
-      ...prev,
-      [errorKey]: "",
-    }));
+    // Refocus the input field
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
   };
 
-  const handleOnListItemClick = async (index: number) => {
-    if (!formData[index].trim()) return;
+  const handleRemoveEntry = (index: number) => {
+    const updatedList = collectorsList.filter((_, i) => i !== index);
+    setCollectorsList(updatedList);
+    onDataChange({ collectors: updatedList });
+  };
 
-    const isLastItem = index === formData.length - 1;
-
-    if (isLastItem) setFormData([...formData, ""]);
-    else if (formData.length > 1)
-      setFormData(formData.filter((_, itemIndex) => itemIndex !== index));
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setCurrentEntry(e.target.value);
+    if (error) setError('');
   };
 
   const validateForm = () => {
-    const errors: { [key: string]: string } = {};
-    formData.forEach((item, index) => {
-      if (!item.trim()) {
-        errors[`collectors-${index}`] = "This field is required.";
-      }
-    });
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (collectorsList.length === 0) {
+      setError('At least one collector is required');
+      return false;
+    }
+    return true;
   };
 
   useEffect(() => {
     if (artwork?.collectors && artwork.collectors.length > 0) {
-      setFormData(artwork.collectors);
+      setCollectorsList(artwork.collectors);
     }
   }, [artwork]);
 
   return (
-    <div className="flex-2 h-fill flex flex-col justify-between gap-6 p-6 bg-base-100 dark:bg-base-100">
-      <div className="border border-base-300 dark:border-base-300 rounded-xl flex flex-col gap-4 p-6 bg-base-200 dark:bg-base-200">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
-            <span className="text-primary dark:text-primary font-bold text-sm">4</span>
+    <div className="h-fill flex flex-2 flex-col justify-between gap-2">
+      <div className="border-base-300 flex flex-col gap-4 rounded-2xl border p-4">
+        <h2 className="text-xl font-semibold">Enter the artwork's collectors</h2>
+
+        {/* Input Section */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <FormField
+              ref={inputRef}
+              value={currentEntry}
+              placeholder="Enter collector name"
+              onInputChange={handleInputChange}
+              error={error}
+              isLabelVisible={false}
+            />
           </div>
-          <h2 className="text-xl font-semibold text-base-content dark:text-base-content">
-            Enter the artwork's collectors
-          </h2>
+          <Button
+            onClick={handleAddEntry}
+            disabled={!currentEntry.trim()}
+            className="mb-auto h-14 rounded-full"
+          >
+            <Plus />
+          </Button>
         </div>
-        
-        <div className="space-y-3">
-          {formData.map((item, index) => {
-            const isLastItem = index + 1 === formData.length;
-            const canRemove = formData.length > 1;
-            
-            return (
-              <div key={index} className="flex gap-3 items-start">
-                <div className="flex-1">
-                  <FormField
-                    hint={`Collector ${index + 1} name`}
-                    value={item}
-                    error={formErrors[`collectors-${index}`]}
-                    onInputChange={(e) => handleOnChange(e, index)}
-                  />
+
+        {/* Collectors List */}
+        {collectorsList.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {collectorsList.map((entry, index) => (
+              <div key={index} className="flex gap-2">
+                <div className="bg-base-100 border-base-300 flex flex-1 items-center justify-between rounded-lg border p-3">
+                  <span className="text-base-content">{entry}</span>
                 </div>
-                
-                <div className="flex gap-2 mt-0">
-                  {isLastItem ? (
-                    // Add button for the last item
-                    <button
-                      type="button"
-                      onClick={() => handleOnListItemClick(index)}
-                      disabled={!formData[index]?.trim()}
-                      className="btn btn-circle btn-sm btn-primary dark:btn-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105"
-                      title="Add new collector"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    // Remove button for existing items
-                    <button
-                      type="button"
-                      onClick={() => handleOnListItemClick(index)}
-                      disabled={!canRemove}
-                      className="btn btn-circle btn-sm btn-error dark:btn-error disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105"
-                      title="Remove this collector"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+                <Button
+                  onClick={() => handleRemoveEntry(index)}
+                  className="h-14 w-14 cursor-pointer rounded-full p-1 text-[var(--color-neutral-white)] transition-all duration-300 ease-in hover:opacity-95"
+                  aria-label="Remove entry"
+                >
+                  <Minus size={20} />
+                </Button>
               </div>
-            );
-          })}
-        </div>
-        
-        <div className="text-sm text-base-content/60 dark:text-base-content/60 mt-2">
-          <p>💡 Add multiple collectors for this artwork. Track ownership history by adding previous and current collectors.</p>
-        </div>
+            ))}
+          </div>
+        )}
       </div>
-      
-      <div className="flex gap-3">
+
+      <div className="flex gap-2">
+        <Button className="flex-1" buttonType="secondary" buttonLabel="Back" onClick={onPrev} />
         <Button
-          variant="secondary"
           className="flex-1"
-          onClick={onPrev}
-        >
-          Back
-        </Button>
-        <Button
-          variant="primary"
-          className="flex-1"
+          buttonType="primary"
+          buttonLabel="Continue"
           onClick={async () => {
             if (validateForm()) {
               onNext();
             }
           }}
-        >
-          Continue
-        </Button>
+        />
       </div>
     </div>
   );

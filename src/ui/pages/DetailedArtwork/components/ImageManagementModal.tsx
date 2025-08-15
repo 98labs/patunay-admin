@@ -21,7 +21,7 @@ export const ImageManagementModal = ({
   artworkId,
   artworkTitle,
   currentAssets,
-  onUpdate
+  onUpdate,
 }: ImageManagementModalProps) => {
   const [assets, setAssets] = useState<AssetEntity[]>(currentAssets || []);
   const [uploading, setUploading] = useState(false);
@@ -33,81 +33,82 @@ export const ImageManagementModal = ({
     setAssets(currentAssets || []);
   }, [currentAssets]);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    console.log('Files dropped:', acceptedFiles.length);
-    if (acceptedFiles.length === 0) return;
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      console.log('Files dropped:', acceptedFiles.length);
+      if (acceptedFiles.length === 0) return;
 
-    setUploading(true);
-    const newAssets: AssetEntity[] = [];
+      setUploading(true);
+      const newAssets: AssetEntity[] = [];
 
-    try {
-      for (const file of acceptedFiles) {
-        console.log('Processing file:', file.name, 'Size:', file.size, 'Type:', file.type);
-        
-        // Generate unique filename with timestamp
-        const timestamp = Date.now();
-        const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const fileName = `${timestamp}_${cleanFileName}`;
-        const filePath = `artworks/${fileName}`;
+      try {
+        for (const file of acceptedFiles) {
+          console.log('Processing file:', file.name, 'Size:', file.size, 'Type:', file.type);
 
-        console.log('Uploading to path:', filePath);
+          // Generate unique filename with timestamp
+          const timestamp = Date.now();
+          const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+          const fileName = `${timestamp}_${cleanFileName}`;
+          const filePath = `artworks/${fileName}`;
 
-        // Upload to storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("artifacts")
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false
+          console.log('Uploading to path:', filePath);
+
+          // Upload to storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('artifacts')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false,
+            });
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            showError(`Failed to upload ${file.name}: ${uploadError.message}`, 'Upload Error');
+            continue;
+          }
+
+          console.log('Upload successful:', uploadData);
+
+          // Get public URL since bucket is public
+          const { data: publicUrlData } = supabase.storage.from('artifacts').getPublicUrl(filePath);
+
+          console.log('Public URL:', publicUrlData.publicUrl);
+
+          newAssets.push({
+            fileName: file.name,
+            url: publicUrlData.publicUrl,
+            sortOrder: assets.length + newAssets.length,
           });
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          showError(`Failed to upload ${file.name}: ${uploadError.message}`, "Upload Error");
-          continue;
         }
 
-        console.log('Upload successful:', uploadData);
-
-        // Get public URL since bucket is public
-        const { data: publicUrlData } = supabase.storage
-          .from("artifacts")
-          .getPublicUrl(filePath);
-
-        console.log('Public URL:', publicUrlData.publicUrl);
-
-        newAssets.push({
-          filename: file.name,
-          url: publicUrlData.publicUrl,
-          sortOrder: assets.length + newAssets.length
-        });
+        if (newAssets.length > 0) {
+          const updatedAssets = [...assets, ...newAssets];
+          setAssets(updatedAssets);
+          showSuccess(`${newAssets.length} image(s) uploaded successfully`);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        showError('Failed to upload images', 'Upload Error');
+      } finally {
+        setUploading(false);
       }
-
-      if (newAssets.length > 0) {
-        const updatedAssets = [...assets, ...newAssets];
-        setAssets(updatedAssets);
-        showSuccess(`${newAssets.length} image(s) uploaded successfully`);
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      showError('Failed to upload images', 'Upload Error');
-    } finally {
-      setUploading(false);
-    }
-  }, [assets, showError, showSuccess]);
+    },
+    [assets, showError, showSuccess]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
     },
-    disabled: uploading
+    disabled: uploading,
   });
 
   const handleDelete = async (index: number) => {
     const assetToDelete = assets[index];
     if (!assetToDelete) return;
 
-    setDeletingIds(prev => new Set(prev).add(index));
+    setDeletingIds((prev) => new Set(prev).add(index));
 
     try {
       // Delete from storage if URL exists
@@ -115,16 +116,16 @@ export const ImageManagementModal = ({
         try {
           // Extract the storage path from the URL
           const url = new URL(assetToDelete.url);
-          const pathMatch = url.pathname.match(/\/storage\/v1\/object\/(?:sign|public)\/artifacts\/(.+)/);
-          
+          const pathMatch = url.pathname.match(
+            /\/storage\/v1\/object\/(?:sign|public)\/artifacts\/(.+)/
+          );
+
           if (pathMatch) {
             const storagePath = decodeURIComponent(pathMatch[1].split('?')[0]);
             console.log('Deleting from storage:', storagePath);
-            
+
             // Delete from storage
-            const { error } = await supabase.storage
-              .from('artifacts')
-              .remove([storagePath]);
+            const { error } = await supabase.storage.from('artifacts').remove([storagePath]);
 
             if (error) {
               console.error('Error deleting from storage:', error);
@@ -139,14 +140,15 @@ export const ImageManagementModal = ({
       }
 
       // Remove from local state
-      const updatedAssets = assets.filter((_, i) => i !== index)
+      const updatedAssets = assets
+        .filter((_, i) => i !== index)
         .map((asset, i) => ({ ...asset, sortOrder: i }));
       setAssets(updatedAssets);
       showSuccess('Image deleted successfully');
     } catch (error) {
       showError('Failed to delete image', 'Delete Error');
     } finally {
-      setDeletingIds(prev => {
+      setDeletingIds((prev) => {
         const newSet = new Set(prev);
         newSet.delete(index);
         return newSet;
@@ -157,18 +159,18 @@ export const ImageManagementModal = ({
   const moveImage = (index: number, direction: 'up' | 'down') => {
     const newAssets = [...assets];
     const newIndex = direction === 'up' ? index - 1 : index + 1;
-    
+
     if (newIndex < 0 || newIndex >= assets.length) return;
-    
+
     // Swap positions
     [newAssets[index], newAssets[newIndex]] = [newAssets[newIndex], newAssets[index]];
-    
+
     // Update sort order
     const updatedAssets = newAssets.map((asset, i) => ({
       ...asset,
-      sortOrder: i
+      sortOrder: i,
     }));
-    
+
     setAssets(updatedAssets);
   };
 
@@ -190,14 +192,12 @@ export const ImageManagementModal = ({
       if (assets.length > 0) {
         const assetsToInsert = assets.map((asset, index) => ({
           artwork_id: artworkId,
-          filename: asset.filename,
+          filename: asset.fileName,
           url: asset.url,
-          sort_order: index
+          sort_order: index,
         }));
 
-        const { error: insertError } = await supabase
-          .from('assets')
-          .insert(assetsToInsert);
+        const { error: insertError } = await supabase.from('assets').insert(assetsToInsert);
 
         if (insertError) {
           console.error('Error inserting assets:', insertError);
@@ -217,27 +217,22 @@ export const ImageManagementModal = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Manage Images - ${artworkTitle}`}
-      size="large"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={`Manage Images - ${artworkTitle}`} size="large">
       <div className="space-y-4">
         {/* Upload Area */}
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+          className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
             isDragActive ? 'border-primary bg-primary/10' : 'border-base-300 hover:border-primary'
-          } ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          } ${uploading ? 'cursor-not-allowed opacity-50' : ''}`}
         >
           <input {...getInputProps()} />
-          <Upload className="w-12 h-12 mx-auto mb-4 text-base-content/50" />
-          <p className="text-sm font-semibold mb-2">
+          <Upload className="text-base-content/50 mx-auto mb-4 h-12 w-12" />
+          <p className="mb-2 text-sm font-semibold">
             {isDragActive ? 'Drop images here' : 'Drag and drop images here'}
           </p>
-          <p className="text-sm text-base-content/70 mb-4">or click to select files</p>
-          <p className="text-xs text-base-content/50">
+          <p className="text-base-content/70 mb-4 text-sm">or click to select files</p>
+          <p className="text-base-content/50 text-xs">
             Supported formats: JPEG, PNG, GIF, WebP (max 10MB each)
           </p>
           {uploading && (
@@ -251,29 +246,29 @@ export const ImageManagementModal = ({
         {/* Current Images */}
         {assets.length > 0 && (
           <div className="space-y-2">
-            <h3 className="font-semibold text-sm">Current Images ({assets.length})</h3>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <h3 className="text-sm font-semibold">Current Images ({assets.length})</h3>
+            <div className="max-h-96 space-y-2 overflow-y-auto">
               {assets.map((asset, index) => (
                 <div
                   key={`${asset.url}-${index}`}
-                  className="flex items-center gap-3 p-3 bg-base-200 rounded-lg"
+                  className="bg-base-200 flex items-center gap-3 rounded-lg p-3"
                 >
                   <div className="flex-shrink-0">
                     <img
                       src={asset.url}
-                      alt={asset.filename}
-                      className="w-16 h-16 object-cover rounded"
+                      alt={asset.fileName}
+                      className="h-16 w-16 rounded object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = '/placeholder-image.png'; // Add a placeholder
                       }}
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {asset.filename || `Image ${index + 1}`}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {asset.fileName || `Image ${index + 1}`}
                     </p>
-                    <p className="text-xs text-base-content/70">
+                    <p className="text-base-content/70 text-xs">
                       Position: {index + 1} of {assets.length}
                     </p>
                   </div>
@@ -284,7 +279,7 @@ export const ImageManagementModal = ({
                       disabled={index === 0}
                       title="Move up"
                     >
-                      <ChevronUp className="w-4 h-4" />
+                      <ChevronUp className="h-4 w-4" />
                     </button>
                     <button
                       className="btn btn-ghost btn-xs"
@@ -292,7 +287,7 @@ export const ImageManagementModal = ({
                       disabled={index === assets.length - 1}
                       title="Move down"
                     >
-                      <ChevronDown className="w-4 h-4" />
+                      <ChevronDown className="h-4 w-4" />
                     </button>
                     <button
                       className="btn btn-error btn-xs"
@@ -303,7 +298,7 @@ export const ImageManagementModal = ({
                       {deletingIds.has(index) ? (
                         <span className="loading loading-spinner loading-xs"></span>
                       ) : (
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="h-4 w-4" />
                       )}
                     </button>
                   </div>
@@ -315,7 +310,7 @@ export const ImageManagementModal = ({
 
         {/* No Images Message */}
         {assets.length === 0 && (
-          <div className="text-center py-8 text-base-content/50">
+          <div className="text-base-content/50 py-8 text-center">
             <p>No images uploaded yet</p>
           </div>
         )}
@@ -323,14 +318,10 @@ export const ImageManagementModal = ({
 
       {/* Modal Actions */}
       <div className="modal-action">
-        <Button
-          buttonType="secondary"
-          buttonLabel="Cancel"
-          onClick={onClose}
-        />
+        <Button buttonType="secondary" buttonLabel="Cancel" onClick={onClose} />
         <Button
           buttonType="primary"
-          buttonLabel={saving ? "Saving..." : "Save Changes"}
+          buttonLabel={saving ? 'Saving...' : 'Save Changes'}
           onClick={handleSave}
           disabled={uploading || saving}
         />

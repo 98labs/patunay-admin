@@ -12,7 +12,7 @@ const DashboardLayout = () => {
   }
 
   return (
-    <div className="bg-base-100 dark:bg-base-100 flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
       <main className="bg-base-100 dark:bg-base-100 flex h-screen flex-1 flex-col overflow-hidden">
         {/* Topbar */}
@@ -27,13 +27,10 @@ const DashboardLayout = () => {
           </div>
         </header>
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-9xl mx-auto w-full px-4 py-4 sm:px-6 lg:px-8">
-            <div className="text-base-content">
-              <NetworkStatus />
-              {/* <NfcWarningBanner className="mb-4" /> */}
-              <NotificationMessage />
-              <Outlet />
-            </div>
+          <div className="max-w-9xl mx-auto w-full px-8 py-8 sm:px-6 lg:px-8">
+            <NetworkStatus />
+            <NotificationMessage />
+            <Outlet />
           </div>
         </div>
       </main>
