@@ -171,21 +171,19 @@ const Artworks = () => {
         />
 
         {/* Table */}
-        <div className="border-base-300 bg-base-100 rounded-lg border shadow-sm">
-          <ArtworksTable
-            data={data}
-            isLoading={isLoading}
-            totalCount={totalCount}
-            pagination={pagination}
-            onPaginationChange={setPagination}
-            sorting={sorting}
-            onSortingChange={setSorting}
-            columnFilters={columnFilters}
-            onColumnFiltersChange={setColumnFilters}
-            globalFilter={globalFilter}
-            onGlobalFilterChange={setGlobalFilter}
-          />
-        </div>
+        <ArtworksTable
+          data={data}
+          isLoading={isLoading}
+          totalCount={totalCount}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+          globalFilter={globalFilter}
+          onGlobalFilterChange={setGlobalFilter}
+        />
 
         {/* Pagination */}
         {data.length > 0 && (

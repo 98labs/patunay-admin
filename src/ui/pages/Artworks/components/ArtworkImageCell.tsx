@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../../../../assets/logo/patunay-256x256.png';
 import { useImageUrl } from '../../../hooks/useImageUrl';
@@ -6,125 +6,82 @@ import { useImageUrl } from '../../../hooks/useImageUrl';
 interface ArtworkImageCellProps {
   artworkId: string;
   title?: string;
-  imageUrl?: string;
+  assets?: Array<{ url: string; id?: string; name?: string }>;
 }
 
-const MAX_RETRY_ATTEMPTS = 3;
-const RETRY_DELAY = 1000; // 1 second
+export const ArtworkImageCell = ({ artworkId, title, assets = [] }: ArtworkImageCellProps) => {
+  const [imageStates, setImageStates] = useState<Record<string, 'loading' | 'loaded' | 'error'>>(
+    {}
+  );
 
-export const ArtworkImageCell = ({ artworkId, title, imageUrl }: ArtworkImageCellProps) => {
-  const [imageState, setImageState] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const [retryCount, setRetryCount] = useState(0);
-  const retryTimeoutRef = useRef<NodeJS.Timeout>();
-  const imgRef = useRef<HTMLImageElement>(null);
-  
-  // Extract storage info from URL for enhanced loading
-  const storageInfo = imageUrl ? extractStorageInfo(imageUrl) : null;
+  // Get the first two images for display
+  const firstImage = assets[0];
+  const secondImage = assets[1];
+  const remainingCount = assets.length > 2 ? assets.length - 2 : 0;
+
+  // Extract storage info from first image URL for enhanced loading
+  const storageInfo = firstImage?.url ? extractStorageInfo(firstImage.url) : null;
   const { url: enhancedUrl } = useImageUrl({
     bucket: storageInfo?.bucket,
     path: storageInfo?.path,
-    enabled: !!storageInfo && imageState === 'error' && retryCount > 0,
+    enabled: !!storageInfo && imageStates[firstImage?.url || ''] === 'error',
     transform: { width: 100, height: 100, quality: 85 },
   });
-  
+
   // Use enhanced URL if available, otherwise fall back to original
-  const displayUrl = enhancedUrl || imageUrl;
-  
-  // Check if image is already cached/loaded
-  useEffect(() => {
-    if (!displayUrl) {
-      setImageState('error');
-      return;
-    }
-    
-    // Create a new image to check cache
-    const img = new Image();
-    img.src = displayUrl;
-    
-    if (img.complete && img.naturalWidth > 0) {
-      // Image is already cached
-      setImageState('loaded');
-    } else {
-      // Image needs to load
-      setImageState('loading');
-    }
-    
-    // Clear any pending retry
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-    }
-    
-    setRetryCount(0);
-  }, [displayUrl]);
-  
-  const handleImageLoad = () => {
-    setImageState('loaded');
-    setRetryCount(0);
+  const displayUrl = enhancedUrl || firstImage?.url;
+
+  const handleImageLoad = (url: string) => {
+    setImageStates((prev) => ({ ...prev, [url]: 'loaded' }));
   };
-  
-  const handleImageError = () => {
-    if (retryCount < MAX_RETRY_ATTEMPTS) {
-      // Schedule a retry
-      retryTimeoutRef.current = setTimeout(() => {
-        setRetryCount(prev => prev + 1);
-        setImageState('error'); // Trigger re-render with enhanced URL
-      }, RETRY_DELAY * (retryCount + 1));
-    } else {
-      // Max retries reached
-      if (import.meta.env.DEV) {
-        console.warn(`ArtworkImageCell: Failed to load image after ${MAX_RETRY_ATTEMPTS} attempts for ${artworkId} - ${title}`);
-      }
-      setImageState('error');
-    }
+
+  const handleImageError = (url: string) => {
+    setImageStates((prev) => ({ ...prev, [url]: 'error' }));
   };
-  
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-      }
-    };
-  }, []);
-  
-  const hasValidUrl = displayUrl && displayUrl.trim() !== '';
-  const showPlaceholder = !hasValidUrl || (imageState === 'error' && retryCount >= MAX_RETRY_ATTEMPTS);
-  
+
+  const hasValidFirstImage = displayUrl && displayUrl.trim() !== '';
+  const hasValidSecondImage = secondImage?.url && secondImage.url.trim() !== '';
+
   return (
-    <Link 
-      to={`/dashboard/artworks/${artworkId}`} 
-      className="block"
-    >
-      <div className="avatar">
-        <div className="w-12 h-12 rounded border border-base-300 overflow-hidden bg-base-200 relative">
-          {hasValidUrl && !showPlaceholder ? (
-            <>
-              {/* Always show image once we have a URL */}
-              <img 
-                ref={imgRef}
-                key={`${displayUrl}-${retryCount}`} // Force remount on retry
+    <Link to={`/dashboard/artworks/${artworkId}`} className="block">
+      <div className="flex items-center justify-center">
+        <div className="relative">
+          {/* First image */}
+          <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-gray-200 bg-gray-100 shadow-sm">
+            {hasValidFirstImage ? (
+              <img
                 src={displayUrl}
-                alt={title || "Artwork"} 
-                className={`object-cover w-full h-full ${imageState === 'loading' ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-                loading="eager" // Prioritize loading
+                alt={title || 'Artwork'}
+                className="h-full w-full object-cover"
+                onLoad={() => handleImageLoad(displayUrl!)}
+                onError={() => handleImageError(displayUrl!)}
+                loading="eager"
               />
-              {/* Loading spinner overlay */}
-              {imageState === 'loading' && (
-                <div className="absolute inset-0 flex items-center justify-center bg-base-200">
-                  <div className="loading loading-spinner loading-sm"></div>
-                </div>
-              )}
-            </>
-          ) : (
-            // Placeholder when no image or error
-            <div className="w-full h-full flex items-center justify-center">
-              <img 
-                src={logo} 
-                alt="Default artwork" 
-                className="w-8 h-8 opacity-60"
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <img src={logo} alt="Default artwork" className="h-8 w-8 opacity-60" />
+              </div>
+            )}
+          </div>
+
+          {/* Second image (overlapped) */}
+          {hasValidSecondImage && (
+            <div className="absolute -top-1 -right-1 h-12 w-12 overflow-hidden rounded-lg border border-gray-200 bg-gray-100 shadow-sm">
+              <img
+                src={secondImage.url}
+                alt={title || 'Artwork'}
+                className="h-full w-full object-cover"
+                onLoad={() => handleImageLoad(secondImage.url)}
+                onError={() => handleImageError(secondImage.url)}
+                loading="lazy"
               />
+            </div>
+          )}
+
+          {/* Remaining count indicator */}
+          {remainingCount > 0 && (
+            <div className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full bg-gray-600 text-xs font-medium text-white shadow-sm">
+              +{remainingCount}
             </div>
           )}
         </div>
@@ -139,15 +96,17 @@ export const ArtworkImageCell = ({ artworkId, title, imageUrl }: ArtworkImageCel
 function extractStorageInfo(url: string): { bucket: string; path: string } | null {
   try {
     const urlObj = new URL(url);
-    const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/(?:sign|public)\/([^/]+)\/(.+)/);
-    
+    const pathMatch = urlObj.pathname.match(
+      /\/storage\/v1\/object\/(?:sign|public)\/([^/]+)\/(.+)/
+    );
+
     if (pathMatch) {
       return {
         bucket: pathMatch[1],
         path: decodeURIComponent(pathMatch[2].split('?')[0]),
       };
     }
-    
+
     return null;
   } catch {
     return null;
