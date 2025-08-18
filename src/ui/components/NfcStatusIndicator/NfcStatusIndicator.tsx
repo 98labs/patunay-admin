@@ -37,6 +37,8 @@ export const NfcStatusIndicator: React.FC<NfcStatusIndicatorProps> = ({
     return 'text-[var(--color-semantic-error)]';
   };
 
+  // TODO: Remove "Connected:" Make "NFC READY: ACS ACR112 0" one line
+
   const getStatusText = () => {
     if (isLoading) return 'Checking...';
     if (isNfcAvailable && nfcFeaturesEnabled) return 'NFC Ready';
