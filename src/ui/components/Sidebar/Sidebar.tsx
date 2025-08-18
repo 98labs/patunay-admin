@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuth } from '../../hooks/useAuth';
 import { Links, NavbarItemProps } from './types';
-import { useMemo, useCallback, createElement, useState } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import {
   ChevronsLeft,
   Home,

@@ -8,7 +8,6 @@ import router from './router';
 import { RouterProvider } from 'react-router-dom';
 import SuspenseContent from './layouts/SuspenseContent.tsx';
 import store from './store/store.ts';
-import { runInitializationDiagnostic } from './utils/initializationDiagnostic';
 
 // Run diagnostic check in development mode
 

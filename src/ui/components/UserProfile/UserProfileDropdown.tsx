@@ -5,7 +5,7 @@ import { ChevronUp, User, LogOut, Sun, Moon } from 'lucide-react';
 import { themeChange } from 'theme-change';
 
 import { selectUser } from '../../store/features/auth';
-import { UserAvatar } from '@components';
+import { UserAvatar, Version } from '@components';
 import { useAuth } from '../../hooks/useAuth';
 import { useLogoutMutation } from '../../store/api/userApi';
 import { USER_ROLES } from '../../typings';
@@ -213,6 +213,7 @@ const UserProfileDropdown = ({ minimized = false }: UserProfileDropdownProps) =>
           </button>
         </div>
       )}
+      <Version />
     </div>
   );
 };
