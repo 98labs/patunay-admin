@@ -8,6 +8,10 @@ import router from './router';
 import { RouterProvider } from 'react-router-dom';
 import SuspenseContent from './layouts/SuspenseContent.tsx';
 import store from './store/store.ts';
+<<<<<<< HEAD
+=======
+import { runInitializationDiagnostic } from './utils/initializationDiagnostic';
+>>>>>>> d6c7030d2fcd9bb052e9898aa9b62c63c99e72e1
 
 // Run diagnostic check in development mode
 
