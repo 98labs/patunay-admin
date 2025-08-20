@@ -24,7 +24,6 @@ import { useNotification } from '../../hooks/useNotification';
 import { useAuth } from '../../hooks/useAuth';
 import { UserForm } from './components/UserForm';
 import { PermissionsManager } from './components/PermissionsManager';
-import { UserActionsMenu } from './components/UserActionsMenu';
 import { Edit, Pencil, Plus, Users } from 'lucide-react';
 import {
   createColumnHelper,
@@ -297,30 +296,11 @@ const UserManagement = () => {
           </span>
         ),
       }),
-      columnHelper.display({
-        id: 'actions',
-        header: 'Actions',
-        cell: (info) => (
-          <UserActionsMenu
-            user={info.row.original}
-            currentUserId={currentUser?.id}
-            currentUserRole={currentUser?.role}
-            onEdit={() => handleEditUser(info.row.original)}
-            onManagePermissions={() => handleManagePermissions(info.row.original)}
-            onToggleStatus={() => handleToggleUserStatus(info.row.original)}
-            onDelete={() => handleDeleteUser(info.row.original)}
-          />
-        ),
-      }),
     ],
     [
       columnHelper,
       currentUser?.id,
       currentUser?.role,
-      handleEditUser,
-      handleManagePermissions,
-      handleToggleUserStatus,
-      handleDeleteUser,
     ]
   );
 
