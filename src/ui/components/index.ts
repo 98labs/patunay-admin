@@ -15,6 +15,7 @@ export { default as Loading } from './Loading';
 export { default as Pagination } from './Pagination';
 export { default as SearchInput } from './SearchInput';
 export { default as Select } from './Select';
+export { default as SideDrawer } from './SideDrawer';
 export { default as Table } from './Table';
 export {
   Modal,

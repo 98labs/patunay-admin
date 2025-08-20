@@ -8,8 +8,11 @@ import {
   Select,
   Badge,
   EmptyState,
+  SideDrawer,
 } from '@components';
 import { DataTable } from '../../components/DataTable';
+import { classNames } from '../../utils/classNames';
+
 import {
   useGetUsersQuery,
   useDeleteUserMutation,
@@ -22,13 +25,15 @@ import { useAuth } from '../../hooks/useAuth';
 import { UserForm } from './components/UserForm';
 import { PermissionsManager } from './components/PermissionsManager';
 import { UserActionsMenu } from './components/UserActionsMenu';
-import { Plus, Users } from 'lucide-react';
+import { Edit, Pencil, Plus, Users } from 'lucide-react';
 import {
   createColumnHelper,
   PaginationState,
   SortingState,
   ColumnFiltersState,
+  Row,
 } from '@tanstack/react-table';
+import ActionBox from './components/ActionBox';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'permissions';
 
@@ -43,9 +48,26 @@ interface UserData {
   email_confirmed_at?: string;
   last_sign_in_at?: string;
   permissions?: string[];
+  phone?: string;
+  last_login_at?: string;
+  updated_at?: string;
+  created_at?: string;
 }
 
 type SelectedUser = UserData;
+
+const formatDate = (dateString?: string) => {
+  if (!dateString) return 'Never';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
 
 const UserManagement = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -93,6 +115,8 @@ const UserManagement = () => {
 
   const isProcessing = isDeletingUser || isDisablingUser || isEnablingUser;
 
+  const [isDrawerEnabled, setIsDrawerEnabled] = useState(false);
+
   // Handlers
   const handleCreateUser = useCallback(() => {
     setSelectedUser(null);
@@ -107,6 +131,12 @@ const UserManagement = () => {
   const handleManagePermissions = useCallback((user: SelectedUser) => {
     setSelectedUser(user);
     setViewMode('permissions');
+  }, []);
+
+  const handleSetIsDrawerOpened = useCallback((row: Row<UserData>) => {
+    setSelectedUser(row.original);
+    setIsDrawerEnabled(true);
+    console.log(row);
   }, []);
 
   const handleDeleteUser = useCallback(
@@ -149,12 +179,13 @@ const UserManagement = () => {
       if (selectedUser.is_active) {
         await disableUser(selectedUser.id).unwrap();
         showSuccess('User disabled successfully');
+        setSelectedUser({ ...selectedUser, is_active: false });
       } else {
         await enableUser(selectedUser.id).unwrap();
         showSuccess('User enabled successfully');
+        setSelectedUser({ ...selectedUser, is_active: true });
       }
       setShowStatusModal(false);
-      setSelectedUser(null);
       refetchUsers();
     } catch (error: unknown) {
       showError((error as Error)?.message || 'Failed to update user status');
@@ -424,6 +455,7 @@ const UserManagement = () => {
           manualPagination={true}
           manualSorting={true}
           manualFiltering={true}
+          onRowClick={handleSetIsDrawerOpened}
           centerAlignColumns={['role', 'is_active', 'actions']}
         />
       )}
@@ -451,6 +483,172 @@ const UserManagement = () => {
         danger={selectedUser?.is_active}
         isLoading={isProcessing}
       />
+
+      <SideDrawer
+        headerTitle="User Details"
+        width={480}
+        isDrawerOpen={isDrawerEnabled}
+        onClose={() => setIsDrawerEnabled(false)}
+      >
+        <div className="h-full p-8">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col items-center">
+              <div className="group relative cursor-pointer">
+                {selectedUser?.avatar_url ? (
+                  <img
+                    className="h-20 w-20 rounded-full object-cover ring-2 ring-[var(--color-neutral-gray-02)]"
+                    src={selectedUser.avatar_url}
+                    alt=""
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-neutral-gray-03)] text-2xl font-semibold text-[var(--color-neutral-black-02)] ring-2 ring-[var(--color-neutral-gray-02)]">
+                    {selectedUser?.first_name?.[0]?.toUpperCase() ||
+                      selectedUser?.email?.[0]?.toUpperCase() ||
+                      '?'}
+                  </div>
+                )}
+                <div className="absolute inset-0 rounded-full bg-black opacity-0 transition-opacity group-hover:opacity-30" />
+                <div className="absolute right-0 bottom-0 rounded-full border border-gray-200 bg-white p-1 shadow-md dark:border-gray-600 dark:bg-gray-700">
+                  <Pencil className="h-3 w-3" />
+                </div>
+              </div>
+              <span className="text-xl font-semibold">
+                {selectedUser?.first_name} {selectedUser?.last_name}
+              </span>
+              <span className="text-xs text-[var(--color-neutral-black-02)]">
+                {selectedUser?.email}
+              </span>
+              <span className="text-xs text-[var(--color-neutral-black-02)] italic">
+                {selectedUser?.phone || 'No phone number'}
+              </span>
+            </div>
+
+            <div className="flex h-full flex-col gap-2 text-sm">
+              {/* Role and Status */}
+              <div className="flex">
+                <div className="flex-1">
+                  <h3 className="font-semibold">Role</h3>
+                  <p className="">{selectedUser?.role}</p>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold">Status</h3>
+                  <div
+                    className={classNames(
+                      'border-[var(--color-neutral-gray-03) inline-flex items-center gap-1 rounded-full border px-2'
+                    )}
+                  >
+                    <div
+                      className={classNames(
+                        'full h-2 w-2 rounded-full',
+                        selectedUser?.is_active
+                          ? 'bg-[var(--color-semantic-success)]'
+                          : 'bg-[var(--color-semantic-error)]'
+                      )}
+                    />
+                    <span>{selectedUser?.is_active ? 'Active' : 'Inactive'}</span>
+                  </div>
+                </div>
+              </div>
+              {/* Permissions */}
+              <div className="">
+                <h3 className="font-semibold">Permissions</h3>
+                <ul className="flex flex-wrap gap-1">
+                  {selectedUser?.permissions?.map((permission) => (
+                    <li
+                      key={permission}
+                      className="rounded-full bg-[var(--color-neutral-gray-02)] px-2"
+                    >
+                      {permission}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {/* Metadata */}
+              <div className="flex flex-col gap-2 pt-4">
+                <div>
+                  <h3 className="font-semibold">User ID</h3>
+                  <span>{selectedUser?.id}</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Last Edited At</h3>
+                  <span>{formatDate(selectedUser?.updated_at)}</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Last Logged In</h3>
+                  <span>
+                    {formatDate(selectedUser?.last_login_at || selectedUser?.last_sign_in_at)}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Account Created At</h3>
+                  <span>{formatDate(selectedUser?.created_at)}</span>
+                </div>
+              </div>
+              {/* Actions */}
+              <div className="flex flex-col gap-2 py-4">
+                <ActionBox
+                  title="Edit User"
+                  description="Make changes to the user's profile"
+                  buttonText="Edit User"
+                  onButtonClick={() => {
+                    selectedUser && handleEditUser(selectedUser);
+                    setIsDrawerEnabled(false);
+                  }}
+                  borderColorClass="border-[var(--color-accent-yellow-400)]/50"
+                  boxBgClass="bg-[var(--color-accent-yellow-200)]/50"
+                  buttonBgClass="bg-[var(--color-accent-yellow-400)]/30"
+                  buttonHoverBgClass="hover:bg-[var(--color-accent-yellow-400)]/60"
+                  textColor="text-[var(--color-accent-yellow-600)]"
+                />
+                <ActionBox
+                  title="Manage User Roles and Permissions"
+                  description="Make changes to the user's roles and permissions"
+                  buttonText="Manage Permissions"
+                  onButtonClick={() => {
+                    selectedUser && handleManagePermissions(selectedUser);
+                    setIsDrawerEnabled(false);
+                  }}
+                />
+                <ActionBox
+                  title={selectedUser?.is_active ? 'Disable User' : 'Enable User'}
+                  description={
+                    selectedUser?.is_active
+                      ? "Deactivate user's account"
+                      : "Activate user's account"
+                  }
+                  buttonText={selectedUser?.is_active ? 'Disable User' : 'Enable User'}
+                  borderColorClass={
+                    selectedUser?.is_active
+                      ? 'border-[var(--color-tertiary-red-400)]/50'
+                      : 'border-[var(--color-tertiary-green-400)]/50'
+                  }
+                  boxBgClass={
+                    selectedUser?.is_active
+                      ? 'bg-[var(--color-tertiary-red-200)]/50'
+                      : 'bg-[var(--color-tertiary-green-200)]/20'
+                  }
+                  buttonBgClass={
+                    selectedUser?.is_active
+                      ? 'bg-[var(--color-tertiary-red-400)]/30'
+                      : 'bg-[var(--color-tertiary-green-400)]/30'
+                  }
+                  buttonHoverBgClass={
+                    selectedUser?.is_active
+                      ? 'hover:bg-[var(--color-tertiary-red-400)]/60'
+                      : 'hover:bg-[var(--color-tertiary-green-400)]/60'
+                  }
+                  textColor={
+                    selectedUser?.is_active
+                      ? 'text-[var(--color-tertiary-red-600)]'
+                      : 'text-[var(--color-tertiary-green-600)]'
+                  }
+                  onButtonClick={() => selectedUser && handleToggleUserStatus(selectedUser)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </SideDrawer>
     </div>
   );
 };

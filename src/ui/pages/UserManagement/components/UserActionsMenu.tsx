@@ -35,7 +35,7 @@ export const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>
-        <Menu.Button className="flex items-center rounded-full text-gray-400 hover:text-gray-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100 focus:outline-none dark:hover:text-gray-300 dark:focus:ring-offset-gray-800">
+        <Menu.Button className="flex items-center cursor-pointer rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100 focus:outline-none dark:hover:text-gray-300 dark:focus:ring-offset-gray-800 transition-colors">
           <span className="sr-only">Open options</span>
           <MoreVertical className="h-5 w-5" aria-hidden="true" />
         </Menu.Button>
