@@ -188,16 +188,14 @@ const Artworks = () => {
         />
 
         {/* Pagination */}
-        {data.length > 0 && (
-          <ArtworksPagination
-            pagination={pagination}
-            onPaginationChange={setPagination}
-            totalCount={totalCount}
-            pageCount={pageCount}
-            canPreviousPage={pagination.pageIndex > 0}
-            canNextPage={pagination.pageIndex < pageCount - 1}
-          />
-        )}
+        <ArtworksPagination
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          totalCount={totalCount}
+          pageCount={pageCount}
+          canPreviousPage={pagination.pageIndex > 0}
+          canNextPage={pagination.pageIndex < pageCount - 1}
+        />
       </div>
 
       {/* Modals */}

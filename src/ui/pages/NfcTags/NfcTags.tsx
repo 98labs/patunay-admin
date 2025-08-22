@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { Button, PageHeader, SideDrawer, StatusIndicator, ActionBox, Badge } from '@components';
 import { showNotification } from '../../components/NotificationMessage/slice';
 import { getTags, Tag } from '../../supabase/rpc/getTags';
@@ -16,6 +17,7 @@ import { getArtwork } from '../../supabase/rpc/getArtwork';
 
 const NfcTags = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { isNfcAvailable, nfcFeaturesEnabled, deviceStatus } = useNfcStatus();
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
@@ -626,7 +628,8 @@ const NfcTags = () => {
                         <img
                           src={imageUrl}
                           alt={selectedArtwork.title || 'Artwork'}
-                          className="h-48 w-full rounded-lg object-cover"
+                          className="h-48 w-full rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => navigate(`/dashboard/artworks/${selectedArtwork.id}`)}
                           onError={(e) => {
                             console.error('Failed to load image:', imageUrl);
                             e.currentTarget.style.display = 'none';
@@ -638,9 +641,14 @@ const NfcTags = () => {
 
                   {/* Artwork Details */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="col-span-2">
                       <span className="text-xs text-gray-500">Title</span>
-                      <p className="text-sm font-medium">{selectedArtwork.title}</p>
+                      <p 
+                        className="text-sm font-medium text-[var(--color-primary-500)] hover:text-[var(--color-primary-600)] cursor-pointer hover:underline transition-colors"
+                        onClick={() => navigate(`/dashboard/artworks/${selectedArtwork.id}`)}
+                      >
+                        {selectedArtwork.title}
+                      </p>
                     </div>
 
                     <div>

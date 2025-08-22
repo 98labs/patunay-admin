@@ -13,10 +13,6 @@ export function DataTablePagination<TData>({ table, totalCount }: DataTablePagin
     table.setPageSize(newPageSize);
   };
 
-  if (pageCount <= 1) {
-    return null;
-  }
-
   return (
     <div className="flex items-center justify-end">
       {/* Results per page and Current page navigation */}
