@@ -42,6 +42,8 @@ export { default as SimpleChart } from './SimpleChart';
 export { default as StatsCard } from './StatsCard';
 export { default as StatusIndicator } from './StatusIndicator';
 export { default as SystemHealth } from './SystemHealth';
+export { TableSkeleton } from './TableSkeleton';
+export type { SkeletonColumnConfig } from './TableSkeleton';
 export { default as UserForm } from './UserForm';
 export { default as UserProfile, UserProfileDropdown } from './UserProfile';
 export { default as UserTable } from './UserTable';

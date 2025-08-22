@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   PageHeader,
-  Loading,
   ConfirmationModal,
   Button,
   FormField,
@@ -26,6 +25,7 @@ import { useNotification } from '../../hooks/useNotification';
 import { useAuth } from '../../hooks/useAuth';
 import { UserForm } from './components/UserForm';
 import { PermissionsManager } from './components/PermissionsManager';
+import UserTableSkeleton from './components/UserTableSkeleton';
 import { Edit, Pencil, Plus, Search, Users } from 'lucide-react';
 import {
   createColumnHelper,
@@ -467,24 +467,25 @@ const UserManagement = () => {
 
       {/* Users Table */}
       {isLoadingUsers || usersError || !usersResponse?.data || usersResponse.data.length === 0 ? (
-        <div className="rounded-lg bg-white shadow dark:bg-gray-800">
+        <>
           {isLoadingUsers ? (
-            <div className="p-8">
-              <Loading />
-            </div>
+            <UserTableSkeleton />
           ) : usersError ? (
-            <div className="p-8">
-              <EmptyState
-                title="Error loading users"
-                description={usersError.toString()}
-                action={{
-                  label: 'Retry',
-                  onClick: () => refetchUsers(),
-                }}
-              />
+            <div className="rounded-lg bg-white shadow dark:bg-gray-800">
+              <div className="p-8">
+                <EmptyState
+                  title="Error loading users"
+                  description={usersError.toString()}
+                  action={{
+                    label: 'Retry',
+                    onClick: () => refetchUsers(),
+                  }}
+                />
+              </div>
             </div>
           ) : (
-            <div className="p-8">
+            <div className="rounded-lg bg-white shadow dark:bg-gray-800">
+              <div className="p-8">
               <EmptyState
                 icon={<Users className="h-12 w-12" />}
                 title="No users found"
@@ -511,14 +512,15 @@ const UserManagement = () => {
                       : undefined
                 }
               />
+              </div>
             </div>
           )}
-        </div>
+        </>
       ) : (
         <DataTable
           data={usersResponse.data}
           columns={columns}
-          isLoading={isLoadingUsers}
+          isLoading={false}
           totalCount={usersResponse.count}
           pagination={pagination}
           onPaginationChange={setPagination}

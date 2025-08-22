@@ -15,6 +15,7 @@ import {
   Login,
   NotFoundPage,
 } from "./LazyComponents";
+import UserTableSkeleton from "../pages/UserManagement/components/UserTableSkeleton";
 
 // Layout components are loaded separately for better optimization
 const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
@@ -118,7 +119,23 @@ const router = createBrowserRouter([
             path: "/dashboard/admin/users",
             element: (
               <UserManagementRoute>
-                <SuspenseWrapper>
+                <SuspenseWrapper fallback={
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48 mb-2" />
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-64" />
+                      </div>
+                      <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="flex-1 h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+                      <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+                    </div>
+                    <UserTableSkeleton />
+                  </div>
+                }>
                   <UserManagement />
                 </SuspenseWrapper>
               </UserManagementRoute>
