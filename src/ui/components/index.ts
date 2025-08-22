@@ -1,4 +1,5 @@
 // Component exports
+export { default as ActionBox } from './ActionBox';
 export { default as ActivityFeed } from './ActivityFeed';
 export { default as Alert } from './Alert';
 export { default as Badge } from './Badge';
@@ -39,6 +40,7 @@ export { default as RadioButton } from './RadioButton';
 export { default as Sidebar } from './Sidebar';
 export { default as SimpleChart } from './SimpleChart';
 export { default as StatsCard } from './StatsCard';
+export { default as StatusIndicator } from './StatusIndicator';
 export { default as SystemHealth } from './SystemHealth';
 export { default as UserForm } from './UserForm';
 export { default as UserProfile, UserProfileDropdown } from './UserProfile';
@@ -48,7 +50,6 @@ export { default as Version } from './Version';
 export { UserAvatar } from './UserAvatar';
 export { CreateUserModal } from './CreateUserModal';
 export { SupabaseDiagnostic } from './SupabaseDiagnostic';
-export { default as NfcTagsTable } from './NfcTagsTable';
 export { DataTable } from './DataTable';
 export { Toast, useToast, ToastContainer } from './Toast/Toast';
 // RBAC components

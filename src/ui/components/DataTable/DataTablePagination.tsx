@@ -26,59 +26,70 @@ export function DataTablePagination<TData>({ table, totalCount }: DataTablePagin
   }
 
   return (
-    <div className="flex items-center justify-end">
-      {/* Results per page and Current page navigation */}
-      <div className="flex items-center gap-6">
+    <div className="mt-4 flex items-center justify-between">
+      {/* Results per page */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm" style={{ color: 'var(--color-neutral-black-02)' }}>
+          Results per page:
+        </span>
+        <select
+          value={pageSize}
+          onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+          className="select select-sm border-0 bg-transparent focus:outline-none"
+          style={{ color: 'var(--color-neutral-black-02)' }}
+        >
+          {[10, 20, 30, 40, 50].map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Pagination controls */}
+      <div className="flex items-center gap-4">
+        {/* Showing info */}
+        <span className="text-sm" style={{ color: 'var(--color-neutral-black-02)' }}>
+          Showing {startItem}-{endItem} of {total}
+        </span>
+
+        {/* Navigation buttons */}
         <div className="flex items-center gap-2">
-          <span
-            className="text-sm whitespace-nowrap"
+          <button
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="rounded p-2 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
             style={{ color: 'var(--color-neutral-black-02)' }}
           >
-            Results per page
-          </span>
-          <select
-            value={pageSize}
-            onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-            className="select select-sm border border-gray-300 bg-white text-sm"
-            style={{
-              minWidth: '60px',
-              color: 'var(--color-neutral-black-01)',
-            }}
-          >
-            {[5, 10, 25, 50, 100].map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-        </div>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="15,18 9,12 15,6"></polyline>
+            </svg>
+          </button>
 
-        <div className="flex items-center gap-4">
-          <span
-            className="text-sm whitespace-nowrap"
+          <button
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="rounded p-2 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
             style={{ color: 'var(--color-neutral-black-02)' }}
           >
-            Current Page: {pageIndex + 1}
-          </span>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="flex h-8 w-8 items-center justify-center bg-white hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Previous page"
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              {'<'}
-            </button>
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="flex h-8 w-8 items-center justify-center bg-white hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Next page"
-            >
-              {'>'}
-            </button>
-          </div>
+              <polyline points="9,18 15,12 9,6"></polyline>
+            </svg>
+          </button>
         </div>
       </div>
     </div>

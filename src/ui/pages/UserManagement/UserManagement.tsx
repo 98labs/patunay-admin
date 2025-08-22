@@ -9,6 +9,7 @@ import {
   Badge,
   EmptyState,
   SideDrawer,
+  StatusIndicator,
 } from '@components';
 import { DataTable } from '../../components/DataTable';
 import { classNames } from '../../utils/classNames';
@@ -33,7 +34,7 @@ import {
   ColumnFiltersState,
   Row,
 } from '@tanstack/react-table';
-import ActionBox from './components/ActionBox';
+import { ActionBox } from '@components';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'permissions';
 
@@ -135,11 +136,6 @@ const UserManagement = () => {
     setViewMode('create');
   }, []);
 
-  const handleEditUser = useCallback((user: SelectedUser) => {
-    setSelectedUser(user);
-    setViewMode('edit');
-  }, []);
-
   const handleManagePermissions = useCallback((user: SelectedUser) => {
     setSelectedUser(user);
     setViewMode('permissions');
@@ -151,19 +147,10 @@ const UserManagement = () => {
     setIsEditMode(false);
   }, []);
 
-  const handleDeleteUser = useCallback(
-    (user: SelectedUser) => {
-      setSelectedUser(user);
-      // Only super_user can actually delete, admin users get a different modal
-      if (currentUser?.role === 'super_user') {
-        setShowDeleteModal(true);
-      } else {
-        // For admin users, show a message about contacting support
-        showError('Contact Patunay support to delete a user. You can disable the account instead.');
-      }
-    },
-    [currentUser?.role, showError]
-  );
+  const handleCloseDrawer = () => {
+    setIsDrawerEnabled(false);
+    setIsEditMode(false);
+  };
 
   const handleToggleUserStatus = useCallback((user: SelectedUser) => {
     setSelectedUser(user);
@@ -242,11 +229,11 @@ const UserManagement = () => {
         id: selectedUser.id,
         ...editFormData,
       };
-      
+
       if (avatarFile) {
         updateData.avatar_file = avatarFile;
       }
-      
+
       await updateUser(updateData).unwrap();
 
       showSuccess('User updated successfully');
@@ -262,30 +249,42 @@ const UserManagement = () => {
     } catch (error: unknown) {
       showError((error as Error)?.message || 'Failed to update user');
     }
-  }, [selectedUser, editFormData, avatarFile, avatarPreview, updateUser, showSuccess, showError, refetchUsers]);
+  }, [
+    selectedUser,
+    editFormData,
+    avatarFile,
+    avatarPreview,
+    updateUser,
+    showSuccess,
+    showError,
+    refetchUsers,
+  ]);
 
-  const handleAvatarFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        showError('Please select an image file.');
-        return;
+  const handleAvatarFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        if (!file.type.startsWith('image/')) {
+          showError('Please select an image file.');
+          return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+          showError('File size must be less than 5MB.');
+          return;
+        }
+
+        setAvatarFile(file);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setAvatarPreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
       }
-      
-      if (file.size > 5 * 1024 * 1024) {
-        showError('File size must be less than 5MB.');
-        return;
-      }
-      
-      setAvatarFile(file);
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  }, [showError]);
+    },
+    [showError]
+  );
 
   const handleAvatarClick = useCallback(() => {
     if (isEditMode && fileInputRef.current) {
@@ -565,15 +564,12 @@ const UserManagement = () => {
         headerTitle="User Details"
         width={480}
         isDrawerOpen={isDrawerEnabled}
-        onClose={() => {
-          setIsDrawerEnabled(false);
-          setIsEditMode(false);
-        }}
+        onClose={handleCloseDrawer}
       >
         <div className="h-full p-8">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col items-center">
-              <div 
+              <div
                 className={`group relative ${isEditMode ? 'cursor-pointer' : ''}`}
                 onClick={handleAvatarClick}
               >
@@ -682,25 +678,11 @@ const UserManagement = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold">Status</h3>
-                  <div
-                    className={classNames(
-                      'border-[var(--color-neutral-gray-03) inline-flex items-center gap-1 rounded-full border px-2'
-                    )}
-                  >
-                    <div
-                      className={classNames(
-                        'full h-2 w-2 rounded-full',
-                        selectedUser?.is_active
-                          ? 'bg-[var(--color-semantic-success)]'
-                          : 'bg-[var(--color-semantic-error)]'
-                      )}
-                    />
-                    <span>{selectedUser?.is_active ? 'Active' : 'Inactive'}</span>
-                  </div>
+                  <StatusIndicator isActive={selectedUser?.is_active || false} />
                 </div>
               </div>
               {/* Permissions */}
-              <div className="">
+              <div className="pb-4 border-b">
                 <h3 className="font-semibold">Permissions</h3>
                 <ul className="flex flex-wrap gap-1">
                   {selectedUser?.permissions?.map((permission) => (
@@ -714,7 +696,7 @@ const UserManagement = () => {
                 </ul>
               </div>
               {/* Metadata */}
-              <div className="flex flex-col gap-2 pt-4">
+              <div className="flex flex-col gap-2 pt-4 pb-4 border-b">
                 <div>
                   <h3 className="font-semibold">User ID</h3>
                   <span>{selectedUser?.id}</span>
@@ -735,7 +717,7 @@ const UserManagement = () => {
                 </div>
               </div>
               {/* Actions */}
-              <div className="flex flex-col gap-2 py-4">
+              <div className="flex flex-col gap-2 pt-4">
                 {isEditMode ? (
                   <div className="flex gap-2">
                     <Button
