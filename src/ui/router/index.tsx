@@ -16,6 +16,8 @@ import {
   NotFoundPage,
 } from "./LazyComponents";
 import UserTableSkeleton from "../pages/UserManagement/components/UserTableSkeleton";
+import NfcTagsSkeleton from "../pages/NfcTags/components/NfcTagsSkeleton";
+import ArtworksSkeleton from "../pages/Artworks/components/ArtworksSkeleton";
 
 // Layout components are loaded separately for better optimization
 const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
@@ -66,7 +68,22 @@ const router = createBrowserRouter([
           {
             path: "/dashboard/artworks",
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={
+                <div className="space-y-6">
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+                  <div className="flex gap-4">
+                    <div className="flex-1 h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+                  </div>
+                  <ArtworksSkeleton />
+                  <div className="flex justify-center gap-2">
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24" />
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24" />
+                  </div>
+                </div>
+              }>
                 <Artworks />
               </SuspenseWrapper>
             ),
@@ -91,7 +108,18 @@ const router = createBrowserRouter([
             path: "/dashboard/admin/nfc-tags",
             element: (
               <NfcManagementRoute>
-                <SuspenseWrapper>
+                <SuspenseWrapper fallback={
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48" />
+                      <div className="flex items-center gap-3">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16" />
+                        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+                      </div>
+                    </div>
+                    <NfcTagsSkeleton />
+                  </div>
+                }>
                   <NfcTags />
                 </SuspenseWrapper>
               </NfcManagementRoute>

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
-import { Button, Loading, PageHeader, SideDrawer, StatusIndicator, ActionBox, Badge } from '@components';
+import { Button, PageHeader, SideDrawer, StatusIndicator, ActionBox, Badge } from '@components';
 import { showNotification } from '../../components/NotificationMessage/slice';
 import { getTags, Tag } from '../../supabase/rpc/getTags';
 import { registerTag } from '../../supabase/rpc/registerTag';
@@ -9,6 +9,8 @@ import { useNfcStatus } from '../../context/NfcStatusContext';
 import { Row, createColumnHelper } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { NfcTagsDataTable } from './components/NfcTagsDataTable';
+import NfcTagsSkeleton from './components/NfcTagsSkeleton';
+import { ArtworkInfoSkeleton, UserInfoSkeleton, CreatorInfoSkeleton } from './components/SideDrawerSkeletons';
 import { useGetUserQuery } from '../../store/api/userManagementApiV2';
 import { getArtwork } from '../../supabase/rpc/getArtwork';
 
@@ -252,16 +254,16 @@ const NfcTags = () => {
   );
 
   // Fetch user data for created_by and updated_by
-  const { data: createdByUser } = useGetUserQuery(selectedTag?.created_by || '', {
+  const { data: createdByUser, isLoading: isLoadingCreatedBy } = useGetUserQuery(selectedTag?.created_by || '', {
     skip: !selectedTag?.created_by,
   });
 
-  const { data: updatedByUser } = useGetUserQuery(selectedTag?.updated_by || '', {
+  const { data: updatedByUser, isLoading: isLoadingUpdatedBy } = useGetUserQuery(selectedTag?.updated_by || '', {
     skip: !selectedTag?.updated_by,
   });
 
   // Fetch tag issuer info if artwork is loaded
-  const { data: tagIssuerUser } = useGetUserQuery(selectedArtwork?.tag_issued_by || '', {
+  const { data: tagIssuerUser, isLoading: isLoadingTagIssuer } = useGetUserQuery(selectedArtwork?.tag_issued_by || '', {
     skip: !selectedArtwork?.tag_issued_by,
   });
 
@@ -493,8 +495,6 @@ const NfcTags = () => {
     };
   }, []);
 
-  if (loading) return <Loading fullScreen={false} />;
-
   return (
     <div className="container mx-auto space-y-6 px-4">
       <div className="flex items-center justify-between">
@@ -524,17 +524,21 @@ const NfcTags = () => {
       </div>
 
       {/* NFC Tags Table */}
-      <NfcTagsDataTable
-        data={tags}
-        columns={columns}
-        isLoading={loading}
-        emptyMessage="No tags registered yet"
-        centerAlignColumns={['active', 'read_write_count']}
-        enablePagination={true}
-        enableSorting={true}
-        enableFiltering={true}
-        onRowClick={handleOpenDrawer}
-      />
+      {loading ? (
+        <NfcTagsSkeleton />
+      ) : (
+        <NfcTagsDataTable
+          data={tags}
+          columns={columns}
+          isLoading={false}
+          emptyMessage="No tags registered yet"
+          centerAlignColumns={['active', 'read_write_count']}
+          enablePagination={true}
+          enableSorting={true}
+          enableFiltering={true}
+          onRowClick={handleOpenDrawer}
+        />
+      )}
 
       {/* NFC Scanning Indicator */}
       {isScanning && (
@@ -593,9 +597,7 @@ const NfcTags = () => {
                 Attached Artwork
               </h3>
               {loadingArtwork ? (
-                <div className="flex justify-center py-4">
-                  <span className="loading loading-spinner loading-sm"></span>
-                </div>
+                <ArtworkInfoSkeleton />
               ) : selectedArtwork ? (
                 <div className="space-y-3">
                   {/* Artwork Image */}
@@ -682,12 +684,14 @@ const NfcTags = () => {
 
                   {/* Tag Issuer Information */}
                   {selectedArtwork.tag_issued_by && (
-                    <div className="mt-3 border-t pt-3">
+                    <div className="mt-3">
                       <div className="flex gap-4">
                         <div className="flex-1">
                           <span className="text-xs text-gray-500">Tag Issued By</span>
                           <div className="mt-1">
-                            {tagIssuerUser?.data ? (
+                            {isLoadingTagIssuer ? (
+                              <UserInfoSkeleton />
+                            ) : tagIssuerUser?.data ? (
                               <div>
                                 <span className="text-sm font-medium">
                                   {tagIssuerUser.data.first_name || tagIssuerUser.data.last_name
@@ -725,14 +729,16 @@ const NfcTags = () => {
           )}
 
           {/* Creation and Update Information */}
-          <div className="space-y-3 border-t border-b pt-4 pb-4">
+          <div className="space-y-3 border-b pt-4 pb-4">
             {/* Created By and Created At */}
             <div className="flex gap-4">
               <div className="flex-1">
                 <h3 className="text-xs font-semibold text-gray-500 uppercase">Created By</h3>
                 <div className="mt-1">
                   {selectedTag?.created_by ? (
-                    createdByUser?.data ? (
+                    isLoadingCreatedBy ? (
+                      <UserInfoSkeleton />
+                    ) : createdByUser?.data ? (
                       <div>
                         <span className="text-sm font-medium">
                           {createdByUser.data.first_name || createdByUser.data.last_name
@@ -771,7 +777,9 @@ const NfcTags = () => {
                   <h3 className="text-xs font-semibold text-gray-500 uppercase">Updated By</h3>
                   <div className="mt-1">
                     {selectedTag?.updated_by ? (
-                      updatedByUser?.data ? (
+                      isLoadingUpdatedBy ? (
+                        <UserInfoSkeleton />
+                      ) : updatedByUser?.data ? (
                         <div>
                           <span className="text-sm font-medium">
                             {updatedByUser.data.first_name || updatedByUser.data.last_name

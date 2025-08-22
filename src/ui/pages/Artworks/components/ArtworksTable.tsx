@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArtworkEntity } from '../../../typings';
 import { ArtworkImageCell } from './ArtworkImageCell';
+import ArtworksSkeleton from './ArtworksSkeleton';
 import { Badge } from '@components';
 
 interface ArtworksTableProps {
@@ -190,11 +191,7 @@ export const ArtworksTable = ({
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="loading loading-spinner loading-lg"></div>
-      </div>
-    );
+    return <ArtworksSkeleton />;
   }
 
   if (data.length === 0) {
