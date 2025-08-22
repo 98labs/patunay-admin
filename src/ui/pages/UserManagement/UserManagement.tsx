@@ -1,10 +1,10 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   PageHeader,
   Loading,
   ConfirmationModal,
   Button,
-  SearchInput,
+  FormField,
   Select,
   Badge,
   EmptyState,
@@ -18,13 +18,14 @@ import {
   useDeleteUserMutation,
   useDisableUserMutation,
   useEnableUserMutation,
+  useUpdateUserMutation,
 } from '../../store/api/userManagementApiV2';
 import { UserRole } from '../../store/api/userManagementApiV2';
 import { useNotification } from '../../hooks/useNotification';
 import { useAuth } from '../../hooks/useAuth';
 import { UserForm } from './components/UserForm';
 import { PermissionsManager } from './components/PermissionsManager';
-import { Edit, Pencil, Plus, Users } from 'lucide-react';
+import { Edit, Pencil, Plus, Search, Users } from 'lucide-react';
 import {
   createColumnHelper,
   PaginationState,
@@ -73,6 +74,17 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    first_name: '',
+    last_name: '',
+    phone: '',
+    role: '' as UserRole,
+    avatar_url: '',
+  });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // DataTable state
   const [pagination, setPagination] = useState<PaginationState>({
@@ -111,6 +123,7 @@ const UserManagement = () => {
   const [deleteUser, { isLoading: isDeletingUser }] = useDeleteUserMutation();
   const [disableUser, { isLoading: isDisablingUser }] = useDisableUserMutation();
   const [enableUser, { isLoading: isEnablingUser }] = useEnableUserMutation();
+  const [updateUser, { isLoading: isUpdatingUser }] = useUpdateUserMutation();
 
   const isProcessing = isDeletingUser || isDisablingUser || isEnablingUser;
 
@@ -135,7 +148,7 @@ const UserManagement = () => {
   const handleSetIsDrawerOpened = useCallback((row: Row<UserData>) => {
     setSelectedUser(row.original);
     setIsDrawerEnabled(true);
-    console.log(row);
+    setIsEditMode(false);
   }, []);
 
   const handleDeleteUser = useCallback(
@@ -196,6 +209,89 @@ const UserManagement = () => {
     setSelectedUser(null);
     refetchUsers();
   }, [refetchUsers]);
+
+  const handleStartEdit = useCallback(() => {
+    if (selectedUser) {
+      setEditFormData({
+        first_name: selectedUser.first_name || '',
+        last_name: selectedUser.last_name || '',
+        phone: selectedUser.phone || '',
+        role: selectedUser.role,
+        avatar_url: selectedUser.avatar_url || '',
+      });
+      setAvatarPreview(selectedUser.avatar_url || null);
+      setAvatarFile(null);
+      setIsEditMode(true);
+    }
+  }, [selectedUser]);
+
+  const handleCancelEdit = useCallback(() => {
+    setIsEditMode(false);
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
+
+  const handleSaveEdit = useCallback(async () => {
+    if (!selectedUser) return;
+
+    try {
+      const updateData: any = {
+        id: selectedUser.id,
+        ...editFormData,
+      };
+      
+      if (avatarFile) {
+        updateData.avatar_file = avatarFile;
+      }
+      
+      await updateUser(updateData).unwrap();
+
+      showSuccess('User updated successfully');
+      setSelectedUser({
+        ...selectedUser,
+        ...editFormData,
+        avatar_url: avatarPreview || editFormData.avatar_url,
+      });
+      setIsEditMode(false);
+      setAvatarFile(null);
+      setAvatarPreview(null);
+      refetchUsers();
+    } catch (error: unknown) {
+      showError((error as Error)?.message || 'Failed to update user');
+    }
+  }, [selectedUser, editFormData, avatarFile, avatarPreview, updateUser, showSuccess, showError, refetchUsers]);
+
+  const handleAvatarFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        showError('Please select an image file.');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        showError('File size must be less than 5MB.');
+        return;
+      }
+      
+      setAvatarFile(file);
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }, [showError]);
+
+  const handleAvatarClick = useCallback(() => {
+    if (isEditMode && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  }, [isEditMode]);
 
   // Column helper for type safety
   const columnHelper = createColumnHelper<UserData>();
@@ -297,11 +393,7 @@ const UserManagement = () => {
         ),
       }),
     ],
-    [
-      columnHelper,
-      currentUser?.id,
-      currentUser?.role,
-    ]
+    [columnHelper, currentUser?.id, currentUser?.role]
   );
 
   // Render different views
@@ -328,22 +420,27 @@ const UserManagement = () => {
         action={
           currentUser?.role === 'admin' || currentUser?.role === 'super_user' ? (
             <Button onClick={handleCreateUser} variant="primary">
-              <Plus className="mr-2 h-4 w-4" />
-              Add User
+              <div className="flex items-center gap-1">
+                <Plus size={20} /> <span className="">Add New User</span>
+              </div>
             </Button>
           ) : null
         }
       />
 
       {/* Filters and Actions */}
-      <div className="rounded-lg bg-white p-4 shadow dark:bg-gray-800">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-          <SearchInput
-            value={globalFilter}
-            onChange={setGlobalFilter}
-            placeholder="Search users..."
-            className="md:col-span-2"
-          />
+      <div className="flex gap-4">
+        <div className="flex flex-1 items-center gap-2">
+          <div className="flex-1">
+            <FormField
+              isLabelVisible={false}
+              className="py-2"
+              prefixIcon={Search}
+              placeholder="Search users by name, email, or role..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+            />
+          </div>
           <Select
             value={roleFilter}
             onChange={(value) => setRoleFilter(value as UserRole | 'all')}
@@ -468,16 +565,22 @@ const UserManagement = () => {
         headerTitle="User Details"
         width={480}
         isDrawerOpen={isDrawerEnabled}
-        onClose={() => setIsDrawerEnabled(false)}
+        onClose={() => {
+          setIsDrawerEnabled(false);
+          setIsEditMode(false);
+        }}
       >
         <div className="h-full p-8">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col items-center">
-              <div className="group relative cursor-pointer">
-                {selectedUser?.avatar_url ? (
+              <div 
+                className={`group relative ${isEditMode ? 'cursor-pointer' : ''}`}
+                onClick={handleAvatarClick}
+              >
+                {(isEditMode && avatarPreview) || (!isEditMode && selectedUser?.avatar_url) ? (
                   <img
                     className="h-20 w-20 rounded-full object-cover ring-2 ring-[var(--color-neutral-gray-02)]"
-                    src={selectedUser.avatar_url}
+                    src={isEditMode ? avatarPreview! : selectedUser!.avatar_url}
                     alt=""
                   />
                 ) : (
@@ -487,20 +590,70 @@ const UserManagement = () => {
                       '?'}
                   </div>
                 )}
-                <div className="absolute inset-0 rounded-full bg-black opacity-0 transition-opacity group-hover:opacity-30" />
-                <div className="absolute right-0 bottom-0 rounded-full border border-gray-200 bg-white p-1 shadow-md dark:border-gray-600 dark:bg-gray-700">
-                  <Pencil className="h-3 w-3" />
-                </div>
+                {isEditMode && (
+                  <>
+                    <div className="absolute inset-0 rounded-full bg-black opacity-0 transition-opacity group-hover:opacity-30" />
+                    <div className="absolute right-0 bottom-0 rounded-full border border-gray-200 bg-white p-1 shadow-md dark:border-gray-600 dark:bg-gray-700">
+                      <Pencil className="h-3 w-3" />
+                    </div>
+                  </>
+                )}
               </div>
-              <span className="text-xl font-semibold">
-                {selectedUser?.first_name} {selectedUser?.last_name}
-              </span>
-              <span className="text-xs text-[var(--color-neutral-black-02)]">
-                {selectedUser?.email}
-              </span>
-              <span className="text-xs text-[var(--color-neutral-black-02)] italic">
-                {selectedUser?.phone || 'No phone number'}
-              </span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleAvatarFileChange}
+              />
+              {isEditMode && avatarFile && (
+                <span className="mt-2 text-xs text-[var(--color-semantic-success)]">
+                  ✓ New image selected
+                </span>
+              )}
+              {isEditMode ? (
+                <div className="pt-4">
+                  <div className="flex gap-2">
+                    <FormField
+                      label="First Name"
+                      placeholder="First Name"
+                      value={editFormData.first_name}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, first_name: e.target.value })
+                      }
+                      className="py-2"
+                    />
+                    <FormField
+                      label="Last Name"
+                      placeholder="Last Name"
+                      value={editFormData.last_name}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, last_name: e.target.value })
+                      }
+                      className="py-2"
+                    />
+                  </div>
+                  <FormField
+                    label="Phone Number"
+                    placeholder="Phone Number"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    className="py-2"
+                  />
+                </div>
+              ) : (
+                <>
+                  <span className="text-xl font-semibold">
+                    {selectedUser?.first_name} {selectedUser?.last_name}
+                  </span>
+                  <span className="text-xs text-[var(--color-neutral-black-02)]">
+                    {selectedUser?.email}
+                  </span>
+                  <span className="text-xs text-[var(--color-neutral-black-02)] italic">
+                    {selectedUser?.phone || 'No phone number'}
+                  </span>
+                </>
+              )}
             </div>
 
             <div className="flex h-full flex-col gap-2 text-sm">
@@ -508,7 +661,24 @@ const UserManagement = () => {
               <div className="flex">
                 <div className="flex-1">
                   <h3 className="font-semibold">Role</h3>
-                  <p className="">{selectedUser?.role}</p>
+                  {isEditMode ? (
+                    <Select
+                      value={editFormData.role}
+                      onChange={(value) =>
+                        setEditFormData({ ...editFormData, role: value as UserRole })
+                      }
+                      options={[
+                        { value: 'super_user', label: 'Super User' },
+                        { value: 'admin', label: 'Admin' },
+                        { value: 'issuer', label: 'Issuer' },
+                        { value: 'appraiser', label: 'Appraiser' },
+                        { value: 'staff', label: 'Staff' },
+                        { value: 'viewer', label: 'Viewer' },
+                      ]}
+                    />
+                  ) : (
+                    <p className="">{selectedUser?.role}</p>
+                  )}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold">Status</h3>
@@ -566,64 +736,81 @@ const UserManagement = () => {
               </div>
               {/* Actions */}
               <div className="flex flex-col gap-2 py-4">
-                <ActionBox
-                  title="Edit User"
-                  description="Make changes to the user's profile"
-                  buttonText="Edit User"
-                  onButtonClick={() => {
-                    selectedUser && handleEditUser(selectedUser);
-                    setIsDrawerEnabled(false);
-                  }}
-                  borderColorClass="border-[var(--color-accent-yellow-400)]/50"
-                  boxBgClass="bg-[var(--color-accent-yellow-200)]/50"
-                  buttonBgClass="bg-[var(--color-accent-yellow-400)]/30"
-                  buttonHoverBgClass="hover:bg-[var(--color-accent-yellow-400)]/60"
-                  textColor="text-[var(--color-accent-yellow-600)]"
-                />
-                <ActionBox
-                  title="Manage User Roles and Permissions"
-                  description="Make changes to the user's roles and permissions"
-                  buttonText="Manage Permissions"
-                  onButtonClick={() => {
-                    selectedUser && handleManagePermissions(selectedUser);
-                    setIsDrawerEnabled(false);
-                  }}
-                />
-                <ActionBox
-                  title={selectedUser?.is_active ? 'Disable User' : 'Enable User'}
-                  description={
-                    selectedUser?.is_active
-                      ? "Deactivate user's account"
-                      : "Activate user's account"
-                  }
-                  buttonText={selectedUser?.is_active ? 'Disable User' : 'Enable User'}
-                  borderColorClass={
-                    selectedUser?.is_active
-                      ? 'border-[var(--color-tertiary-red-400)]/50'
-                      : 'border-[var(--color-tertiary-green-400)]/50'
-                  }
-                  boxBgClass={
-                    selectedUser?.is_active
-                      ? 'bg-[var(--color-tertiary-red-200)]/50'
-                      : 'bg-[var(--color-tertiary-green-200)]/20'
-                  }
-                  buttonBgClass={
-                    selectedUser?.is_active
-                      ? 'bg-[var(--color-tertiary-red-400)]/30'
-                      : 'bg-[var(--color-tertiary-green-400)]/30'
-                  }
-                  buttonHoverBgClass={
-                    selectedUser?.is_active
-                      ? 'hover:bg-[var(--color-tertiary-red-400)]/60'
-                      : 'hover:bg-[var(--color-tertiary-green-400)]/60'
-                  }
-                  textColor={
-                    selectedUser?.is_active
-                      ? 'text-[var(--color-tertiary-red-600)]'
-                      : 'text-[var(--color-tertiary-green-600)]'
-                  }
-                  onButtonClick={() => selectedUser && handleToggleUserStatus(selectedUser)}
-                />
+                {isEditMode ? (
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSaveEdit}
+                      variant="primary"
+                      loading={isUpdatingUser}
+                      className="flex-1"
+                    >
+                      Save Changes
+                    </Button>
+                    <Button onClick={handleCancelEdit} variant="secondary" className="flex-1">
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <ActionBox
+                    title="Edit User"
+                    description="Make changes to the user's profile"
+                    buttonText="Edit User"
+                    onButtonClick={handleStartEdit}
+                    borderColorClass="border-[var(--color-accent-yellow-400)]/50"
+                    boxBgClass="bg-[var(--color-accent-yellow-200)]/50"
+                    buttonBgClass="bg-[var(--color-accent-yellow-400)]/30"
+                    buttonHoverBgClass="hover:bg-[var(--color-accent-yellow-400)]/60"
+                    textColor="text-[var(--color-accent-yellow-600)]"
+                  />
+                )}
+                {!isEditMode && (
+                  <>
+                    <ActionBox
+                      title="Manage User Roles and Permissions"
+                      description="Make changes to the user's roles and permissions"
+                      buttonText="Manage Permissions"
+                      onButtonClick={() => {
+                        selectedUser && handleManagePermissions(selectedUser);
+                        setIsDrawerEnabled(false);
+                      }}
+                    />
+                    <ActionBox
+                      title={selectedUser?.is_active ? 'Disable User' : 'Enable User'}
+                      description={
+                        selectedUser?.is_active
+                          ? "Deactivate user's account"
+                          : "Activate user's account"
+                      }
+                      buttonText={selectedUser?.is_active ? 'Disable User' : 'Enable User'}
+                      borderColorClass={
+                        selectedUser?.is_active
+                          ? 'border-[var(--color-tertiary-red-400)]/50'
+                          : 'border-[var(--color-tertiary-green-400)]/50'
+                      }
+                      boxBgClass={
+                        selectedUser?.is_active
+                          ? 'bg-[var(--color-tertiary-red-200)]/50'
+                          : 'bg-[var(--color-tertiary-green-200)]/20'
+                      }
+                      buttonBgClass={
+                        selectedUser?.is_active
+                          ? 'bg-[var(--color-tertiary-red-400)]/30'
+                          : 'bg-[var(--color-tertiary-green-400)]/30'
+                      }
+                      buttonHoverBgClass={
+                        selectedUser?.is_active
+                          ? 'hover:bg-[var(--color-tertiary-red-400)]/60'
+                          : 'hover:bg-[var(--color-tertiary-green-400)]/60'
+                      }
+                      textColor={
+                        selectedUser?.is_active
+                          ? 'text-[var(--color-tertiary-red-600)]'
+                          : 'text-[var(--color-tertiary-green-600)]'
+                      }
+                      onButtonClick={() => selectedUser && handleToggleUserStatus(selectedUser)}
+                    />
+                  </>
+                )}
               </div>
             </div>
           </div>
