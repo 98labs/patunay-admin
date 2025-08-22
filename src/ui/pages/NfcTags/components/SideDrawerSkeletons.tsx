@@ -1,42 +1,43 @@
 import React from 'react';
+import '../../../styles/shimmer.css';
 
 export const ArtworkInfoSkeleton: React.FC = () => (
   <div className="space-y-3">
     {/* Artwork Image Skeleton */}
     <div className="mb-3">
-      <div className="h-48 w-full rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
+      <div className="h-48 w-full rounded-lg skeleton-shimmer" />
     </div>
 
     {/* Artwork Details Grid Skeleton */}
     <div className="grid grid-cols-2 gap-3">
       <div>
         <span className="text-xs text-gray-500">Title</span>
-        <div className="mt-1 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24" />
+        <div className="mt-1 h-4 skeleton-shimmer rounded w-24" />
       </div>
 
       <div>
         <span className="text-xs text-gray-500">Artist</span>
-        <div className="mt-1 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20" />
+        <div className="mt-1 h-4 skeleton-shimmer rounded w-20" />
       </div>
 
       <div>
         <span className="text-xs text-gray-500">Medium</span>
-        <div className="mt-1 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16" />
+        <div className="mt-1 h-4 skeleton-shimmer rounded w-16" />
       </div>
 
       <div>
         <span className="text-xs text-gray-500">Year</span>
-        <div className="mt-1 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-12" />
+        <div className="mt-1 h-4 skeleton-shimmer rounded w-12" />
       </div>
 
       <div>
         <span className="text-xs text-gray-500">Dimensions</span>
-        <div className="mt-1 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20" />
+        <div className="mt-1 h-4 skeleton-shimmer rounded w-20" />
       </div>
 
       <div>
         <span className="text-xs text-gray-500">ID Number</span>
-        <div className="mt-1 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16" />
+        <div className="mt-1 h-4 skeleton-shimmer rounded w-16" />
       </div>
     </div>
 
@@ -46,14 +47,14 @@ export const ArtworkInfoSkeleton: React.FC = () => (
         <div className="flex-1">
           <span className="text-xs text-gray-500">Tag Issued By</span>
           <div className="mt-1">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32 mb-1" />
-            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28" />
+            <div className="h-4 skeleton-shimmer rounded w-32 mb-1" />
+            <div className="h-3 skeleton-shimmer rounded w-28" />
           </div>
         </div>
 
         <div className="flex-1">
           <span className="text-xs text-gray-500">Issued At</span>
-          <div className="mt-1 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24" />
+          <div className="mt-1 h-4 skeleton-shimmer rounded w-24" />
         </div>
       </div>
     </div>
@@ -62,8 +63,8 @@ export const ArtworkInfoSkeleton: React.FC = () => (
 
 export const UserInfoSkeleton: React.FC = () => (
   <div>
-    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32 mb-1" />
-    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-40" />
+    <div className="h-4 skeleton-shimmer rounded w-32 mb-1" />
+    <div className="h-3 skeleton-shimmer rounded w-40" />
   </div>
 );
 
@@ -74,14 +75,14 @@ export const CreatorInfoSkeleton: React.FC = () => (
       <div className="flex-1">
         <h3 className="text-xs font-semibold text-gray-500 uppercase">Created By</h3>
         <div className="mt-1">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28 mb-1" />
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-36" />
+          <div className="h-4 skeleton-shimmer rounded w-28 mb-1" />
+          <div className="h-3 skeleton-shimmer rounded w-36" />
         </div>
       </div>
 
       <div className="flex-1">
         <h3 className="text-xs font-semibold text-gray-500 uppercase">Created At</h3>
-        <div className="mt-1 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+        <div className="mt-1 h-4 skeleton-shimmer rounded w-32" />
       </div>
     </div>
 
@@ -90,14 +91,14 @@ export const CreatorInfoSkeleton: React.FC = () => (
       <div className="flex-1">
         <h3 className="text-xs font-semibold text-gray-500 uppercase">Updated By</h3>
         <div className="mt-1">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28 mb-1" />
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-36" />
+          <div className="h-4 skeleton-shimmer rounded w-28 mb-1" />
+          <div className="h-3 skeleton-shimmer rounded w-36" />
         </div>
       </div>
 
       <div className="flex-1">
         <h3 className="text-xs font-semibold text-gray-500 uppercase">Updated At</h3>
-        <div className="mt-1 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+        <div className="mt-1 h-4 skeleton-shimmer rounded w-32" />
       </div>
     </div>
   </div>

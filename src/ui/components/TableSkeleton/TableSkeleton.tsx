@@ -1,4 +1,5 @@
 import React from 'react';
+import '../../styles/shimmer.css';
 
 export interface SkeletonColumnConfig {
   key: string;
@@ -50,7 +51,7 @@ const TableSkeleton: React.FC<TableSkeletonProps> = ({
   };
 
   const defaultCellRenderer = (width: string = 'w-24') => (
-    <div className={`h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ${width}`} />
+    <div className={`h-4 skeleton-shimmer rounded ${width}`} />
   );
 
   return (
@@ -112,13 +113,13 @@ const TableSkeleton: React.FC<TableSkeletonProps> = ({
           style={{ borderColor: 'var(--color-neutral-gray-01)' }}
         >
           <div className="flex items-center space-x-2">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24" />
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20" />
+            <div className="h-4 skeleton-shimmer rounded w-24" />
+            <div className="h-8 skeleton-shimmer rounded w-20" />
           </div>
           <div className="flex items-center space-x-2">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20" />
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20" />
+            <div className="h-8 skeleton-shimmer rounded w-20" />
+            <div className="h-4 skeleton-shimmer rounded w-32" />
+            <div className="h-8 skeleton-shimmer rounded w-20" />
           </div>
         </div>
       )}

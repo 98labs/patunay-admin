@@ -1,5 +1,6 @@
 import React from 'react';
 import { TableSkeleton, SkeletonColumnConfig } from '../../../components/TableSkeleton';
+import '../../../styles/shimmer.css';
 
 const ArtworksSkeleton: React.FC = () => {
   const columns: SkeletonColumnConfig[] = [
@@ -8,7 +9,7 @@ const ArtworksSkeleton: React.FC = () => {
       header: 'No.',
       align: 'left',
       cellRenderer: () => (
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-12" />
+        <div className="h-4 skeleton-shimmer rounded w-12" />
       ),
     },
     {
@@ -17,7 +18,7 @@ const ArtworksSkeleton: React.FC = () => {
       align: 'center',
       cellRenderer: () => (
         <div className="flex items-center justify-center">
-          <div className="h-20 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+          <div className="h-20 w-20 skeleton-shimmer rounded-lg" />
         </div>
       ),
     },
@@ -26,7 +27,7 @@ const ArtworksSkeleton: React.FC = () => {
       header: 'Name',
       align: 'left',
       cellRenderer: () => (
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+        <div className="h-4 skeleton-shimmer rounded w-32" />
       ),
     },
     {
@@ -34,7 +35,7 @@ const ArtworksSkeleton: React.FC = () => {
       header: 'Author',
       align: 'left',
       cellRenderer: () => (
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28" />
+        <div className="h-4 skeleton-shimmer rounded w-28" />
       ),
     },
     {
@@ -42,7 +43,7 @@ const ArtworksSkeleton: React.FC = () => {
       header: 'Date added',
       align: 'left',
       cellRenderer: () => (
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+        <div className="h-4 skeleton-shimmer rounded w-32" />
       ),
     },
     {
@@ -50,7 +51,7 @@ const ArtworksSkeleton: React.FC = () => {
       header: 'NFC Status',
       align: 'center',
       cellRenderer: () => (
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-24" />
+        <div className="h-6 skeleton-shimmer rounded-lg w-24" />
       ),
     },
   ];

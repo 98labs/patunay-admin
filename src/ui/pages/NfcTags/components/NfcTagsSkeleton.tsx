@@ -1,5 +1,6 @@
 import React from 'react';
 import { TableSkeleton, SkeletonColumnConfig } from '../../../components/TableSkeleton';
+import '../../../styles/shimmer.css';
 
 const NfcTagsSkeleton: React.FC = () => {
   const columns: SkeletonColumnConfig[] = [
@@ -8,7 +9,7 @@ const NfcTagsSkeleton: React.FC = () => {
       header: 'Tag ID',
       align: 'left',
       cellRenderer: () => (
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-40 font-mono" />
+        <div className="h-4 skeleton-shimmer rounded w-40 font-mono" />
       ),
     },
     {
@@ -16,7 +17,7 @@ const NfcTagsSkeleton: React.FC = () => {
       header: 'Status',
       align: 'center',
       cellRenderer: () => (
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-16" />
+        <div className="h-6 skeleton-shimmer rounded-lg w-16" />
       ),
     },
     {
@@ -24,7 +25,7 @@ const NfcTagsSkeleton: React.FC = () => {
       header: 'Attached To',
       align: 'left',
       cellRenderer: () => (
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+        <div className="h-4 skeleton-shimmer rounded w-32" />
       ),
     },
     {
@@ -32,7 +33,7 @@ const NfcTagsSkeleton: React.FC = () => {
       header: 'Read/Write Count',
       align: 'center',
       cellRenderer: () => (
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-12" />
+        <div className="h-4 skeleton-shimmer rounded w-12" />
       ),
     },
     {
@@ -41,8 +42,8 @@ const NfcTagsSkeleton: React.FC = () => {
       align: 'left',
       cellRenderer: () => (
         <div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1 w-24" />
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16" />
+          <div className="h-4 skeleton-shimmer rounded mb-1 w-24" />
+          <div className="h-3 skeleton-shimmer rounded w-16" />
         </div>
       ),
     },
@@ -52,8 +53,8 @@ const NfcTagsSkeleton: React.FC = () => {
       align: 'left',
       cellRenderer: () => (
         <div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1 w-24" />
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16" />
+          <div className="h-4 skeleton-shimmer rounded mb-1 w-24" />
+          <div className="h-3 skeleton-shimmer rounded w-16" />
         </div>
       ),
     },
