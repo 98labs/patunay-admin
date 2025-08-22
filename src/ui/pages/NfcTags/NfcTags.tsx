@@ -1,16 +1,16 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
-import { Button, Loading, PageHeader, SideDrawer, StatusIndicator, ActionBox } from '@components';
+import { Button, Loading, PageHeader, SideDrawer, StatusIndicator, ActionBox, Badge } from '@components';
 import { showNotification } from '../../components/NotificationMessage/slice';
 import { getTags, Tag } from '../../supabase/rpc/getTags';
 import { registerTag } from '../../supabase/rpc/registerTag';
 import { updateTagStatus } from '../../supabase/rpc/updateTagStatus';
 import { useNfcStatus } from '../../context/NfcStatusContext';
-import { useGetUserStatsQuery } from 'store';
 import { Row, createColumnHelper } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { NfcTagsDataTable } from './components/NfcTagsDataTable';
 import { useGetUserQuery } from '../../store/api/userManagementApiV2';
+import { getArtwork } from '../../supabase/rpc/getArtwork';
 
 const NfcTags = () => {
   const dispatch = useDispatch();
@@ -26,6 +26,8 @@ const NfcTags = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isDrawerOpened, setIsDrawerOpened] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedArtwork, setSelectedArtwork] = useState<any>(null);
+  const [loadingArtwork, setLoadingArtwork] = useState(false);
 
   const fetchTags = useCallback(async () => {
     try {
@@ -47,6 +49,11 @@ const NfcTags = () => {
   useEffect(() => {
     fetchTags();
   }, [fetchTags]);
+
+  // Debug effect to monitor artwork state changes
+  useEffect(() => {
+    console.log('Selected artwork state updated:', selectedArtwork);
+  }, [selectedArtwork]);
 
   const handleStopScanning = useCallback(() => {
     console.log('📟 Stopping NFC scanning...');
@@ -194,21 +201,68 @@ const NfcTags = () => {
   const handleCloseDrawer = () => {
     setIsDrawerOpened(false);
     setIsEditMode(false);
+    setSelectedTag(null);
+    setSelectedArtwork(null);
+    setLoadingArtwork(false);
   };
 
-  const handleOpenDrawer = useCallback((row: Row<Tag>) => {
-    setSelectedTag(row.original);
-    setIsDrawerOpened(true);
-    setIsEditMode(false);
-  }, []);
+  const handleOpenDrawer = useCallback(
+    async (row: Row<Tag>) => {
+      console.log('Opening drawer for tag:', row.original);
+      
+      // Reset states first
+      setSelectedArtwork(null);
+      setLoadingArtwork(false);
+      
+      // Set the selected tag and open drawer
+      setSelectedTag(row.original);
+      setIsDrawerOpened(true);
+      setIsEditMode(false);
+
+      // Fetch artwork details if tag is attached
+      if (row.original.artwork_id) {
+        console.log('Fetching artwork with ID:', row.original.artwork_id);
+        setLoadingArtwork(true);
+        try {
+          const artworkData = await getArtwork(row.original.artwork_id);
+          console.log('Fetched artwork data:', artworkData);
+          // Ensure we're getting the first element if it's an array
+          const artwork = Array.isArray(artworkData) ? artworkData[0] : artworkData;
+          console.log('Processed artwork object:', artwork);
+          console.log('Artwork assets:', artwork?.assets);
+          setSelectedArtwork(artwork);
+        } catch (error) {
+          console.error('Failed to fetch artwork details:', error);
+          dispatch(
+            showNotification({
+              message: 'Failed to load artwork details',
+              status: 'error',
+            })
+          );
+          setSelectedArtwork(null);
+        } finally {
+          setLoadingArtwork(false);
+        }
+      } else {
+        console.log('No artwork_id found on tag:', row.original);
+        setSelectedArtwork(null);
+      }
+    },
+    [dispatch]
+  );
 
   // Fetch user data for created_by and updated_by
   const { data: createdByUser } = useGetUserQuery(selectedTag?.created_by || '', {
     skip: !selectedTag?.created_by,
   });
-  
+
   const { data: updatedByUser } = useGetUserQuery(selectedTag?.updated_by || '', {
     skip: !selectedTag?.updated_by,
+  });
+
+  // Fetch tag issuer info if artwork is loaded
+  const { data: tagIssuerUser } = useGetUserQuery(selectedArtwork?.tag_issued_by || '', {
+    skip: !selectedArtwork?.tag_issued_by,
   });
 
   // Column helper for type safety
@@ -234,9 +288,15 @@ const NfcTags = () => {
         cell: ({ getValue }) => {
           const isActive = getValue();
           return (
-            <span className={`badge badge-sm ${isActive ? 'badge-success' : 'badge-error'}`}>
+            <Badge
+              className={`rounded-lg ${
+                isActive
+                  ? 'bg-[var(--color-semantic-success)] text-[var(--color-neutral-white)]'
+                  : 'bg-[var(--color-semantic-error)] text-[var(--color-neutral-white)]'
+              }`}
+            >
               {isActive ? 'Active' : 'Inactive'}
-            </span>
+            </Badge>
           );
         },
         enableSorting: true,
@@ -529,16 +589,143 @@ const NfcTags = () => {
           {/* Artwork Information */}
           {selectedTag?.artwork_id && (
             <div className="border-b pb-4">
-              <h3 className="mb-2 text-xs font-semibold text-gray-500 uppercase">
+              <h3 className="mb-3 text-xs font-semibold text-gray-500 uppercase">
                 Attached Artwork
               </h3>
-              <p className="text-sm">{selectedTag?.artwork_title || 'Unknown Artwork'}</p>
-              <p className="mt-1 text-xs text-gray-500">ID: {selectedTag?.artwork_id}</p>
+              {loadingArtwork ? (
+                <div className="flex justify-center py-4">
+                  <span className="loading loading-spinner loading-sm"></span>
+                </div>
+              ) : selectedArtwork ? (
+                <div className="space-y-3">
+                  {/* Artwork Image */}
+                  {(() => {
+                    // Handle different possible image data structures
+                    let imageUrl = null;
+                    
+                    if (selectedArtwork.assets && Array.isArray(selectedArtwork.assets) && selectedArtwork.assets.length > 0) {
+                      // Use assets array (actual structure from API)
+                      imageUrl = selectedArtwork.assets[0].url;
+                    } else if (selectedArtwork.images && Array.isArray(selectedArtwork.images) && selectedArtwork.images.length > 0) {
+                      // Fallback to images array if it exists
+                      imageUrl = selectedArtwork.images[0].url || selectedArtwork.images[0].image_url;
+                    } else if (selectedArtwork.image_url) {
+                      // If there's a direct image_url property
+                      imageUrl = selectedArtwork.image_url;
+                    } else if (selectedArtwork.image) {
+                      // If there's an image property
+                      imageUrl = typeof selectedArtwork.image === 'string' 
+                        ? selectedArtwork.image 
+                        : selectedArtwork.image?.url || selectedArtwork.image?.image_url;
+                    }
+                    
+                    return imageUrl ? (
+                      <div className="mb-3">
+                        <img
+                          src={imageUrl}
+                          alt={selectedArtwork.title || 'Artwork'}
+                          className="h-48 w-full rounded-lg object-cover"
+                          onError={(e) => {
+                            console.error('Failed to load image:', imageUrl);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Artwork Details */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-xs text-gray-500">Title</span>
+                      <p className="text-sm font-medium">{selectedArtwork.title}</p>
+                    </div>
+
+                    <div>
+                      <span className="text-xs text-gray-500">Artist</span>
+                      <p className="text-sm">{selectedArtwork.artist}</p>
+                    </div>
+
+                    {selectedArtwork.medium && (
+                      <div>
+                        <span className="text-xs text-gray-500">Medium</span>
+                        <p className="text-sm">{selectedArtwork.medium}</p>
+                      </div>
+                    )}
+
+                    {selectedArtwork.year && (
+                      <div>
+                        <span className="text-xs text-gray-500">Year</span>
+                        <p className="text-sm">{selectedArtwork.year}</p>
+                      </div>
+                    )}
+
+                    {(selectedArtwork.height || selectedArtwork.width) && (
+                      <div>
+                        <span className="text-xs text-gray-500">Dimensions</span>
+                        <p className="text-sm">
+                          {selectedArtwork.height && `${selectedArtwork.height}`}
+                          {selectedArtwork.height && selectedArtwork.width && ' × '}
+                          {selectedArtwork.width && `${selectedArtwork.width}`}
+                          {selectedArtwork.size_unit && ` ${selectedArtwork.size_unit}`}
+                        </p>
+                      </div>
+                    )}
+
+                    {(selectedArtwork.idnumber || selectedArtwork.id_number) && (
+                      <div>
+                        <span className="text-xs text-gray-500">ID Number</span>
+                        <p className="text-sm">{selectedArtwork.idnumber || selectedArtwork.id_number}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tag Issuer Information */}
+                  {selectedArtwork.tag_issued_by && (
+                    <div className="mt-3 border-t pt-3">
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <span className="text-xs text-gray-500">Tag Issued By</span>
+                          <div className="mt-1">
+                            {tagIssuerUser?.data ? (
+                              <div>
+                                <span className="text-sm font-medium">
+                                  {tagIssuerUser.data.first_name || tagIssuerUser.data.last_name
+                                    ? `${tagIssuerUser.data.first_name || ''} ${tagIssuerUser.data.last_name || ''}`.trim()
+                                    : tagIssuerUser.data.email}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="font-mono text-xs text-gray-500">
+                                {selectedArtwork.tag_issued_by}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {selectedArtwork.tag_issued_at && (
+                          <div className="flex-1">
+                            <span className="text-xs text-gray-500">Issued At</span>
+                            <p className="mt-1 text-sm">
+                              {format(new Date(selectedArtwork.tag_issued_at), 'PP')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm">{selectedTag?.artwork_title || 'Unknown Artwork'}</p>
+                  <p className="mt-1 text-xs text-gray-500">ID: {selectedTag?.artwork_id}</p>
+                </div>
+              )}
             </div>
           )}
 
           {/* Creation and Update Information */}
-          <div className="space-y-3 border-t pt-4 border-b pb-4">
+          <div className="space-y-3 border-t border-b pt-4 pb-4">
             {/* Created By and Created At */}
             <div className="flex gap-4">
               <div className="flex-1">
@@ -552,28 +739,34 @@ const NfcTags = () => {
                             ? `${createdByUser.data.first_name || ''} ${createdByUser.data.last_name || ''}`.trim()
                             : createdByUser.data.email}
                         </span>
-                        <span className="text-xs text-gray-500 block">{createdByUser.data.email}</span>
+                        <span className="block text-xs text-gray-500">
+                          {createdByUser.data.email}
+                        </span>
                       </div>
                     ) : (
-                      <span className="font-mono text-xs text-gray-500">{selectedTag.created_by}</span>
+                      <span className="font-mono text-xs text-gray-500">
+                        {selectedTag.created_by}
+                      </span>
                     )
                   ) : (
                     <span className="text-xs text-gray-500">—</span>
                   )}
                 </div>
               </div>
-              
+
               <div className="flex-1">
                 <h3 className="text-xs font-semibold text-gray-500 uppercase">Created At</h3>
-                <span className="text-sm block mt-1">
-                  {selectedTag?.created_at ? format(new Date(selectedTag.created_at), 'PPpp') : 'N/A'}
+                <span className="mt-1 block text-sm">
+                  {selectedTag?.created_at
+                    ? format(new Date(selectedTag.created_at), 'PPpp')
+                    : 'N/A'}
                 </span>
               </div>
             </div>
 
             {/* Updated By and Updated At */}
             {(selectedTag?.updated_by || selectedTag?.updated_at) && (
-              <div className="flex gap-4 mt-4">
+              <div className="mt-4 flex gap-4">
                 <div className="flex-1">
                   <h3 className="text-xs font-semibold text-gray-500 uppercase">Updated By</h3>
                   <div className="mt-1">
@@ -585,21 +778,27 @@ const NfcTags = () => {
                               ? `${updatedByUser.data.first_name || ''} ${updatedByUser.data.last_name || ''}`.trim()
                               : updatedByUser.data.email}
                           </span>
-                          <span className="text-xs text-gray-500 block">{updatedByUser.data.email}</span>
+                          <span className="block text-xs text-gray-500">
+                            {updatedByUser.data.email}
+                          </span>
                         </div>
                       ) : (
-                        <span className="font-mono text-xs text-gray-500">{selectedTag.updated_by}</span>
+                        <span className="font-mono text-xs text-gray-500">
+                          {selectedTag.updated_by}
+                        </span>
                       )
                     ) : (
                       <span className="text-xs text-gray-500">—</span>
                     )}
                   </div>
                 </div>
-                
+
                 <div className="flex-1">
                   <h3 className="text-xs font-semibold text-gray-500 uppercase">Updated At</h3>
-                  <span className="text-sm block mt-1">
-                    {selectedTag?.updated_at ? format(new Date(selectedTag.updated_at), 'PPpp') : '—'}
+                  <span className="mt-1 block text-sm">
+                    {selectedTag?.updated_at
+                      ? format(new Date(selectedTag.updated_at), 'PPpp')
+                      : '—'}
                   </span>
                 </div>
               </div>
@@ -609,7 +808,7 @@ const NfcTags = () => {
             {selectedTag?.expiration_date && (
               <div>
                 <h3 className="text-xs font-semibold text-gray-500 uppercase">Expiration Date</h3>
-                <span className="text-sm block mt-1">
+                <span className="mt-1 block text-sm">
                   {format(new Date(selectedTag.expiration_date), 'PPpp')}
                 </span>
               </div>
@@ -618,6 +817,28 @@ const NfcTags = () => {
 
           {/* Actions */}
           <div className="flex flex-col gap-2 pt-4">
+            {selectedTag?.artwork_id && (
+              <ActionBox
+                title="Detach from Artwork"
+                description="Remove this tag from the attached artwork"
+                buttonText="Detach Tag"
+                borderColorClass="border-[var(--color-accent-yellow-400)]/50"
+                boxBgClass="bg-[var(--color-accent-yellow-200)]/50"
+                buttonBgClass="bg-[var(--color-accent-yellow-400)]/30"
+                buttonHoverBgClass="hover:bg-[var(--color-accent-yellow-400)]/60"
+                textColor="text-[var(--color-accent-yellow-600)]"
+                onButtonClick={() => {
+                  // TODO: Implement detach functionality
+                  dispatch(
+                    showNotification({
+                      message: 'Detach functionality not yet implemented',
+                      status: 'info',
+                    })
+                  );
+                }}
+              />
+            )}
+
             <ActionBox
               title={selectedTag?.active ? 'Deactivate Tag' : 'Activate Tag'}
               description={
@@ -656,28 +877,6 @@ const NfcTags = () => {
                 }
               }}
             />
-
-            {selectedTag?.artwork_id && (
-              <ActionBox
-                title="Detach from Artwork"
-                description="Remove this tag from the attached artwork"
-                buttonText="Detach Tag"
-                borderColorClass="border-[var(--color-accent-yellow-400)]/50"
-                boxBgClass="bg-[var(--color-accent-yellow-200)]/50"
-                buttonBgClass="bg-[var(--color-accent-yellow-400)]/30"
-                buttonHoverBgClass="hover:bg-[var(--color-accent-yellow-400)]/60"
-                textColor="text-[var(--color-accent-yellow-600)]"
-                onButtonClick={() => {
-                  // TODO: Implement detach functionality
-                  dispatch(
-                    showNotification({
-                      message: 'Detach functionality not yet implemented',
-                      status: 'info',
-                    })
-                  );
-                }}
-              />
-            )}
           </div>
         </div>
       </SideDrawer>

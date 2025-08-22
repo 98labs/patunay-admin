@@ -5,18 +5,8 @@ export const getTags = async (): Promise<Tag[]> => {
   console.log('📟 Fetching all tags from database');
 
   try {
-    const { data, error } = await supabase
-      .from('tags')
-      .select(
-        `
-        *,
-        artworks (
-          id,
-          title
-        )
-      `
-      )
-      .order('created_at', { ascending: false });
+    // Use the RPC function to get tags with artwork information
+    const { data, error } = await supabase.rpc('get_tags_with_artworks');
 
     if (error) {
       console.error('📟 Error fetching tags:', error);
@@ -25,17 +15,12 @@ export const getTags = async (): Promise<Tag[]> => {
 
     console.log('📟 Fetched tags:', data?.length || 0);
 
-    // Map the data to include artwork information
-    const tags = (data || []).map((tag) => ({
-      ...tag,
-      artwork_id: tag.artworks?.[0]?.id || null,
-      artwork_title: tag.artworks?.[0]?.title || null,
-      artworks: undefined, // Remove the nested artworks array
-    }));
-
-    return tags;
+    // Data already has artwork_id and artwork_title from the RPC
+    // Just return it directly as it matches our Tag type
+    return data || [];
   } catch (error) {
     console.error('📟 Failed to fetch tags:', error);
     throw error;
   }
 };
+export type { Tag };
