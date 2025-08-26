@@ -7,6 +7,7 @@ import { getTags, Tag } from '../../supabase/rpc/getTags';
 import { registerTag } from '../../supabase/rpc/registerTag';
 import { updateTagStatus } from '../../supabase/rpc/updateTagStatus';
 import { useNfcStatus } from '../../context/NfcStatusContext';
+import { NfcModeEntity } from '../../typings/enums/nfcEnum';
 import { Row, createColumnHelper, ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { NfcTagsDataTable } from './components/NfcTagsDataTable';
@@ -18,7 +19,7 @@ import { getArtwork } from '../../supabase/rpc/getArtwork';
 const NfcTags = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isNfcAvailable, nfcFeaturesEnabled, deviceStatus } = useNfcStatus();
+  const { isNfcAvailable, nfcFeaturesEnabled } = useNfcStatus();
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -113,7 +114,7 @@ const NfcTags = () => {
     // Set NFC to read mode
     if (window.electron?.setMode) {
       console.log('📟 Setting NFC to Read mode');
-      window.electron.setMode('Read');
+      window.electron.setMode(NfcModeEntity.Read);
     }
 
     dispatch(
