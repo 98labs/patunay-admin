@@ -7,11 +7,11 @@ import { getTags, Tag } from '../../supabase/rpc/getTags';
 import { registerTag } from '../../supabase/rpc/registerTag';
 import { updateTagStatus } from '../../supabase/rpc/updateTagStatus';
 import { useNfcStatus } from '../../context/NfcStatusContext';
-import { Row, createColumnHelper } from '@tanstack/react-table';
+import { Row, createColumnHelper, ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { NfcTagsDataTable } from './components/NfcTagsDataTable';
 import NfcTagsSkeleton from './components/NfcTagsSkeleton';
-import { ArtworkInfoSkeleton, UserInfoSkeleton, CreatorInfoSkeleton } from './components/SideDrawerSkeletons';
+import { ArtworkInfoSkeleton, UserInfoSkeleton } from './components/SideDrawerSkeletons';
 import { useGetUserQuery } from '../../store/api/userManagementApiV2';
 import { getArtwork } from '../../supabase/rpc/getArtwork';
 
@@ -36,7 +36,23 @@ const NfcTags = () => {
   const fetchTags = useCallback(async () => {
     try {
       const data = await getTags();
-      setTags(data);
+
+      // Sort tags: attached artworks first (descending date), then unattached
+      const sortedData = [...data].sort((a, b) => {
+        // First, separate by attachment status
+        const aHasArtwork = !!a.artwork_id;
+        const bHasArtwork = !!b.artwork_id;
+
+        if (aHasArtwork && !bHasArtwork) return -1;
+        if (!aHasArtwork && bHasArtwork) return 1;
+
+        // If both have artworks or both don't, sort by created_at descending
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA; // Descending order (newest first)
+      });
+
+      setTags(sortedData);
     } catch (error) {
       console.error('Error fetching tags:', error);
       dispatch(
@@ -213,11 +229,11 @@ const NfcTags = () => {
   const handleOpenDrawer = useCallback(
     async (row: Row<Tag>) => {
       console.log('Opening drawer for tag:', row.original);
-      
+
       // Reset states first
       setSelectedArtwork(null);
       setLoadingArtwork(false);
-      
+
       // Set the selected tag and open drawer
       setSelectedTag(row.original);
       setIsDrawerOpened(true);
@@ -256,24 +272,33 @@ const NfcTags = () => {
   );
 
   // Fetch user data for created_by and updated_by
-  const { data: createdByUser, isLoading: isLoadingCreatedBy } = useGetUserQuery(selectedTag?.created_by || '', {
-    skip: !selectedTag?.created_by,
-  });
+  const { data: createdByUser, isLoading: isLoadingCreatedBy } = useGetUserQuery(
+    selectedTag?.created_by || '',
+    {
+      skip: !selectedTag?.created_by,
+    }
+  );
 
-  const { data: updatedByUser, isLoading: isLoadingUpdatedBy } = useGetUserQuery(selectedTag?.updated_by || '', {
-    skip: !selectedTag?.updated_by,
-  });
+  const { data: updatedByUser, isLoading: isLoadingUpdatedBy } = useGetUserQuery(
+    selectedTag?.updated_by || '',
+    {
+      skip: !selectedTag?.updated_by,
+    }
+  );
 
   // Fetch tag issuer info if artwork is loaded
-  const { data: tagIssuerUser, isLoading: isLoadingTagIssuer } = useGetUserQuery(selectedArtwork?.tag_issued_by || '', {
-    skip: !selectedArtwork?.tag_issued_by,
-  });
+  const { data: tagIssuerUser, isLoading: isLoadingTagIssuer } = useGetUserQuery(
+    selectedArtwork?.tag_issued_by || '',
+    {
+      skip: !selectedArtwork?.tag_issued_by,
+    }
+  );
 
   // Column helper for type safety
   const columnHelper = createColumnHelper<Tag>();
 
   // Table columns
-  const columns = useMemo(
+  const columns = useMemo<ColumnDef<Tag, any>[]>(
     () => [
       columnHelper.accessor('id', {
         id: 'id',
@@ -434,7 +459,7 @@ const NfcTags = () => {
     try {
       // Subscribe to NFC card detection
       const unsubscribe = window.electron.subscribeNfcCardDetection(
-        (card: { uid: string; data: any }) => {
+        (card: { uid: string; data?: string }) => {
           console.log('📟 NFC card detected in registration mode:', card);
           // Only handle if we're still scanning and haven't processed a card yet
           if (isScanning && !hasProcessedCard.current) {
@@ -495,7 +520,7 @@ const NfcTags = () => {
         unsubscribeRef.current = null;
       }
     };
-  }, []);
+  }, [isScanning]);
 
   return (
     <div className="container mx-auto space-y-6 px-4">
@@ -606,29 +631,39 @@ const NfcTags = () => {
                   {(() => {
                     // Handle different possible image data structures
                     let imageUrl = null;
-                    
-                    if (selectedArtwork.assets && Array.isArray(selectedArtwork.assets) && selectedArtwork.assets.length > 0) {
+
+                    if (
+                      selectedArtwork.assets &&
+                      Array.isArray(selectedArtwork.assets) &&
+                      selectedArtwork.assets.length > 0
+                    ) {
                       // Use assets array (actual structure from API)
                       imageUrl = selectedArtwork.assets[0].url;
-                    } else if (selectedArtwork.images && Array.isArray(selectedArtwork.images) && selectedArtwork.images.length > 0) {
+                    } else if (
+                      selectedArtwork.images &&
+                      Array.isArray(selectedArtwork.images) &&
+                      selectedArtwork.images.length > 0
+                    ) {
                       // Fallback to images array if it exists
-                      imageUrl = selectedArtwork.images[0].url || selectedArtwork.images[0].image_url;
+                      imageUrl =
+                        selectedArtwork.images[0].url || selectedArtwork.images[0].image_url;
                     } else if (selectedArtwork.image_url) {
                       // If there's a direct image_url property
                       imageUrl = selectedArtwork.image_url;
                     } else if (selectedArtwork.image) {
                       // If there's an image property
-                      imageUrl = typeof selectedArtwork.image === 'string' 
-                        ? selectedArtwork.image 
-                        : selectedArtwork.image?.url || selectedArtwork.image?.image_url;
+                      imageUrl =
+                        typeof selectedArtwork.image === 'string'
+                          ? selectedArtwork.image
+                          : selectedArtwork.image?.url || selectedArtwork.image?.image_url;
                     }
-                    
+
                     return imageUrl ? (
                       <div className="mb-3">
                         <img
                           src={imageUrl}
                           alt={selectedArtwork.title || 'Artwork'}
-                          className="h-48 w-full rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          className="h-48 w-full cursor-pointer rounded-lg object-cover transition-opacity hover:opacity-90"
                           onClick={() => navigate(`/dashboard/artworks/${selectedArtwork.id}`)}
                           onError={(e) => {
                             console.error('Failed to load image:', imageUrl);
@@ -643,8 +678,8 @@ const NfcTags = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2">
                       <span className="text-xs text-gray-500">Title</span>
-                      <p 
-                        className="text-sm font-medium text-[var(--color-primary-500)] hover:text-[var(--color-primary-600)] cursor-pointer hover:underline transition-colors"
+                      <p
+                        className="cursor-pointer text-sm font-medium text-[var(--color-primary-500)] transition-colors hover:text-[var(--color-primary-600)] hover:underline"
                         onClick={() => navigate(`/dashboard/artworks/${selectedArtwork.id}`)}
                       >
                         {selectedArtwork.title}
@@ -685,7 +720,9 @@ const NfcTags = () => {
                     {(selectedArtwork.idnumber || selectedArtwork.id_number) && (
                       <div>
                         <span className="text-xs text-gray-500">ID Number</span>
-                        <p className="text-sm">{selectedArtwork.idnumber || selectedArtwork.id_number}</p>
+                        <p className="text-sm">
+                          {selectedArtwork.idnumber || selectedArtwork.id_number}
+                        </p>
                       </div>
                     )}
                   </div>
