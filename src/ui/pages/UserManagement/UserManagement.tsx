@@ -486,32 +486,32 @@ const UserManagement = () => {
           ) : (
             <div className="rounded-lg bg-white shadow dark:bg-gray-800">
               <div className="p-8">
-              <EmptyState
-                icon={<Users className="h-12 w-12" />}
-                title="No users found"
-                description={
-                  globalFilter || roleFilter !== 'all' || statusFilter !== 'all'
-                    ? 'No users match your filters. Try adjusting your search criteria.'
-                    : 'Get started by creating your first user.'
-                }
-                action={
-                  globalFilter || roleFilter !== 'all' || statusFilter !== 'all'
-                    ? {
-                        label: 'Clear filters',
-                        onClick: () => {
-                          setGlobalFilter('');
-                          setRoleFilter('all');
-                          setStatusFilter('all');
-                        },
-                      }
-                    : currentUser?.role === 'admin' || currentUser?.role === 'super_user'
+                <EmptyState
+                  icon={<Users className="h-12 w-12" />}
+                  title="No users found"
+                  description={
+                    globalFilter || roleFilter !== 'all' || statusFilter !== 'all'
+                      ? 'No users match your filters. Try adjusting your search criteria.'
+                      : 'Get started by creating your first user.'
+                  }
+                  action={
+                    globalFilter || roleFilter !== 'all' || statusFilter !== 'all'
                       ? {
-                          label: 'Add User',
-                          onClick: handleCreateUser,
+                          label: 'Clear filters',
+                          onClick: () => {
+                            setGlobalFilter('');
+                            setRoleFilter('all');
+                            setStatusFilter('all');
+                          },
                         }
-                      : undefined
-                }
-              />
+                      : currentUser?.role === 'admin' || currentUser?.role === 'super_user'
+                        ? {
+                            label: 'Add User',
+                            onClick: handleCreateUser,
+                          }
+                        : undefined
+                  }
+                />
               </div>
             </div>
           )}
@@ -684,7 +684,7 @@ const UserManagement = () => {
                 </div>
               </div>
               {/* Permissions */}
-              <div className="pb-4 border-b">
+              <div className="border-b pb-4">
                 <h3 className="font-semibold">Permissions</h3>
                 <ul className="flex flex-wrap gap-1">
                   {selectedUser?.permissions?.map((permission) => (
@@ -698,7 +698,7 @@ const UserManagement = () => {
                 </ul>
               </div>
               {/* Metadata */}
-              <div className="flex flex-col gap-2 pt-4 pb-4 border-b">
+              <div className="flex flex-col gap-2 border-b pt-4 pb-6">
                 <div>
                   <h3 className="font-semibold">User ID</h3>
                   <span>{selectedUser?.id}</span>
@@ -719,7 +719,7 @@ const UserManagement = () => {
                 </div>
               </div>
               {/* Actions */}
-              <div className="flex flex-col gap-2 pt-4">
+              <div className="flex flex-col gap-2 py-4">
                 {isEditMode ? (
                   <div className="flex gap-2">
                     <Button
